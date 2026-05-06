@@ -5,10 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'TSBL Invoice') — TSBL</title>
+    @php $favicon = \App\Models\Setting::get('favicon_path'); @endphp
+    @if($favicon)
+        <link rel="icon" type="image/png" href="{{ asset($favicon) }}">
+    @endif
     <!-- Bootstrap 5 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Bootstrap Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <!-- Tom Select -->
+    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet">
     <style>
         :root {
             --sidebar-width: 250px;
@@ -136,25 +142,30 @@
 <!-- Sidebar -->
 <nav id="sidebar">
     <div class="sidebar-brand">
-        <i class="bi bi-receipt-cutoff text-primary me-2 fs-5"></i>
-        <span>TSBL Invoice</span>
+        @php $navbarLogo = \App\Models\Setting::get('navbar_logo_path'); @endphp
+        @if($navbarLogo)
+            <img src="{{ asset($navbarLogo) }}" alt="Logo" style="max-height:36px;max-width:160px;object-fit:contain;">
+        @else
+            <i class="bi bi-receipt-cutoff text-primary me-2 fs-5"></i>
+            <span>TSBL Invoice</span>
+        @endif
     </div>
     <div class="pt-2 pb-4">
         <div class="nav-section">Menu Utama</div>
         <a href="{{ route('dashboard') }}" class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}">
             <i class="bi bi-speedometer2"></i> Dashboard
         </a>
-        <a href="#" class="nav-link {{ request()->routeIs('invoices.*') ? 'active' : '' }}">
+        <a href="{{ route('invoices.index') }}" class="nav-link {{ request()->routeIs('invoices.*') ? 'active' : '' }}">
             <i class="bi bi-file-earmark-text"></i> Invoice
         </a>
         <a href="{{ route('partners.index') }}" class="nav-link {{ request()->routeIs('partners.*') ? 'active' : '' }}">
             <i class="bi bi-people"></i> Partner
         </a>
         <div class="nav-section">Keuangan</div>
-        <a href="#" class="nav-link {{ request()->routeIs('payments.*') ? 'active' : '' }}">
+        <a href="{{ route('payments.index') }}" class="nav-link {{ request()->routeIs('payments.*') ? 'active' : '' }}">
             <i class="bi bi-cash-stack"></i> Pembayaran
         </a>
-        <a href="#" class="nav-link {{ request()->routeIs('reports.*') ? 'active' : '' }}">
+        <a href="{{ route('reports.index') }}" class="nav-link {{ request()->routeIs('reports.*') ? 'active' : '' }}">
             <i class="bi bi-bar-chart-line"></i> Laporan
         </a>
         <div class="nav-section">Pengaturan</div>
@@ -165,7 +176,7 @@
         <a href="{{ route('users.index') }}" class="nav-link {{ request()->routeIs('users.*') ? 'active' : '' }}">
             <i class="bi bi-person-gear"></i> Pengguna
         </a>
-        <a href="#" class="nav-link {{ request()->routeIs('settings.*') ? 'active' : '' }}">
+        <a href="{{ route('settings.index') }}" class="nav-link {{ request()->routeIs('settings.*') ? 'active' : '' }}">
             <i class="bi bi-gear"></i> Pengaturan
         </a>
         @endif
@@ -223,11 +234,11 @@
         <i class="bi bi-speedometer2 fs-5"></i>
         <span style="font-size:.65rem">Dashboard</span>
     </a>
-    <a href="#" class="flex-fill d-flex flex-column align-items-center justify-content-center text-decoration-none {{ request()->routeIs('invoices.*') ? 'text-primary' : 'text-secondary' }}">
+    <a href="{{ route('invoices.index') }}" class="flex-fill d-flex flex-column align-items-center justify-content-center text-decoration-none {{ request()->routeIs('invoices.*') ? 'text-primary' : 'text-secondary' }}">
         <i class="bi bi-file-earmark-text fs-5"></i>
         <span style="font-size:.65rem">Invoice</span>
     </a>
-    <a href="#" class="flex-fill d-flex flex-column align-items-center justify-content-center text-decoration-none text-white"
+    <a href="{{ route('invoices.create') }}" class="flex-fill d-flex flex-column align-items-center justify-content-center text-decoration-none text-white"
        style="background:#0d6efd;border-radius:50%;width:50px;height:50px;margin-top:-15px;box-shadow:0 4px 12px rgba(13,110,253,.4);">
         <i class="bi bi-plus-lg fs-4"></i>
     </a>
@@ -243,6 +254,8 @@
 
 <!-- Bootstrap 5 JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<!-- Tom Select -->
+<script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
 <script>
 function toggleSidebar() {
     const sidebar = document.getElementById('sidebar');

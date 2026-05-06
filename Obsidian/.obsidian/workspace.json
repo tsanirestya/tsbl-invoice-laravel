@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Architecture/LARAVEL-STRUCTURE.md",
+                "file": "Planning/MASTER-PLAN.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "LARAVEL-STRUCTURE"
+              "title": "MASTER-PLAN"
             }
           }
         ]
@@ -185,19 +185,31 @@
   },
   "active": "f75570c9470dc731",
   "lastOpenFiles": [
-    "Development-Phases/PHASE-2-SUMMARY.md",
+    "INDEX.md.tmp.32056.1777997945270",
+    "Bugs/BUG-004-INVOICE-PDF-SUBTOTAL-ALIGNMENT.md",
+    "Bugs/BUG-004-INVOICE-PDF-SUBTOTAL-ALIGNMENT.md.tmp.32056.1777997935616",
+    "INDEX.md.tmp.21840.1777997737111",
+    "Bugs/BUG-003-PRODUCTS-PAGINATION.md",
+    "Bugs/BUG-003-PRODUCTS-PAGINATION.md.tmp.21840.1777997726507",
+    "INDEX.md.tmp.23048.1777996659463",
+    "Bugs/BUG-002-PDF-EXPORT-LAYOUT.md",
+    "Development-Phases/PHASE-5-SUMMARY.md",
+    "Development-Phases/PHASE-5-SUMMARY.md.tmp.22908.1777995932184",
+    "Logs/LOG-2026-05-05.md",
+    "Database/SCHEMA.md",
+    "Bugs/BUG-001-LOGIN-FORM-ACTION.md",
+    "Planning/MASTER-PLAN.md.tmp.29724.1777995635359",
     "TODO/TODO-PHASE-1-FOUNDATION.md",
+    "Development-Phases/PHASE-4-SUMMARY.md",
+    "Development-Phases/PHASE-4-SUMMARY.md.tmp.29724.1777995628317",
+    "INDEX.md.tmp.27124.1777994356711",
+    "Development-Phases/PHASE-3-SUMMARY.md",
     "Architecture/LARAVEL-STRUCTURE.md",
+    "Development-Phases/PHASE-2-SUMMARY.md",
     "Planning/MASTER-PLAN.md",
     "Development-Phases/PHASE-1-SUMMARY.md",
     "Development-Phases/PHASE-1-SUMMARY.md.tmp.976.1777992829114",
-    "Logs/LOG-2026-05-05.md",
     "Logs/LOG-2026-05-05.md.tmp.976.1777992816287",
-    "Bugs/BUG-001-LOGIN-FORM-ACTION.md",
-    "Bugs/BUG-001-LOGIN-FORM-ACTION.md.tmp.976.1777992792365",
-    "INDEX.md",
-    "UI-UX/DESIGN-SYSTEM.md.tmp.976.1777992762376",
-    "Architecture/LARAVEL-STRUCTURE.md.tmp.976.1777992706273",
-    "Database/SCHEMA.md"
+    "INDEX.md"
   ]
 }

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Partner;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -64,7 +65,130 @@ class PartnerController extends Controller
 
     public function show(Partner $partner)
     {
-        return view('partners.show', compact('partner'));
+        $partner->load('invoices.payments');
+        $scorecard      = $this->computeScorecard($partner);
+        $recentInvoices = $partner->invoices->sortByDesc('invoice_date')->take(10);
+
+        return view('partners.show', compact('partner', 'scorecard', 'recentInvoices'));
+    }
+
+    public function performance(Request $request)
+    {
+        $query = Partner::with(['invoices.payments']);
+
+        if ($request->filled('type')) {
+            $query->where('partner_type', $request->type);
+        }
+
+        $partners = $query->orderBy('nama_partner')->get();
+
+        $scorecards = $partners->map(fn($p) => array_merge(['partner' => $p], $this->computeScorecard($p)));
+
+        if ($request->filled('risk')) {
+            $scorecards = $scorecards->filter(fn($s) => $s['risk_grade'] === strtoupper($request->risk));
+        }
+
+        return view('partners.performance', compact('scorecards'));
+    }
+
+    private function computeScorecard(Partner $partner): array
+    {
+        $invoices    = $partner->invoices;
+        $totalBilled = (float) $invoices->sum('grand_total');
+        $totalPaid   = (float) $invoices->flatMap->payments->sum('amount');
+        $outstanding = max(0, $totalBilled - $totalPaid);
+
+        $paidOnTime      = 0;
+        $paidLate        = 0;
+        $totalDaysLate   = 0;
+        $lastPaymentDate = null;
+
+        foreach ($invoices as $invoice) {
+            $lastPay = $invoice->payments->sortByDesc('payment_date')->first();
+
+            if ($lastPay) {
+                $payDate = $lastPay->payment_date;
+                if (!$lastPaymentDate || $payDate > $lastPaymentDate) {
+                    $lastPaymentDate = $payDate;
+                }
+            }
+
+            if ($invoice->payment_status === 'PAID' && $invoice->due_date && $lastPay) {
+                $due  = Carbon::parse($invoice->due_date);
+                $paid = Carbon::parse($lastPay->payment_date);
+
+                if ($paid->lte($due)) {
+                    $paidOnTime++;
+                } else {
+                    $paidLate++;
+                    $totalDaysLate += $paid->diffInDays($due);
+                }
+            }
+        }
+
+        $overdueCount = $invoices->where('payment_status', 'OVERDUE')->count();
+        $unpaidCount  = $invoices->where('payment_status', 'UNPAID')->count();
+        $partialCount = $invoices->where('payment_status', 'PARTIAL')->count();
+
+        $resolved    = $paidOnTime + $paidLate;
+        $onTimeRate  = $resolved > 0 ? round($paidOnTime / $resolved * 100, 1) : null;
+        $avgDaysLate = $paidLate > 0 ? round($totalDaysLate / $paidLate, 1) : 0;
+
+        $limitCredit      = (float) $partner->limit_credit;
+        $creditUtilization = $limitCredit > 0 ? round($outstanding / $limitCredit * 100, 1) : null;
+
+        [$riskGrade, $riskColor] = $this->calcRiskGrade($onTimeRate, $overdueCount, $creditUtilization, $invoices->count());
+
+        return [
+            'total_invoices'     => $invoices->count(),
+            'total_billed'       => $totalBilled,
+            'total_paid'         => $totalPaid,
+            'outstanding'        => $outstanding,
+            'paid_on_time'       => $paidOnTime,
+            'paid_late'          => $paidLate,
+            'overdue_count'      => $overdueCount,
+            'unpaid_count'       => $unpaidCount,
+            'partial_count'      => $partialCount,
+            'on_time_rate'       => $onTimeRate,
+            'avg_days_late'      => $avgDaysLate,
+            'credit_utilization' => $creditUtilization,
+            'last_payment_date'  => $lastPaymentDate,
+            'risk_grade'         => $riskGrade,
+            'risk_color'         => $riskColor,
+        ];
+    }
+
+    private function calcRiskGrade(?float $onTimeRate, int $overdueCount, ?float $creditUtil, int $totalInvoices): array
+    {
+        if ($totalInvoices === 0) {
+            return ['N/A', 'secondary'];
+        }
+
+        if ($onTimeRate === null) {
+            return $overdueCount > 0 ? ['D', 'danger'] : ['N/A', 'secondary'];
+        }
+
+        if ($onTimeRate >= 90 && $overdueCount === 0) {
+            $grade = 'A';
+            $color = 'success';
+        } elseif ($onTimeRate >= 70) {
+            $grade = 'B';
+            $color = 'primary';
+        } elseif ($onTimeRate >= 50) {
+            $grade = 'C';
+            $color = 'warning';
+        } else {
+            $grade = 'D';
+            $color = 'danger';
+        }
+
+        // Downgrade if credit utilization exceeds 100%
+        if ($creditUtil !== null && $creditUtil > 100 && in_array($grade, ['A', 'B'])) {
+            $grade = 'C';
+            $color = 'warning';
+        }
+
+        return [$grade, $color];
     }
 
     public function edit(Partner $partner)

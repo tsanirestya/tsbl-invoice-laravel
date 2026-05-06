@@ -26,32 +26,32 @@ Mobile-first finance operational web system built di Laravel 11.
 - [x] Storage symlink
 - [x] Fix: login form action pakai `route('login')`
 
-### 🔲 Phase 2 — Core Modules (NEXT)
-→ TODO: [[TODO-PHASE-2-CORE-MODULES]]
-- [ ] User Management (CRUD + signature upload + activate/deactivate)
-- [ ] Partner Management (CRUD + doc upload + credit limit + contract reminder)
-- [ ] Products Module (CRUD + pricing)
+### ✅ Phase 2 — Core Modules (SELESAI 2026-05-05)
+→ Summary: [[PHASE-2-SUMMARY]]
+- [x] User Management (CRUD + signature upload + activate/deactivate)
+- [x] Partner Management (CRUD + doc upload + credit limit + contract reminder)
+- [x] Products Module (CRUD + pricing)
 
-### 🔲 Phase 3 — Invoice Engine
-→ TODO: [[TODO-PHASE-3-INVOICE-ENGINE]]
-- [ ] Invoice Generator (form + auto invoice no + auto due date + auto terbilang)
-- [ ] Invoice items (dynamic rows + product picker + auto calc)
-- [ ] Duplicate invoice
-- [ ] PDF Generation (DomPDF + watermark PAID/UNPAID + digital signature)
-- [ ] Invoice finalization & permanent PDF storage
+### ✅ Phase 3 — Invoice Engine (SELESAI 2026-05-05)
+→ Summary: [[PHASE-3-SUMMARY]]
+- [x] Invoice Generator (form + auto invoice no + auto due date + auto terbilang)
+- [x] Invoice items (dynamic rows + product picker + auto calc)
+- [x] Duplicate invoice
+- [x] PDF Generation (DomPDF + watermark PAID/UNPAID + digital signature)
+- [x] Invoice finalization & permanent PDF storage
 
-### 🔲 Phase 4 — Finance Operations
-→ TODO: [[TODO-PHASE-4-FINANCE]]
-- [ ] Payment Tracking (proof upload + partial payments)
-- [ ] Auto-overdue detection (cron / on-request)
-- [ ] Payment checklist view
-- [ ] Invoice status auto-update dari payment
+### ✅ Phase 4 — Finance Operations (SELESAI 2026-05-05)
+→ Summary: [[PHASE-4-SUMMARY]]
+- [x] Payment Tracking (proof upload + partial payments)
+- [x] Auto-overdue detection (artisan command + web button on-request)
+- [x] Payment checklist view (/payments)
+- [x] Invoice status auto-update dari payment (recalcStatus)
 
-### 🔲 Phase 5 — Settings & Reports
-→ TODO: [[TODO-PHASE-5-SETTINGS-REPORTS]]
-- [ ] Settings Module (company profile, bank, invoice prefix, due days, T&C)
-- [ ] Reports (outstanding, overdue, paid, revenue, partner transactions)
-- [ ] Export Excel + PDF
+### ✅ Phase 5 — Settings & Reports (SELESAI 2026-05-05)
+→ Summary: [[PHASE-5-SUMMARY]]
+- [x] Settings Module (company profile, bank, invoice prefix, due days, T&C, logo upload)
+- [x] Reports (outstanding, overdue, paid, revenue, partner summary) with date/status/partner filters
+- [x] Export CSV (UTF-8 BOM, Excel-ready) + Export PDF (DomPDF A4 landscape)
 
 ---
 

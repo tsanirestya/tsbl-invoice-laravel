@@ -6,9 +6,14 @@
 @section('content')
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h5 class="mb-0 fw-bold">Daftar Partner</h5>
-    <a href="{{ route('partners.create') }}" class="btn btn-primary btn-sm">
-        <i class="bi bi-plus-lg me-1"></i> Tambah Partner
-    </a>
+    <div class="d-flex gap-2">
+        <a href="{{ route('partners.performance') }}" class="btn btn-outline-info btn-sm">
+            <i class="bi bi-bar-chart-line me-1"></i> Scorecard
+        </a>
+        <a href="{{ route('partners.create') }}" class="btn btn-primary btn-sm">
+            <i class="bi bi-plus-lg me-1"></i> Tambah Partner
+        </a>
+    </div>
 </div>
 
 <form method="GET" class="card card-body mb-3 py-2">

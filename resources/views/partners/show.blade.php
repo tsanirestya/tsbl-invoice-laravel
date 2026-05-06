@@ -161,5 +161,174 @@
         </div>
     </div>
     @endif
+
+    {{-- Payment Scorecard --}}
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center fw-semibold">
+                <span>Scorecard Pembayaran</span>
+                @if($scorecard['risk_grade'] !== 'N/A')
+                    <span class="badge bg-{{ $scorecard['risk_color'] }} fs-6 px-3">Grade {{ $scorecard['risk_grade'] }}</span>
+                @else
+                    <span class="badge bg-secondary">Belum Ada Data</span>
+                @endif
+            </div>
+            <div class="card-body">
+                {{-- Key metrics --}}
+                <div class="row g-2 mb-3">
+                    <div class="col-6 col-md-3">
+                        <div class="p-2 bg-light rounded text-center">
+                            <div class="fs-4 fw-bold text-success">{{ $scorecard['paid_on_time'] }}</div>
+                            <div class="small text-muted">Tepat Waktu</div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="p-2 bg-light rounded text-center">
+                            <div class="fs-4 fw-bold text-warning">{{ $scorecard['paid_late'] }}</div>
+                            <div class="small text-muted">Terlambat</div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="p-2 bg-light rounded text-center">
+                            <div class="fs-4 fw-bold text-danger">{{ $scorecard['overdue_count'] + $scorecard['unpaid_count'] }}</div>
+                            <div class="small text-muted">Belum Dibayar</div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="p-2 bg-light rounded text-center">
+                            <div class="fs-4 fw-bold">
+                                {{ $scorecard['on_time_rate'] !== null ? $scorecard['on_time_rate'].'%' : '—' }}
+                            </div>
+                            <div class="small text-muted">On-Time Rate</div>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Detail metrics --}}
+                <dl class="row mb-3 small">
+                    <dt class="col-5 col-md-3 text-muted">Total Invoice</dt>
+                    <dd class="col-7 col-md-9">{{ $scorecard['total_invoices'] }}</dd>
+
+                    <dt class="col-5 col-md-3 text-muted">Total Tagihan</dt>
+                    <dd class="col-7 col-md-9">Rp {{ number_format($scorecard['total_billed'], 0, ',', '.') }}</dd>
+
+                    <dt class="col-5 col-md-3 text-muted">Total Dibayar</dt>
+                    <dd class="col-7 col-md-9">Rp {{ number_format($scorecard['total_paid'], 0, ',', '.') }}</dd>
+
+                    <dt class="col-5 col-md-3 text-muted">Outstanding</dt>
+                    <dd class="col-7 col-md-9">
+                        <span class="{{ $scorecard['outstanding'] > 0 ? 'text-danger fw-semibold' : 'text-success' }}">
+                            Rp {{ number_format($scorecard['outstanding'], 0, ',', '.') }}
+                        </span>
+                    </dd>
+
+                    @if($scorecard['partial_count'] > 0)
+                    <dt class="col-5 col-md-3 text-muted">Partial</dt>
+                    <dd class="col-7 col-md-9">{{ $scorecard['partial_count'] }} invoice</dd>
+                    @endif
+
+                    @if($scorecard['avg_days_late'] > 0)
+                    <dt class="col-5 col-md-3 text-muted">Avg Hari Terlambat</dt>
+                    <dd class="col-7 col-md-9 text-warning">+{{ $scorecard['avg_days_late'] }} hari</dd>
+                    @endif
+
+                    @if($scorecard['credit_utilization'] !== null)
+                    <dt class="col-5 col-md-3 text-muted">Credit Utilization</dt>
+                    <dd class="col-7 col-md-9">
+                        @php $cu = $scorecard['credit_utilization']; @endphp
+                        <span class="{{ $cu > 100 ? 'text-danger fw-semibold' : ($cu > 50 ? 'text-warning' : 'text-success') }}">
+                            {{ $cu }}%
+                        </span>
+                        <small class="text-muted">(limit Rp {{ number_format($partner->limit_credit, 0, ',', '.') }})</small>
+                    </dd>
+                    @endif
+
+                    @if($scorecard['last_payment_date'])
+                    <dt class="col-5 col-md-3 text-muted">Terakhir Bayar</dt>
+                    <dd class="col-7 col-md-9">
+                        {{ \Carbon\Carbon::parse($scorecard['last_payment_date'])->format('d/m/Y') }}
+                    </dd>
+                    @endif
+                </dl>
+
+                {{-- Recent invoices table --}}
+                @if($recentInvoices->count() > 0)
+                <h6 class="small text-uppercase text-muted fw-semibold mb-2">10 Invoice Terakhir</h6>
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover mb-0 small">
+                        <thead class="table-light">
+                            <tr>
+                                <th>No Invoice</th>
+                                <th>Tgl Invoice</th>
+                                <th>Jatuh Tempo</th>
+                                <th class="text-end">Grand Total</th>
+                                <th class="text-center">Status</th>
+                                <th class="text-center">Ketepatan Bayar</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($recentInvoices as $inv)
+                            @php
+                                $lastPay = $inv->payments->sortByDesc('payment_date')->first();
+                                $timeliness = null;
+                                $daysLate   = 0;
+                                if ($inv->payment_status === 'PAID' && $lastPay && $inv->due_date) {
+                                    $due  = \Carbon\Carbon::parse($inv->due_date);
+                                    $paid = \Carbon\Carbon::parse($lastPay->payment_date);
+                                    if ($paid->lte($due)) {
+                                        $timeliness = 'ontime';
+                                    } else {
+                                        $timeliness = 'late';
+                                        $daysLate   = $paid->diffInDays($due);
+                                    }
+                                }
+                                $statusColors = ['PAID'=>'success','UNPAID'=>'secondary','PARTIAL'=>'info','OVERDUE'=>'danger'];
+                            @endphp
+                            <tr>
+                                <td>
+                                    <a href="{{ route('invoices.show', $inv) }}" class="text-decoration-none">
+                                        {{ $inv->invoice_no }}
+                                    </a>
+                                </td>
+                                <td>{{ $inv->invoice_date->format('d/m/Y') }}</td>
+                                <td>{{ $inv->due_date?->format('d/m/Y') ?? '—' }}</td>
+                                <td class="text-end">Rp {{ number_format($inv->grand_total, 0, ',', '.') }}</td>
+                                <td class="text-center">
+                                    <span class="badge bg-{{ $statusColors[$inv->payment_status] ?? 'secondary' }}">
+                                        {{ $inv->payment_status }}
+                                    </span>
+                                </td>
+                                <td class="text-center">
+                                    @if($timeliness === 'ontime')
+                                        <span class="text-success">
+                                            <i class="bi bi-check-circle-fill me-1"></i>Tepat Waktu
+                                        </span>
+                                    @elseif($timeliness === 'late')
+                                        <span class="text-warning">
+                                            <i class="bi bi-clock-fill me-1"></i>+{{ $daysLate }} hari
+                                        </span>
+                                    @elseif($inv->payment_status === 'OVERDUE')
+                                        <span class="text-danger">
+                                            <i class="bi bi-x-circle-fill me-1"></i>Overdue
+                                        </span>
+                                    @elseif($inv->payment_status === 'PARTIAL')
+                                        <span class="text-info">
+                                            <i class="bi bi-hourglass-split me-1"></i>Sebagian
+                                        </span>
+                                    @else
+                                        <span class="text-muted">—</span>
+                                    @endif
+                                </td>
+                            </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+                @else
+                    <p class="text-muted small mb-0">Belum ada invoice untuk partner ini.</p>
+                @endif
+            </div>
+        </div>
+    </div>
 </div>
 @endsection

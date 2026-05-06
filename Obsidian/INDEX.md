@@ -19,8 +19,8 @@
 | Phase | File | Status |
 |---|---|---|
 | Phase 1 — Foundation | [[TODO-PHASE-1-FOUNDATION]] | ✅ Done |
-| Phase 2 — Core Modules | [[TODO-PHASE-2-CORE-MODULES]] | 🔲 Next |
-| Phase 3 — Invoice Engine | [[TODO-PHASE-3-INVOICE-ENGINE]] | 🔲 Pending |
+| Phase 2 — Core Modules | [[PHASE-2-SUMMARY]] | ✅ Done |
+| Phase 3 — Invoice Engine | [[PHASE-3-SUMMARY]] | ✅ Done |
 | Phase 4 — Finance Operations | [[TODO-PHASE-4-FINANCE]] | 🔲 Pending |
 | Phase 5 — Settings & Reports | [[TODO-PHASE-5-SETTINGS-REPORTS]] | 🔲 Pending |
 
@@ -30,6 +30,9 @@
 ## 🐛 Bugs
 → Folder: `Bugs/`
 - [[BUG-001-LOGIN-FORM-ACTION]] — Login 404 fix (subdirectory URL issue)
+- [[BUG-002-PDF-EXPORT-LAYOUT]] — Perbaikan tampilan export PDF di halaman Reports 🔲
+- [[BUG-003-PRODUCTS-PAGINATION]] — Pagination berantakan di halaman /products 🔴
+- [[BUG-004-INVOICE-PDF-SUBTOTAL-ALIGNMENT]] — Subtotal & Grand Total tidak sejajar kolom jumlah di PDF invoice 🔲
 
 ## 📝 Logs
 → Folder: `Logs/`

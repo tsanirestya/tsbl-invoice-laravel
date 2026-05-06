@@ -3,13 +3,13 @@
 {{-- Nav tabs --}}
 <ul class="nav nav-tabs mb-3" id="partnerTabs">
     <li class="nav-item">
-        <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-info">Informasi Umum</button>
+        <button type="button" class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-info">Informasi Umum</button>
     </li>
     <li class="nav-item">
-        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-bank">Bank & Pembayaran</button>
+        <button type="button" class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-bank">Bank & Pembayaran</button>
     </li>
     <li class="nav-item">
-        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-docs">Dokumen Legal</button>
+        <button type="button" class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-docs">Dokumen Legal</button>
     </li>
 </ul>
 
@@ -92,13 +92,13 @@
             <div class="col-md-3">
                 <label class="form-label fw-semibold">Kontrak Mulai</label>
                 <input type="date" name="contract_start" class="form-control"
-                       value="{{ old('contract_start', $partner->contract_start?->format('Y-m-d') ?? '') }}">
+                       value="{{ old('contract_start', $editing ? ($partner->contract_start?->format('Y-m-d') ?? '') : '') }}">
             </div>
 
             <div class="col-md-3">
                 <label class="form-label fw-semibold">Kontrak Selesai</label>
                 <input type="date" name="contract_end" class="form-control @error('contract_end') is-invalid @enderror"
-                       value="{{ old('contract_end', $partner->contract_end?->format('Y-m-d') ?? '') }}">
+                       value="{{ old('contract_end', $editing ? ($partner->contract_end?->format('Y-m-d') ?? '') : '') }}">
                 @error('contract_end') <div class="invalid-feedback">{{ $message }}</div> @enderror
             </div>
 
