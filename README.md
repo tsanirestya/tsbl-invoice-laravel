@@ -375,4 +375,4 @@ feat/phase-N-description ← per-phase feature branches
 
 ## License
 
-Internal use only — PT Tunas Satria Borneo Lestari.
+Internal use only — Trans Studio Bali
