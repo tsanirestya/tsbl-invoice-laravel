@@ -1,6 +1,6 @@
 # TSBL Invoice System
 
-A complete B2B invoice management system for **PT Tunas Satria Borneo Lestari**, built to handle multi-partner invoicing, payment tracking, partner performance analytics, and financial reporting.
+A complete B2B invoice management system for **Trans Studio Bali**, built to handle multi-partner invoicing, payment tracking, partner performance analytics, and financial reporting.
 
 ---
 
