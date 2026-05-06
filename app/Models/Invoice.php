@@ -57,8 +57,35 @@ class Invoice extends Model
         return $this->due_date && $this->due_date->isPast() && $this->payment_status !== 'PAID';
     }
 
+    public static function syncOverdueStatuses(): void
+    {
+        static::query()
+            ->whereIn('payment_status', ['UNPAID', 'PARTIAL'])
+            ->whereNotNull('due_date')
+            ->whereDate('due_date', '<', now()->toDateString())
+            ->update(['payment_status' => 'OVERDUE']);
+    }
+
     public function totalPaid(): float
     {
         return (float) $this->payments()->sum('amount');
+    }
+
+    public function recalcStatus(): void
+    {
+        $paid  = $this->totalPaid();
+        $total = (float) $this->grand_total;
+
+        if ($paid >= $total && $total > 0) {
+            $status = 'PAID';
+        } elseif ($paid > 0) {
+            $status = 'PARTIAL';
+        } elseif ($this->due_date && $this->due_date->isPast()) {
+            $status = 'OVERDUE';
+        } else {
+            $status = 'UNPAID';
+        }
+
+        $this->update(['payment_status' => $status]);
     }
 }
