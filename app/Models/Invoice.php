@@ -8,7 +8,7 @@ class Invoice extends Model
 {
     protected $fillable = [
         'invoice_no', 'partner_id', 'guest_name', 'visit_date', 'booking_pass_no',
-        'invoice_date', 'due_date', 'dsi_transaction_no',
+        'invoice_date', 'due_date', 'dsi_transaction_no', 'import_row_id',
         'subtotal', 'deposit', 'grand_total', 'terbilang',
         'payment_status', 'notes', 'pdf_path', 'is_finalized',
         'created_by', 'updated_by',
@@ -52,6 +52,11 @@ class Invoice extends Model
         return $this->belongsTo(User::class, 'created_by');
     }
 
+    public function depositTransaction()
+    {
+        return $this->hasOne(PartnerDeposit::class)->where('type', 'DEDUCTION');
+    }
+
     public function isOverdue(): bool
     {
         return $this->due_date && $this->due_date->isPast() && $this->payment_status !== 'PAID';
@@ -76,7 +81,10 @@ class Invoice extends Model
         $paid  = $this->totalPaid();
         $total = (float) $this->grand_total;
 
-        if ($paid >= $total && $total > 0) {
+        if ($total == 0) {
+            // Fully covered by deposit — no cash needed
+            $status = 'PAID';
+        } elseif ($paid >= $total) {
             $status = 'PAID';
         } elseif ($paid > 0) {
             $status = 'PARTIAL';

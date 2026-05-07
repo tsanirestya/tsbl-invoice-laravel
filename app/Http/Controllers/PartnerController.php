@@ -36,7 +36,41 @@ class PartnerController extends Controller
 
         $partners = $query->orderBy('nama_partner')->paginate(15)->withQueryString();
 
-        return view('partners.index', compact('partners'));
+        // Eager-load for credit status (15 rows max, no N+1 concern)
+        $partners->load('invoices.payments');
+
+        $creditData = [];
+        foreach ($partners as $p) {
+            $billed      = (float) $p->invoices->sum('grand_total');
+            $paid        = (float) $p->invoices->flatMap->payments->sum('amount');
+            $outstanding = max(0, $billed - $paid);
+            $limit       = (float) $p->limit_credit;
+            $util        = ($limit > 0) ? round($outstanding / $limit * 100, 1) : null;
+
+            if ($limit <= 0) {
+                $color = 'secondary'; $label = 'No Limit';
+            } elseif ($outstanding <= 0) {
+                $color = 'success'; $label = 'Lunas';
+            } elseif ($util <= 50) {
+                $color = 'success'; $label = number_format($util, 0) . '%';
+            } elseif ($util <= 80) {
+                $color = 'warning'; $label = number_format($util, 0) . '%';
+            } elseif ($util <= 100) {
+                $color = 'orange'; $label = number_format($util, 0) . '%';
+            } else {
+                $color = 'danger'; $label = 'Melebihi';
+            }
+
+            $creditData[$p->id] = [
+                'outstanding' => $outstanding,
+                'limit'       => $limit,
+                'util'        => $util,
+                'color'       => $color,
+                'label'       => $label,
+            ];
+        }
+
+        return view('partners.index', compact('partners', 'creditData'));
     }
 
     public function create()
@@ -68,8 +102,9 @@ class PartnerController extends Controller
         $partner->load('invoices.payments');
         $scorecard      = $this->computeScorecard($partner);
         $recentInvoices = $partner->invoices->sortByDesc('invoice_date')->take(10);
+        $depositInfo    = $partner->depositInfo();
 
-        return view('partners.show', compact('partner', 'scorecard', 'recentInvoices'));
+        return view('partners.show', compact('partner', 'scorecard', 'recentInvoices', 'depositInfo'));
     }
 
     public function performance(Request $request)

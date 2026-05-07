@@ -13,8 +13,8 @@
 
     <div class="col-md-6">
         <label class="form-label fw-semibold">Harga Default (Rp) <span class="text-danger">*</span></label>
-        <input type="number" name="default_price" class="form-control @error('default_price') is-invalid @enderror"
-               value="{{ old('default_price', $product->default_price ?? 0) }}" min="0" step="1000" required>
+        <input type="text" inputmode="numeric" name="default_price" class="form-control currency-input @error('default_price') is-invalid @enderror"
+               value="{{ old('default_price', $product->default_price ?? 0) }}" required>
         @error('default_price') <div class="invalid-feedback">{{ $message }}</div> @enderror
     </div>
 

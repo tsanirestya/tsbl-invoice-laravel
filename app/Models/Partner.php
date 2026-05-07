@@ -32,6 +32,37 @@ class Partner extends Model
         return $this->hasMany(Invoice::class);
     }
 
+    public function deposits()
+    {
+        return $this->hasMany(PartnerDeposit::class);
+    }
+
+    public function depositBalance(): float
+    {
+        return (float) ($this->deposits()
+            ->selectRaw("SUM(CASE WHEN type='TOPUP' THEN amount WHEN type='DEDUCTION' THEN -amount WHEN type='ADJUSTMENT' THEN amount ELSE 0 END) as balance")
+            ->value('balance') ?? 0);
+    }
+
+    public function hasEnoughDeposit(float $amount): bool
+    {
+        return $this->depositBalance() >= $amount;
+    }
+
+    public function depositInfo(): array
+    {
+        $balance   = $this->depositBalance();
+        $threshold = (float) \App\Models\Setting::get('deposit_low_threshold', 1000000);
+
+        return [
+            'balance'           => $balance,
+            'balance_formatted' => 'Rp ' . number_format($balance, 0, ',', '.'),
+            'threshold'         => $threshold,
+            'is_low'            => $balance > 0 && $balance < $threshold,
+            'is_empty'          => $balance <= 0,
+        ];
+    }
+
     public function isContractExpiringSoon(): bool
     {
         if (!$this->contract_end) return false;

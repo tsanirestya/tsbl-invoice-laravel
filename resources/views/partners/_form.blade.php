@@ -154,8 +154,8 @@
 
             <div class="col-md-4">
                 <label class="form-label fw-semibold">Limit Kredit (Rp) <span class="text-danger">*</span></label>
-                <input type="number" name="limit_credit" class="form-control @error('limit_credit') is-invalid @enderror"
-                       value="{{ old('limit_credit', $partner->limit_credit ?? 0) }}" min="0" step="1000" required>
+                <input type="text" inputmode="numeric" name="limit_credit" class="form-control currency-input @error('limit_credit') is-invalid @enderror"
+                       value="{{ old('limit_credit', $partner->limit_credit ?? 0) }}" required>
                 @error('limit_credit') <div class="invalid-feedback">{{ $message }}</div> @enderror
             </div>
         </div>

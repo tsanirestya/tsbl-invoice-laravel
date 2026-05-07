@@ -4,7 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Models\Invoice;
 use App\Models\Partner;
+use App\Models\PartnerDeposit;
+use App\Models\Payment;
 use App\Models\Setting;
+use App\Models\TransactionImport;
+use App\Models\TransactionImportRow;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -19,11 +25,13 @@ class ReportController extends Controller
 
         $invoices = (clone $query)->with('partner')->orderByDesc('invoice_date')->orderByDesc('id')->paginate(50)->withQueryString();
 
-        $summary = $this->buildSummary($request);
-        $partners = Partner::where('is_active', 1)->orderBy('nama_partner')->get(['id', 'nama_partner']);
+        $summary        = $this->buildSummary($request);
+        $partners       = Partner::where('is_active', 1)->orderBy('nama_partner')->get(['id', 'nama_partner']);
         $partnerSummary = $this->buildPartnerSummary($request);
+        $depositReport  = $this->buildDepositReport();
+        $importSummary  = $this->buildImportSummary();
 
-        return view('reports.index', compact('invoices', 'summary', 'partners', 'partnerSummary'));
+        return view('reports.index', compact('invoices', 'summary', 'partners', 'partnerSummary', 'depositReport', 'importSummary'));
     }
 
     public function exportCsv(Request $request)
@@ -129,17 +137,26 @@ class ReportController extends Controller
 
     private function buildSummary(Request $request): array
     {
-        $base = $this->buildQuery($request);
+        $base       = $this->buildQuery($request);
+        $invoiceIds = (clone $base)->pluck('id');
+
+        $cashMasuk       = (float) Payment::whereIn('invoice_id', $invoiceIds)->sum('amount');
+        $depositDipakai  = (float) PartnerDeposit::whereIn('invoice_id', $invoiceIds)
+                                ->where('type', 'DEDUCTION')
+                                ->sum('amount');
 
         return [
-            'total_invoice'   => (clone $base)->count(),
-            'total_revenue'   => (clone $base)->where('payment_status', 'PAID')->sum('grand_total'),
+            'total_invoice'     => (clone $base)->count(),
+            'total_revenue'     => (clone $base)->where('payment_status', 'PAID')->sum('grand_total'),
             'total_outstanding' => (clone $base)->whereIn('payment_status', ['UNPAID', 'PARTIAL', 'OVERDUE'])->sum('grand_total'),
-            'total_overdue'   => (clone $base)->where('payment_status', 'OVERDUE')->sum('grand_total'),
-            'count_paid'      => (clone $base)->where('payment_status', 'PAID')->count(),
-            'count_unpaid'    => (clone $base)->where('payment_status', 'UNPAID')->count(),
-            'count_partial'   => (clone $base)->where('payment_status', 'PARTIAL')->count(),
-            'count_overdue'   => (clone $base)->where('payment_status', 'OVERDUE')->count(),
+            'total_overdue'     => (clone $base)->where('payment_status', 'OVERDUE')->sum('grand_total'),
+            'count_paid'        => (clone $base)->where('payment_status', 'PAID')->count(),
+            'count_unpaid'      => (clone $base)->where('payment_status', 'UNPAID')->count(),
+            'count_partial'     => (clone $base)->where('payment_status', 'PARTIAL')->count(),
+            'count_overdue'     => (clone $base)->where('payment_status', 'OVERDUE')->count(),
+            'cash_masuk'        => $cashMasuk,
+            'deposit_dipakai'   => $depositDipakai,
+            'total_uang_masuk'  => $cashMasuk + $depositDipakai,
         ];
     }
 
@@ -156,6 +173,98 @@ class ReportController extends Controller
             ->groupBy('partner_id')
             ->orderByDesc('total_billed')
             ->get();
+    }
+
+    private function buildDepositReport(): \Illuminate\Support\Collection
+    {
+        return PartnerDeposit::select(
+                'partner_id',
+                DB::raw("SUM(CASE WHEN type='TOPUP' THEN amount ELSE 0 END) as total_topup"),
+                DB::raw("SUM(CASE WHEN type='DEDUCTION' THEN amount ELSE 0 END) as total_deduction"),
+                DB::raw("SUM(CASE WHEN type='TOPUP' THEN amount WHEN type='DEDUCTION' THEN -amount WHEN type='ADJUSTMENT' THEN amount ELSE 0 END) as balance")
+            )
+            ->with('partner:id,nama_partner')
+            ->groupBy('partner_id')
+            ->orderByDesc('balance')
+            ->get();
+    }
+
+    public function exportAnomalyExcel(TransactionImport $import)
+    {
+        $rows = $import->rows()->where('status', 'anomaly')->with('anomalies', 'product')->get();
+
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Anomaly Report');
+
+        // Headers
+        $headers = ['Row #', 'Trx No', 'Tanggal', 'Ticket Type', 'Ticket Name', 'Unit Price', 'Qty',
+                    'Anomaly Types', 'Detail', 'Match Method', 'Status'];
+        foreach ($headers as $col => $h) {
+            $sheet->setCellValueByColumnAndRow($col + 1, 1, $h);
+        }
+
+        // Data
+        $r = 2;
+        foreach ($rows as $row) {
+            $types  = $row->anomalies->pluck('anomaly_type')->implode(', ');
+            $detail = $row->anomalies->pluck('detail')->implode(' | ');
+            $sheet->setCellValueByColumnAndRow(1, $r, $row->row_index);
+            $sheet->setCellValueByColumnAndRow(2, $r, $row->transaction_no);
+            $sheet->setCellValueByColumnAndRow(3, $r, $row->date?->format('d/m/Y'));
+            $sheet->setCellValueByColumnAndRow(4, $r, $row->ticket_type);
+            $sheet->setCellValueByColumnAndRow(5, $r, $row->ticket_name);
+            $sheet->setCellValueByColumnAndRow(6, $r, $row->unit_price);
+            $sheet->setCellValueByColumnAndRow(7, $r, $row->qty);
+            $sheet->setCellValueByColumnAndRow(8, $r, $types);
+            $sheet->setCellValueByColumnAndRow(9, $r, $detail);
+            $sheet->setCellValueByColumnAndRow(10, $r, $row->match_method);
+            $sheet->setCellValueByColumnAndRow(11, $r, $row->is_approved ? 'Approved' : 'Pending');
+            $r++;
+        }
+
+        $filename = 'anomaly-' . $import->id . '-' . now()->format('Ymd') . '.xlsx';
+        $writer   = new Xlsx($spreadsheet);
+
+        return response()->streamDownload(function () use ($writer) {
+            $writer->save('php://output');
+        }, $filename, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        ]);
+    }
+
+    private function buildImportSummary(): array
+    {
+        $rows = TransactionImportRow::where('status', 'valid')
+            ->whereNotNull('matched_product_id')
+            ->with('product:id,product_name')
+            ->get();
+
+        $byType = $rows->groupBy('ticket_type')->map(fn($g) => [
+            'count'       => $g->count(),
+            'total_amount'=> $g->sum('total_amount'),
+            'total_komisi'=> $g->sum('komisi_amount'),
+        ]);
+
+        $byNationality = [
+            'local'   => $rows->where('nationality', '!=', null)
+                              ->filter(fn($r) => strtolower($r->nationality ?? '') === 'indonesia' || strtolower($r->country ?? '') === 'indonesia')
+                              ->count(),
+            'foreign' => $rows->filter(fn($r) => strtolower($r->nationality ?? '') !== 'indonesia' && strtolower($r->country ?? '') !== 'indonesia' && ($r->nationality || $r->country))
+                              ->count(),
+        ];
+
+        $topProducts = $rows->groupBy('ticket_name')
+            ->map(fn($g) => ['name' => $g->first()->ticket_name, 'count' => $g->count()])
+            ->sortByDesc('count')
+            ->take(10)
+            ->values();
+
+        $totalImports = TransactionImport::count();
+        $doneImports  = TransactionImport::where('status', 'done')->count();
+        $totalKomisi  = $rows->sum('komisi_amount');
+
+        return compact('byType', 'byNationality', 'topProducts', 'totalImports', 'doneImports', 'totalKomisi');
     }
 
     private function getFilterLabels(Request $request): array

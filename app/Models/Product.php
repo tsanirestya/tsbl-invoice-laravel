@@ -23,4 +23,9 @@ class Product extends Model
             'unit_price_dsi' => 'decimal:2',
         ];
     }
+
+    public function aliases()
+    {
+        return $this->hasMany(ProductAlias::class);
+    }
 }

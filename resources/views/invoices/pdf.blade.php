@@ -93,13 +93,18 @@
     {{-- Header --}}
     @php
         $logoPath = $settings['logo_path'] ?? null;
-        $logoAbs  = $logoPath ? Storage::disk('public')->path($logoPath) : null;
+        $logoAbs  = $logoPath ? public_path($logoPath) : null;
+        $logoSrc  = null;
+        if ($logoAbs && file_exists($logoAbs)) {
+            $mime = mime_content_type($logoAbs) ?: 'image/png';
+            $logoSrc = 'data:' . $mime . ';base64,' . base64_encode(file_get_contents($logoAbs));
+        }
     @endphp
     <table class="header">
         <tr>
-            <td>
-                @if($logoAbs && file_exists($logoAbs))
-                    <img src="{{ $logoAbs }}" style="height:80px;max-width:260px" alt="Logo">
+            <td style="width:55%;">
+                @if($logoSrc)
+                    <img src="{{ $logoSrc }}" style="max-height:70px;max-width:220px;width:auto;height:auto;display:block;" alt="Logo">
                 @else
                     <div class="company-name">{{ $settings['company_name'] ?? 'TSBL' }}</div>
                 @endif
@@ -190,16 +195,20 @@
             <td>Subtotal</td>
             <td style="text-align:right;">Rp {{ number_format($invoice->subtotal, 0, ',', '.') }}</td>
         </tr>
-        @if($invoice->deposit > 0)
-        <tr>
-            <td>Deposit</td>
-            <td style="text-align:right;">(Rp {{ number_format($invoice->deposit, 0, ',', '.') }})</td>
-        </tr>
-        @endif
         <tr class="grand">
             <td>Grand Total</td>
             <td style="text-align:right;">Rp {{ number_format($invoice->grand_total, 0, ',', '.') }}</td>
         </tr>
+        @if($invoice->deposit > 0)
+        <tr>
+            <td style="color:#0d6efd;font-size:9pt">Dibayar via Deposit</td>
+            <td style="text-align:right;color:#0d6efd;font-size:9pt">(Rp {{ number_format($invoice->deposit, 0, ',', '.') }})</td>
+        </tr>
+        <tr>
+            <td style="font-size:9pt">Sisa Tagihan</td>
+            <td style="text-align:right;font-size:9pt">Rp {{ number_format(max(0, $invoice->grand_total - $invoice->deposit), 0, ',', '.') }}</td>
+        </tr>
+        @endif
     </table>
 
     {{-- Terbilang --}}

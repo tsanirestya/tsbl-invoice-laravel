@@ -14,7 +14,7 @@ class SettingsController extends Controller
         'bank_account_name', 'invoice_notes', 'terms_conditions',
     ];
 
-    private array $numericKeys = ['default_due_days'];
+    private array $numericKeys = ['default_due_days', 'deposit_low_threshold'];
 
     public function index()
     {
@@ -31,7 +31,8 @@ class SettingsController extends Controller
             'company_email'      => 'nullable|email|max:150',
             'company_npwp'       => 'nullable|string|max:30',
             'invoice_prefix'     => 'required|string|max:10|alpha_num',
-            'default_due_days'   => 'required|integer|min:1|max:365',
+            'default_due_days'        => 'required|integer|min:1|max:365',
+            'deposit_low_threshold'   => 'required|numeric|min:1',
             'bank_name'          => 'nullable|string|max:100',
             'bank_account_no'    => 'nullable|string|max:50',
             'bank_account_name'  => 'nullable|string|max:150',

@@ -119,6 +119,46 @@
         </div>
     </div>
 
+    {{-- Deposit Balance --}}
+    <div class="col-lg-6">
+        <div class="card
+            @if($depositInfo['is_empty']) border-danger
+            @elseif($depositInfo['is_low']) border-warning
+            @else border-success @endif" style="border-width:2px!important">
+            <div class="card-header fw-semibold d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-wallet2 me-1"></i> Saldo Deposit</span>
+                @if($depositInfo['is_empty'])
+                    <span class="badge bg-danger">Habis</span>
+                @elseif($depositInfo['is_low'])
+                    <span class="badge bg-warning text-dark">Rendah</span>
+                @else
+                    <span class="badge bg-success">OK</span>
+                @endif
+            </div>
+            <div class="card-body">
+                <div class="fs-4 fw-bold mb-2
+                    @if($depositInfo['is_empty']) text-danger
+                    @elseif($depositInfo['is_low']) text-warning
+                    @else text-success @endif">
+                    {{ $depositInfo['balance_formatted'] }}
+                </div>
+                @if($depositInfo['is_low'])
+                    <div class="text-muted small mb-2">
+                        Threshold minimum: Rp {{ number_format($depositInfo['threshold'], 0, ',', '.') }}
+                    </div>
+                @endif
+                <div class="d-flex gap-2 mt-2">
+                    <a href="{{ route('deposits.index', $partner) }}" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-clock-history me-1"></i> Riwayat
+                    </a>
+                    <a href="{{ route('deposit-invoices.create', ['partner_id' => $partner->id]) }}" class="btn btn-sm btn-success">
+                        <i class="bi bi-plus-circle me-1"></i> Top-up
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
     {{-- Dokumen --}}
     <div class="col-lg-6">
         <div class="card">

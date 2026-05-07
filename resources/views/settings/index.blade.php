@@ -151,6 +151,28 @@
                 </div>
             </div>
 
+            {{-- Deposit Config --}}
+            <div class="card mb-4">
+                <div class="card-header fw-semibold d-flex align-items-center gap-2">
+                    <i class="bi bi-wallet2 text-info"></i> Pengaturan Deposit
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-12 col-md-5">
+                            <label class="form-label">Batas Minimum Saldo Deposit (Rp) <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text">Rp</span>
+                                <input type="text" inputmode="numeric" name="deposit_low_threshold"
+                                    class="form-control currency-input @error('deposit_low_threshold') is-invalid @enderror"
+                                    value="{{ old('deposit_low_threshold', $settings['deposit_low_threshold'] ?? 1000000) }}">
+                            </div>
+                            <div class="form-text">Partner dengan saldo di bawah angka ini akan muncul sebagai peringatan.</div>
+                            @error('deposit_low_threshold')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div class="d-flex gap-2 justify-content-end mb-4">
                 <button type="submit" class="btn btn-primary px-4">
                     <i class="bi bi-check-lg me-1"></i> Simpan Pengaturan

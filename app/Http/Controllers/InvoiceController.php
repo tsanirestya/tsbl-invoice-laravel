@@ -7,8 +7,11 @@ use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\InvoiceLog;
 use App\Models\Partner;
+use App\Models\PartnerDeposit;
+use App\Models\Payment;
 use App\Models\Product;
 use App\Models\Setting;
+use App\Models\TransactionImportRow;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -50,16 +53,45 @@ class InvoiceController extends Controller
         $invoices = $query->paginate(20)->withQueryString();
         $partners = Partner::where('is_active', 1)->orderBy('nama_partner')->get(['id', 'nama_partner']);
 
-        return view('invoices.index', compact('invoices', 'partners'));
+        // Summary stats (always from full dataset, not filtered)
+        $stats = [
+            'total'          => Invoice::count(),
+            'unpaid'         => Invoice::whereIn('payment_status', ['UNPAID'])->count(),
+            'unpaid_amount'  => Invoice::whereIn('payment_status', ['UNPAID'])->sum('grand_total'),
+            'overdue'        => Invoice::where('payment_status', 'OVERDUE')->count(),
+            'overdue_amount' => Invoice::where('payment_status', 'OVERDUE')->sum('grand_total'),
+            'paid'           => Invoice::where('payment_status', 'PAID')->count(),
+            'paid_amount'    => Invoice::where('payment_status', 'PAID')->sum('grand_total'),
+        ];
+
+        return view('invoices.index', compact('invoices', 'partners', 'stats'));
     }
 
-    public function create()
+    public function create(Request $request)
     {
         $partners   = Partner::where('is_active', 1)->orderBy('nama_partner')->get();
         $products   = Product::where('is_active', 1)->orderBy('product_name')->get();
         $defaultDue = (int) Setting::get('default_due_days', 14);
 
-        return view('invoices.create', compact('partners', 'products', 'defaultDue'));
+        // Mode: dari antrian (transaction_no) — load semua baris 1 transaksi sekaligus
+        $importRows = collect();
+        $importRow  = null; // backward compat
+
+        if ($request->filled('transaction_no')) {
+            $importRows = TransactionImportRow::with(['product', 'import'])
+                ->where('transaction_no', $request->transaction_no)
+                ->whereIn('status', ['valid', 'anomaly'])
+                ->where('is_approved', true)
+                ->get();
+        } elseif ($request->filled('import_row_id')) {
+            // Mode lama: single row
+            $importRow  = TransactionImportRow::with(['product', 'import'])->find($request->import_row_id);
+            if ($importRow) {
+                $importRows = collect([$importRow]);
+            }
+        }
+
+        return view('invoices.create', compact('partners', 'products', 'defaultDue', 'importRow', 'importRows'));
     }
 
     public function store(Request $request)
@@ -67,29 +99,46 @@ class InvoiceController extends Controller
         $validated = $this->validateInvoice($request);
         $items     = $this->validateItems($request);
 
-        DB::transaction(function () use ($validated, $items, $request) {
+        $depositAmount = (float) ($validated['deposit'] ?? 0);
+
+        if ($depositAmount > 0) {
+            $partner = Partner::findOrFail($validated['partner_id']);
+            $balance = $partner->depositBalance();
+            if ($depositAmount > $balance) {
+                return back()->withInput()->withErrors(['deposit' => "Deposit melebihi saldo tersedia (Rp " . number_format($balance, 0, ',', '.') . ")."]);
+            }
+        }
+
+        DB::transaction(function () use ($validated, $items, $depositAmount) {
             $invoiceNo = $this->generateInvoiceNo();
             $partner   = Partner::findOrFail($validated['partner_id']);
             $dueDays   = $partner->payment_due_days ?? (int) Setting::get('default_due_days', 14);
             $dueDate   = $validated['due_date'] ?? date('Y-m-d', strtotime($validated['invoice_date'] . " +{$dueDays} days"));
 
-            [$subtotal, $grandTotal, $itemsData] = $this->calcTotals($items, $validated['deposit'] ?? 0);
+            [$subtotal, , $itemsData] = $this->calcTotals($items, 0);
+
+            // Clamp deposit to subtotal
+            $depositAmount = min($depositAmount, $subtotal);
+
+            // Grand total = subtotal; deposit is a payment method, not a deduction
+            $grandTotal = $subtotal;
 
             $invoice = Invoice::create([
                 'invoice_no'        => $invoiceNo,
                 'partner_id'        => $validated['partner_id'],
-                'guest_name'        => $validated['guest_name'] ?? null,
-                'visit_date'        => $validated['visit_date'] ?? null,
-                'booking_pass_no'   => $validated['booking_pass_no'] ?? null,
+                'guest_name'        => $validated['guest_name'],
+                'visit_date'        => $validated['visit_date'],
+                'booking_pass_no'   => $validated['booking_pass_no'],
                 'invoice_date'      => $validated['invoice_date'],
                 'due_date'          => $dueDate,
-                'dsi_transaction_no'=> $validated['dsi_transaction_no'] ?? null,
+                'dsi_transaction_no'=> $validated['dsi_transaction_no'],
                 'subtotal'          => $subtotal,
-                'deposit'           => $validated['deposit'] ?? 0,
+                'deposit'           => $depositAmount,
                 'grand_total'       => $grandTotal,
                 'terbilang'         => ucfirst(Terbilang::convert($grandTotal)),
                 'payment_status'    => 'UNPAID',
                 'notes'             => $validated['notes'] ?? null,
+                'import_row_id'     => $validated['import_row_id'] ?? null,
                 'is_finalized'      => false,
                 'created_by'        => auth()->id(),
                 'updated_by'        => auth()->id(),
@@ -102,10 +151,38 @@ class InvoiceController extends Controller
                 ]));
             }
 
+            if ($depositAmount > 0) {
+                // Deduct from partner deposit ledger
+                PartnerDeposit::create([
+                    'partner_id' => $validated['partner_id'],
+                    'type'       => 'DEDUCTION',
+                    'amount'     => $depositAmount,
+                    'invoice_id' => $invoice->id,
+                    'notes'      => "Dipakai di invoice {$invoice->invoice_no}",
+                    'created_by' => auth()->id(),
+                    'created_at' => now(),
+                ]);
+
+                // Record as payment so invoice status is tracked correctly
+                Payment::create([
+                    'invoice_id'     => $invoice->id,
+                    'amount'         => $depositAmount,
+                    'payment_date'   => $validated['invoice_date'],
+                    'payment_method' => 'Deposit',
+                    'reference_no'   => null,
+                    'proof_file'     => null,
+                    'notes'          => "Dibayar dengan deposit partner",
+                    'created_by'     => auth()->id(),
+                    'created_at'     => now(),
+                ]);
+
+                $invoice->recalcStatus();
+            }
+
             InvoiceLog::create([
                 'invoice_id'  => $invoice->id,
                 'action'      => 'CREATED',
-                'description' => "Invoice {$invoice->invoice_no} dibuat",
+                'description' => "Invoice {$invoice->invoice_no} dibuat" . ($depositAmount > 0 ? " (deposit Rp " . number_format($depositAmount, 0, ',', '.') . ")" : ""),
                 'created_by'  => auth()->id(),
                 'created_at'  => now(),
             ]);
@@ -139,26 +216,42 @@ class InvoiceController extends Controller
             return redirect()->route('invoices.show', $invoice)->with('error', 'Invoice sudah final — tidak bisa diedit.');
         }
 
-        $validated = $this->validateInvoice($request);
-        $items     = $this->validateItems($request);
+        $validated     = $this->validateInvoice($request);
+        $items         = $this->validateItems($request);
+        $newDeposit    = (float) ($validated['deposit'] ?? 0);
+        $oldDeposit    = (float) $invoice->deposit;
 
-        DB::transaction(function () use ($invoice, $validated, $items) {
+        if ($newDeposit > 0) {
+            $partner       = Partner::findOrFail($validated['partner_id']);
+            $currentBalance = $partner->depositBalance();
+            // Available balance = current balance + old deduction (to be reversed)
+            $availableBalance = $currentBalance + $oldDeposit;
+            if ($newDeposit > $availableBalance) {
+                return back()->withInput()->withErrors(['deposit' => "Deposit melebihi saldo tersedia (Rp " . number_format($availableBalance, 0, ',', '.') . ")."]);
+            }
+        }
+
+        DB::transaction(function () use ($invoice, $validated, $items, $newDeposit, $oldDeposit) {
             $partner = Partner::findOrFail($validated['partner_id']);
             $dueDays = $partner->payment_due_days ?? (int) Setting::get('default_due_days', 14);
             $dueDate = $validated['due_date'] ?? date('Y-m-d', strtotime($validated['invoice_date'] . " +{$dueDays} days"));
 
-            [$subtotal, $grandTotal, $itemsData] = $this->calcTotals($items, $validated['deposit'] ?? 0);
+            [$subtotal, , $itemsData] = $this->calcTotals($items, 0);
+            $depositAmount = min($newDeposit, $subtotal);
+
+            // Grand total = subtotal; deposit is a payment method, not a deduction
+            $grandTotal = $subtotal;
 
             $invoice->update([
                 'partner_id'        => $validated['partner_id'],
-                'guest_name'        => $validated['guest_name'] ?? null,
-                'visit_date'        => $validated['visit_date'] ?? null,
-                'booking_pass_no'   => $validated['booking_pass_no'] ?? null,
+                'guest_name'        => $validated['guest_name'],
+                'visit_date'        => $validated['visit_date'],
+                'booking_pass_no'   => $validated['booking_pass_no'],
                 'invoice_date'      => $validated['invoice_date'],
                 'due_date'          => $dueDate,
-                'dsi_transaction_no'=> $validated['dsi_transaction_no'] ?? null,
+                'dsi_transaction_no'=> $validated['dsi_transaction_no'],
                 'subtotal'          => $subtotal,
-                'deposit'           => $validated['deposit'] ?? 0,
+                'deposit'           => $depositAmount,
                 'grand_total'       => $grandTotal,
                 'terbilang'         => ucfirst(Terbilang::convert($grandTotal)),
                 'notes'             => $validated['notes'] ?? null,
@@ -173,10 +266,40 @@ class InvoiceController extends Controller
                 ]));
             }
 
+            // Reverse old DEDUCTION and old deposit payment, create new ones if needed
+            PartnerDeposit::where('invoice_id', $invoice->id)->where('type', 'DEDUCTION')->delete();
+            Payment::where('invoice_id', $invoice->id)->where('payment_method', 'Deposit')->delete();
+
+            if ($depositAmount > 0) {
+                PartnerDeposit::create([
+                    'partner_id' => $validated['partner_id'],
+                    'type'       => 'DEDUCTION',
+                    'amount'     => $depositAmount,
+                    'invoice_id' => $invoice->id,
+                    'notes'      => "Dipakai di invoice {$invoice->invoice_no}",
+                    'created_by' => auth()->id(),
+                    'created_at' => now(),
+                ]);
+
+                Payment::create([
+                    'invoice_id'     => $invoice->id,
+                    'amount'         => $depositAmount,
+                    'payment_date'   => $validated['invoice_date'],
+                    'payment_method' => 'Deposit',
+                    'reference_no'   => null,
+                    'proof_file'     => null,
+                    'notes'          => "Dibayar dengan deposit partner",
+                    'created_by'     => auth()->id(),
+                    'created_at'     => now(),
+                ]);
+            }
+
+            $invoice->recalcStatus();
+
             InvoiceLog::create([
                 'invoice_id'  => $invoice->id,
                 'action'      => 'UPDATED',
-                'description' => "Invoice {$invoice->invoice_no} diperbarui",
+                'description' => "Invoice {$invoice->invoice_no} diperbarui" . ($depositAmount > 0 ? " (deposit Rp " . number_format($depositAmount, 0, ',', '.') . ")" : ""),
                 'created_by'  => auth()->id(),
                 'created_at'  => now(),
             ]);
@@ -266,14 +389,7 @@ class InvoiceController extends Controller
 
     public function pdf(Invoice $invoice)
     {
-        if ($invoice->pdf_path && Storage::disk('public')->exists($invoice->pdf_path)) {
-            return response()->file(Storage::disk('public')->path($invoice->pdf_path), [
-                'Content-Type'        => 'application/pdf',
-                'Content-Disposition' => 'inline; filename="' . $invoice->invoice_no . '.pdf"',
-            ]);
-        }
-
-        // Draft preview — not stored
+        // Always re-render from template so logo/settings changes are reflected
         $invoice->load(['partner', 'items', 'creator']);
         $settings = Setting::whereIn('key', [
             'company_name', 'company_address', 'company_phone', 'company_email',
@@ -322,6 +438,9 @@ class InvoiceController extends Controller
             Storage::disk('public')->delete($invoice->pdf_path);
         }
 
+        // Reverse deposit DEDUCTION before deleting
+        PartnerDeposit::where('invoice_id', $invoice->id)->where('type', 'DEDUCTION')->delete();
+
         $invoice->items()->delete();
         $invoice->logs()->delete();
         $invoice->delete();
@@ -369,14 +488,15 @@ class InvoiceController extends Controller
     {
         return $request->validate([
             'partner_id'         => 'required|exists:partners,id',
-            'guest_name'         => 'nullable|string|max:200',
-            'visit_date'         => 'nullable|date',
-            'booking_pass_no'    => 'nullable|string|max:100',
+            'guest_name'         => 'required|string|max:200',
+            'visit_date'         => 'required|date',
+            'booking_pass_no'    => 'required|string|max:100',
             'invoice_date'       => 'required|date',
             'due_date'           => 'nullable|date|after_or_equal:invoice_date',
-            'dsi_transaction_no' => 'nullable|string|max:100',
+            'dsi_transaction_no' => 'required|string|max:100',
             'deposit'            => 'nullable|numeric|min:0',
             'notes'              => 'nullable|string',
+            'import_row_id'      => 'nullable|integer|exists:transaction_import_rows,id',
         ]);
     }
 

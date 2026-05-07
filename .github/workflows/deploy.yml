@@ -1,0 +1,91 @@
+name: Deploy to Hosting
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, xml, ctype, iconv, intl, pdo, pdo_mysql, dom, filter, gd, json, fileinfo, zip
+
+      - name: Get Composer cache directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+
+      - name: Cache Composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: ${{ runner.os }}-composer-
+
+      - name: Install Composer dependencies
+        run: composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist
+
+      - name: Create production .env
+        run: |
+          cat > .env << 'ENVEOF'
+          APP_NAME="TSBL Invoice"
+          APP_ENV=production
+          APP_DEBUG=false
+          APP_URL=https://invoice.transentertainment.id
+
+          LOG_CHANNEL=stack
+          LOG_LEVEL=error
+
+          DB_CONNECTION=mysql
+          DB_HOST=localhost
+          DB_PORT=3306
+          DB_DATABASE=transen2_tsbl_invoice
+          DB_USERNAME=transen2_tsanirestya
+          DB_PASSWORD=M@h4meru
+
+          SESSION_DRIVER=file
+          SESSION_LIFETIME=120
+
+          CACHE_STORE=file
+          QUEUE_CONNECTION=sync
+
+          FILESYSTEM_DISK=local
+          ENVEOF
+
+          # Inject APP_KEY from secret (avoid heredoc interpolation issues)
+          echo "APP_KEY=${{ secrets.APP_KEY }}" >> .env
+
+          # Remove leading spaces from heredoc
+          sed -i 's/^[[:space:]]*//' .env
+
+      - name: Cache config & routes
+        run: |
+          php artisan config:cache
+          php artisan route:cache
+          php artisan view:cache
+
+      - name: Deploy via FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          server-dir: /public_html/invoice.transentertainment.id/
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/node_modules/**
+            .env.example
+            .env.local
+            .env.testing
+            **/tests/**
+            **/Obsidian/**
+            **/.github/**
+            "data awal/**"
