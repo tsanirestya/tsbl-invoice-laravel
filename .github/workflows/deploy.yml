@@ -7,6 +7,7 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
       - name: Checkout code
@@ -17,17 +18,6 @@ jobs:
         with:
           php-version: '8.2'
           extensions: mbstring, xml, ctype, iconv, intl, pdo, pdo_mysql, dom, filter, gd, json, fileinfo, zip
-
-      - name: Get Composer cache directory
-        id: composer-cache
-        run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
-
-      - name: Cache Composer dependencies
-        uses: actions/cache@v4
-        with:
-          path: ${{ steps.composer-cache.outputs.dir }}
-          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
-          restore-keys: ${{ runner.os }}-composer-
 
       - name: Install Composer dependencies
         run: composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist
@@ -73,29 +63,20 @@ jobs:
           mkdir -p _webroot
           cp -r public/. _webroot/
 
-          # Custom index.php — bootstrap Laravel dari ../tsbl-invoice-laravel/
           cat > _webroot/index.php << 'EOF'
           <?php
-
           use Illuminate\Http\Request;
-
           define('LARAVEL_START', microtime(true));
-
-          // Maintenance mode check
           if (file_exists($maintenance = __DIR__ . '/../tsbl-invoice-laravel/storage/framework/maintenance.php')) {
               require $maintenance;
           }
-
           require __DIR__ . '/../tsbl-invoice-laravel/vendor/autoload.php';
-
           $app = require_once __DIR__ . '/../tsbl-invoice-laravel/bootstrap/app.php';
-
           $app->handleRequest(Request::capture());
           EOF
-
           sed -i 's/^[[:space:]]*//' _webroot/index.php
 
-      - name: Deploy app → /tsbl-invoice-laravel/
+      - name: Deploy app → /tsbl-invoice-laravel/ (no vendor)
         uses: SamKirkland/FTP-Deploy-Action@v4.3.4
         with:
           server: ${{ secrets.FTP_SERVER }}
@@ -107,6 +88,7 @@ jobs:
             **/.git*
             **/.git*/**
             **/node_modules/**
+            **/vendor/**
             .env.example
             .env.local
             .env.testing
@@ -115,6 +97,13 @@ jobs:
             **/.github/**
             _webroot/**
             "data awal/**"
+            **/storage/framework/cache/**
+            **/storage/framework/sessions/**
+            **/storage/framework/views/**
+            **/storage/logs/**
+            **/bootstrap/cache/**
+            **/database/schema_export.sql
+            **/database/seeds_export.sql
 
       - name: Deploy webroot → /invoice.transentertainment.id/
         uses: SamKirkland/FTP-Deploy-Action@v4.3.4
