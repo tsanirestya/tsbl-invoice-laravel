@@ -4,40 +4,24 @@ ini_set('display_errors', 1);
 
 $appRoot = realpath(__DIR__ . '/../tsbl-invoice-laravel');
 
+require $appRoot . '/vendor/autoload.php';
+$app = require_once $appRoot . '/bootstrap/app.php';
+$kernel = $app->make(Illuminate\Contracts\Console\Kernel::class);
+$kernel->bootstrap();
+
 echo '<pre>';
-echo 'PHP version: ' . PHP_VERSION . "\n";
-echo 'appRoot: ' . $appRoot . "\n\n";
 
-// Try loading autoloader
-try {
-    require $appRoot . '/vendor/autoload.php';
-    echo "✅ Autoloader loaded\n";
-} catch (Throwable $e) {
-    echo "❌ Autoloader error: " . $e->getMessage() . "\n";
-    exit;
-}
+// Config values (from cache)
+echo "config('app.env')      = " . config('app.env') . "\n";
+echo "config('app.url')      = " . config('app.url') . "\n";
+echo "config('database.connections.mysql.database') = " . config('database.connections.mysql.database') . "\n\n";
 
-// Try bootstrapping app
+// Test DB connection
 try {
-    $app = require_once $appRoot . '/bootstrap/app.php';
-    echo "✅ App bootstrapped\n";
+    $pdo = DB::connection()->getPdo();
+    echo "✅ DB connected: " . DB::connection()->getDatabaseName() . "\n";
 } catch (Throwable $e) {
-    echo "❌ Bootstrap error: " . $e->getMessage() . "\n";
-    echo "File: " . $e->getFile() . ":" . $e->getLine() . "\n";
-    echo $e->getTraceAsString();
-    exit;
-}
-
-// Try kernel
-try {
-    $kernel = $app->make(Illuminate\Contracts\Console\Kernel::class);
-    $kernel->bootstrap();
-    echo "✅ Kernel bootstrapped\n";
-    echo "APP_ENV: " . env('APP_ENV') . "\n";
-    echo "DB_DATABASE: " . env('DB_DATABASE') . "\n";
-} catch (Throwable $e) {
-    echo "❌ Kernel error: " . $e->getMessage() . "\n";
-    echo "File: " . $e->getFile() . ":" . $e->getLine() . "\n";
+    echo "❌ DB error: " . $e->getMessage() . "\n";
 }
 
 echo '</pre>';
