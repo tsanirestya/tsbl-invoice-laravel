@@ -59,8 +59,8 @@ jobs:
           FILESYSTEM_DISK=local
           ENVEOF
 
-          # Inject APP_KEY from secret (avoid heredoc interpolation issues)
-          echo "APP_KEY=${{ secrets.APP_KEY }}" >> .env
+          # Inject APP_KEY
+          echo "APP_KEY=base64:ke0SmVRIq+5MCdD40vvCGFTwMDSvTrGC9m3tBEAeYm4=" >> .env
 
           # Remove leading spaces from heredoc
           sed -i 's/^[[:space:]]*//' .env
