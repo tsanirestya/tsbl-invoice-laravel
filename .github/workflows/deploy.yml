@@ -59,10 +59,7 @@ jobs:
           FILESYSTEM_DISK=local
           ENVEOF
 
-          # Inject APP_KEY
           echo "APP_KEY=base64:ke0SmVRIq+5MCdD40vvCGFTwMDSvTrGC9m3tBEAeYm4=" >> .env
-
-          # Remove leading spaces from heredoc
           sed -i 's/^[[:space:]]*//' .env
 
       - name: Cache config & routes
@@ -71,13 +68,41 @@ jobs:
           php artisan route:cache
           php artisan view:cache
 
-      - name: Deploy via FTP
+      - name: Prepare webroot
+        run: |
+          mkdir -p _webroot
+          cp -r public/. _webroot/
+
+          # Custom index.php — bootstrap Laravel dari ../tsbl-invoice-laravel/
+          cat > _webroot/index.php << 'EOF'
+          <?php
+
+          use Illuminate\Http\Request;
+
+          define('LARAVEL_START', microtime(true));
+
+          // Maintenance mode check
+          if (file_exists($maintenance = __DIR__ . '/../tsbl-invoice-laravel/storage/framework/maintenance.php')) {
+              require $maintenance;
+          }
+
+          require __DIR__ . '/../tsbl-invoice-laravel/vendor/autoload.php';
+
+          $app = require_once __DIR__ . '/../tsbl-invoice-laravel/bootstrap/app.php';
+
+          $app->handleRequest(Request::capture());
+          EOF
+
+          sed -i 's/^[[:space:]]*//' _webroot/index.php
+
+      - name: Deploy app → /tsbl-invoice-laravel/
         uses: SamKirkland/FTP-Deploy-Action@v4.3.4
         with:
           server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
-          server-dir: /invoice.transentertainment.id/
+          local-dir: ./
+          server-dir: /tsbl-invoice-laravel/
           exclude: |
             **/.git*
             **/.git*/**
@@ -88,4 +113,14 @@ jobs:
             **/tests/**
             **/Obsidian/**
             **/.github/**
+            _webroot/**
             "data awal/**"
+
+      - name: Deploy webroot → /invoice.transentertainment.id/
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: ./_webroot/
+          server-dir: /invoice.transentertainment.id/

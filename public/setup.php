@@ -3,6 +3,10 @@
  * One-time server setup script.
  * RUN ONCE then DELETE this file via cPanel File Manager.
  * Access: https://invoice.transentertainment.id/setup.php?token=TSBL_SETUP_2026
+ *
+ * In Option B structure:
+ *   webroot  = /invoice.transentertainment.id/   ← this file lives here
+ *   app root = /tsbl-invoice-laravel/
  */
 
 define('SETUP_TOKEN', 'TSBL_SETUP_2026');
@@ -12,9 +16,10 @@ if (!isset($_GET['token']) || $_GET['token'] !== SETUP_TOKEN) {
     die('Forbidden.');
 }
 
-// Bootstrap Laravel
-require __DIR__ . '/../vendor/autoload.php';
-$app = require_once __DIR__ . '/../bootstrap/app.php';
+$appRoot = __DIR__ . '/../tsbl-invoice-laravel';
+
+require $appRoot . '/vendor/autoload.php';
+$app = require_once $appRoot . '/bootstrap/app.php';
 $kernel = $app->make(Illuminate\Contracts\Console\Kernel::class);
 $kernel->bootstrap();
 
@@ -23,24 +28,25 @@ $results = [];
 // 1. Run migrations
 try {
     $exitCode = Artisan::call('migrate', ['--force' => true]);
-    $results['migrate'] = $exitCode === 0
-        ? ['status' => 'OK', 'output' => Artisan::output()]
-        : ['status' => 'ERROR', 'output' => Artisan::output()];
+    $results['migrate'] = [
+        'status' => $exitCode === 0 ? 'OK' : 'ERROR',
+        'output' => Artisan::output(),
+    ];
 } catch (Exception $e) {
     $results['migrate'] = ['status' => 'EXCEPTION', 'output' => $e->getMessage()];
 }
 
-// 2. Storage link
+// 2. Storage link — creates tsbl-invoice-laravel/public/storage symlink
 try {
-    // Remove existing symlink if broken
-    $linkPath = public_path('storage');
+    $linkPath = $appRoot . '/public/storage';
     if (is_link($linkPath)) {
         unlink($linkPath);
     }
     $exitCode = Artisan::call('storage:link');
-    $results['storage_link'] = $exitCode === 0
-        ? ['status' => 'OK', 'output' => Artisan::output()]
-        : ['status' => 'ERROR', 'output' => Artisan::output()];
+    $results['storage_link'] = [
+        'status' => $exitCode === 0 ? 'OK' : 'ERROR',
+        'output' => Artisan::output(),
+    ];
 } catch (Exception $e) {
     $results['storage_link'] = ['status' => 'EXCEPTION', 'output' => $e->getMessage()];
 }
@@ -55,11 +61,11 @@ try {
     $results['cache'] = ['status' => 'EXCEPTION', 'output' => $e->getMessage()];
 }
 
-// 4. Check .env loaded correctly
+// 4. Env check
 $results['env_check'] = [
-    'APP_ENV'    => env('APP_ENV'),
-    'DB_DATABASE'=> env('DB_DATABASE'),
-    'APP_URL'    => env('APP_URL'),
+    'APP_ENV'     => env('APP_ENV'),
+    'APP_URL'     => env('APP_URL'),
+    'DB_DATABASE' => env('DB_DATABASE'),
 ];
 
 header('Content-Type: text/html; charset=utf-8');
@@ -71,9 +77,9 @@ header('Content-Type: text/html; charset=utf-8');
 <style>
   body { font-family: monospace; background: #1e1e1e; color: #d4d4d4; padding: 2rem; }
   h1 { color: #4ec9b0; }
-  .ok { color: #4ec9b0; }
-  .error { color: #f44747; }
-  .exception { color: #ff8c00; }
+  .ok { color: #4ec9b0; font-weight: bold; }
+  .error { color: #f44747; font-weight: bold; }
+  .exception { color: #ff8c00; font-weight: bold; }
   pre { background: #252526; padding: 1rem; border-radius: 4px; white-space: pre-wrap; }
   .warning { background: #5c3a1e; border: 1px solid #ff8c00; padding: 1rem; border-radius: 4px; margin-top: 2rem; }
 </style>
@@ -90,8 +96,8 @@ header('Content-Type: text/html; charset=utf-8');
   <?php endif; ?>
 <?php endforeach; ?>
 <div class="warning">
-  ⚠️ DELETE this file immediately after setup!<br>
-  Via cPanel File Manager: <code>public_html/invoice.transentertainment.id/public/setup.php</code>
+  &#9888; DELETE this file immediately after setup!<br>
+  Via cPanel File Manager: <code>/invoice.transentertainment.id/setup.php</code>
 </div>
 </body>
 </html>
