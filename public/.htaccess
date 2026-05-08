@@ -19,6 +19,10 @@
     RewriteCond %{REQUEST_URI} (.+)/$
     RewriteRule ^ %1 [L,R=301]
 
+    # Proxy storage requests when symlink is absent (production shared hosting)
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteRule ^storage/(.+)$ storage-proxy.php?path=$1 [L,QSA]
+
     # Send Requests To Front Controller...
     RewriteCond %{REQUEST_FILENAME} !-d
     RewriteCond %{REQUEST_FILENAME} !-f

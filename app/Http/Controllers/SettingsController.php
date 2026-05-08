@@ -86,12 +86,26 @@ class SettingsController extends Controller
             ->with('success', 'Pengaturan berhasil disimpan.');
     }
 
+    private function uploadsBase(): string
+    {
+        // Production webroot is separate from public_path() — use DOCUMENT_ROOT
+        if (app()->environment('production')) {
+            return rtrim($_SERVER['DOCUMENT_ROOT'] ?? public_path(), '/\\');
+        }
+        return public_path();
+    }
+
     private function saveFile(UploadedFile $file, ?string $old): string
     {
-        $dir = public_path('uploads/settings');
+        $base = $this->uploadsBase();
+        $dir  = $base . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . 'settings';
 
-        if ($old && file_exists(public_path($old))) {
-            @unlink(public_path($old));
+        if ($old && file_exists($base . DIRECTORY_SEPARATOR . ltrim($old, '/\\'))) {
+            @unlink($base . DIRECTORY_SEPARATOR . ltrim($old, '/\\'));
+        }
+
+        if (!is_dir($dir)) {
+            mkdir($dir, 0755, true);
         }
 
         $filename = uniqid() . '_' . time() . '.' . $file->getClientOriginalExtension();

@@ -42,6 +42,7 @@
 - [[BUG-002-PDF-EXPORT-LAYOUT]] — Perbaikan tampilan export PDF di halaman Reports 🔲
 - [[BUG-003-PRODUCTS-PAGINATION]] — Pagination berantakan di halaman /products 🔴
 - [[BUG-004-INVOICE-PDF-SUBTOTAL-ALIGNMENT]] — Subtotal & Grand Total tidak sejajar kolom jumlah di PDF invoice 🔲
+- [[BUG-005-PRODUCTION-SETUP-FK-MIGRATION]] — Production deploy: route cache 404 + FK type mismatch errno 150 ✅
 
 ## 📝 Logs
 → Folder: `Logs/`
