@@ -51,6 +51,15 @@
            class="btn btn-sm btn-outline-danger" style="border-radius:8px;">
             <i class="bi bi-file-pdf me-1"></i> PDF
         </a>
+        @if($invoice->is_finalized && $invoice->dsi_transaction_no && $invoice->items->contains(fn($i) => !$i->product_id))
+        <form action="{{ route('invoices.auto-create-products', $invoice) }}" method="POST" class="d-inline"
+              onsubmit="return confirm('Buat Produk/Layanan otomatis dari DSI Code? Produk baru akan tersimpan di master produk.')">
+            @csrf
+            <button class="btn btn-sm btn-outline-info" type="submit" style="border-radius:8px;">
+                <i class="bi bi-magic me-1"></i> Auto Produk DSI
+            </button>
+        </form>
+        @endif
         @if(!$invoice->is_finalized)
             <a href="{{ route('invoices.edit', $invoice) }}"
                class="btn btn-sm btn-outline-primary" style="border-radius:8px;">

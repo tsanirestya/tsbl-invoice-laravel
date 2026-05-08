@@ -454,6 +454,100 @@ class InvoiceController extends Controller
         return $pdf->stream($invoice->invoice_no . '.pdf');
     }
 
+    public function autoCreateProducts(Invoice $invoice)
+    {
+        if (!$invoice->is_finalized) {
+            return redirect()->route('invoices.show', $invoice)->with('error', 'Invoice belum difinalisasi.');
+        }
+
+        if (!$invoice->dsi_transaction_no) {
+            return redirect()->route('invoices.show', $invoice)->with('error', 'Invoice tidak memiliki No. Transaksi DSI.');
+        }
+
+        $importRows = TransactionImportRow::where('transaction_no', $invoice->dsi_transaction_no)->get();
+
+        if ($importRows->isEmpty()) {
+            return redirect()->route('invoices.show', $invoice)->with('error', 'Data transaksi DSI tidak ditemukan.');
+        }
+
+        $created = 0;
+        $linked  = 0;
+
+        DB::transaction(function () use ($invoice, $importRows, &$created, &$linked) {
+            $invoice->load('items');
+
+            foreach ($importRows as $row) {
+                if (!$row->ticket_type) {
+                    continue;
+                }
+
+                // Find or create product by dsi_code
+                $product = Product::where('dsi_code', $row->ticket_type)->first();
+
+                if (!$product) {
+                    $komisiPerPax = ($row->komisi_amount && $row->qty > 0)
+                        ? round($row->komisi_amount / $row->qty, 2)
+                        : 0;
+
+                    $product = Product::create([
+                        'product_name'   => $row->ticket_name ?? $row->ticket_type,
+                        'dsi_code'       => $row->ticket_type,
+                        'default_price'  => $row->unit_price ?? 0,
+                        'publish_rate'   => $row->publish_rate ?? $row->unit_price ?? 0,
+                        'komisi'         => $komisiPerPax,
+                        'nett_price'     => $row->nett_price ?? $row->unit_price ?? 0,
+                        'unit_price_dsi' => $row->unit_price ?? 0,
+                        'unit'           => 'Pax',
+                        'is_active'      => true,
+                        'created_by'     => auth()->id(),
+                    ]);
+                    $created++;
+
+                    // Update import row to reflect the new match
+                    $row->update([
+                        'matched_product_id' => $product->id,
+                        'match_method'       => 'exact',
+                    ]);
+                } elseif (!$row->matched_product_id) {
+                    $row->update([
+                        'matched_product_id' => $product->id,
+                        'match_method'       => 'exact',
+                    ]);
+                }
+
+                // Link invoice items that match this ticket name and have no product_id yet
+                $updated = $invoice->items()
+                    ->whereNull('product_id')
+                    ->where('product_name', $row->ticket_name)
+                    ->update(['product_id' => $product->id]);
+
+                $linked += $updated;
+            }
+
+            // Second pass: match remaining unlinked items by product name
+            foreach ($invoice->items()->whereNull('product_id')->get() as $item) {
+                $product = Product::where('product_name', $item->product_name)->first();
+                if ($product) {
+                    $item->update(['product_id' => $product->id]);
+                    $linked++;
+                }
+            }
+        });
+
+        $msg = [];
+        if ($created > 0) {
+            $msg[] = "{$created} produk baru dibuat";
+        }
+        if ($linked > 0) {
+            $msg[] = "{$linked} item ditautkan ke produk";
+        }
+        if (empty($msg)) {
+            return redirect()->route('invoices.show', $invoice)->with('info', 'Semua item sudah tertaut ke produk.');
+        }
+
+        return redirect()->route('invoices.show', $invoice)->with('success', implode(', ', $msg) . '.');
+    }
+
     public function markOverdue()
     {
         $invoices = Invoice::where('is_finalized', true)

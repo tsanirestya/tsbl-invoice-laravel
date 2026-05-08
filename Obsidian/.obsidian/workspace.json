@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "TODO/TODO-PHASE-8-CREDIT-FACILITY.md",
+                "file": "AUDIT-REPORT-2026-05-08.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "TODO-PHASE-8-CREDIT-FACILITY"
+              "title": "AUDIT-REPORT-2026-05-08"
             }
           }
         ]
@@ -185,17 +185,20 @@
   },
   "active": "f75570c9470dc731",
   "lastOpenFiles": [
+    "AUDIT-PROMPT-TEMPLATE.md",
+    "AUDIT-REPORT-2026-05-08.md",
+    "Database/SCHEMA.md",
+    "Logs/LOG-2026-05-05.md",
+    "Architecture/LARAVEL-STRUCTURE.md",
+    "TODO-PHASE-4-FINANCE.md",
+    "INDEX.md",
     "Bugs/BUG-006-PRODUCTION-FILE-UPLOADS-404.md",
+    "TODO/TODO-PHASE-8-CREDIT-FACILITY.md",
     "Bugs/BUG-005-PRODUCTION-SETUP-FK-MIGRATION.md",
     "Planning/FEATURE-CREDIT-FACILITY.md",
     "Planning/FEATURE-BATCH-CREDIT-PAYMENT.md",
     "Planning/FEATURE-PAYMENT-MEMO.md",
-    "TODO/TODO-PHASE-8-CREDIT-FACILITY.md",
-    "Logs/LOG-2026-05-05.md",
     "TODO/TODO-PHASE-7-EXCEL-IMPORT.md",
-    "INDEX.md",
-    "Architecture/LARAVEL-STRUCTURE.md",
-    "TODO-PHASE-4-FINANCE.md",
     "Bugs/BUG-004-INVOICE-PDF-SUBTOTAL-ALIGNMENT.md",
     "UI-UX/DESIGN-SYSTEM.md",
     "TODO/TODO-PHASE-6-PARTNER-DEPOSIT.md",
@@ -207,9 +210,7 @@
     "Development-Phases/PHASE-3-SUMMARY.md",
     "Development-Phases/PHASE-2-SUMMARY.md",
     "Development-Phases/PHASE-1-SUMMARY.md",
-    "Database/SCHEMA.md",
     "Bugs/BUG-003-PRODUCTS-PAGINATION.md",
-    "Bugs/BUG-002-PDF-EXPORT-LAYOUT.md",
     "TODO/TODO-PHASE-6-PARTNER-DEPOSIT.md.tmp.13364.1778033879884",
     "Planning/FEATURE-PARTNER-DEPOSIT.md.tmp.13364.1778033828793",
     "Planning/FEATURE-PARTNER-DEPOSIT.md.tmp.13364.1778033772128",
@@ -219,7 +220,6 @@
     "INDEX.md.tmp.21840.1777997737111",
     "Bugs/BUG-003-PRODUCTS-PAGINATION.md.tmp.21840.1777997726507",
     "INDEX.md.tmp.23048.1777996659463",
-    "Development-Phases/PHASE-5-SUMMARY.md.tmp.22908.1777995932184",
-    "Bugs/BUG-001-LOGIN-FORM-ACTION.md"
+    "Development-Phases/PHASE-5-SUMMARY.md.tmp.22908.1777995932184"
   ]
 }

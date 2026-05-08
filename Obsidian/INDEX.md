@@ -45,6 +45,10 @@
 - [[BUG-005-PRODUCTION-SETUP-FK-MIGRATION]] — Production deploy: route cache 404 + FK type mismatch errno 150 ✅
 - [[BUG-006-PRODUCTION-FILE-UPLOADS-404]] — Production: uploads 404 akibat split webroot + PHP version fix ✅
 
+## 🔍 Audit
+- [[AUDIT-PROMPT-TEMPLATE]] — Template prompt audit menyeluruh (security, fraud, finance, ops)
+- [[AUDIT-REPORT-2026-05-08]] — Comprehensive audit result: 28 findings (4 CRITICAL), Health Score 31/100
+
 ## 📝 Logs
 → Folder: `Logs/`
 - [[LOG-2026-05-05]] — Phase 1 implementation log
