@@ -1,7 +1,7 @@
 # TSBL Invoice System — Comprehensive Security & Fraud Audit Report
 
 **Audit Date:** 2026-05-08
-**Last Remediation:** 2026-05-08 — 14 findings fixed (F-001, F-002, F-003, F-004, F-005, F-006, F-007, F-008, F-009, F-010, F-011, F-013, F-014, F-015)
+**Last Remediation:** 2026-05-08 — 15 findings fixed (F-001, F-002, F-003, F-004, F-005, F-006, F-007, F-008, F-009, F-010, F-011, F-012, F-013, F-014, F-015)
 **Auditor Roles:** Senior System Auditor · Fraud Detection Specialist · Cyber Security Auditor · Financial Risk Analyst · Internal Control Consultant
 **Codebase:** `d:\XAMPP NEW\htdocs\tsbl-invoice-laravel`
 **Stack:** Laravel 11, PHP 8.2, MySQL/MariaDB, Bootstrap 5.3, DomPDF
@@ -589,11 +589,11 @@ Bootstrap 5.3.3 and Bootstrap Icons loaded from jsDelivr without `integrity` att
 | Fraud Prevention | ~~22~~ **41** | ✅ RBAC on financial ops, payment guard, deposit constraint, audit trail preserved |
 | Financial Control | ~~40~~ **51** | ✅ Payment max cap, deposit floor/cap, draft invoice blocked |
 | Operational Control | ~~35~~ **45** | ✅ F-009: admin-mediated password reset — no more single point of failure |
-| Scalability | ~~45~~ **52** | ✅ F-010: lockForUpdate on all 4 sequence generators — race condition eliminated |
+| Scalability | ~~45~~ **55** | ✅ F-010: lockForUpdate on all 4 sequence generators — race condition eliminated; ✅ F-012: credit limit check moved inside transaction |
 | Auditability | ~~30~~ **38** | ✅ Logs preserved on invoice delete |
 | Monitoring | 10 | No alerting, no anomaly detection |
 | Data Integrity | ~~38~~ **42** | ✅ Deposit duplicate bug fixed |
-| **OVERALL** | ~~31~~ ~~42~~ **47 / 100** | 14 findings fixed — F-009 + F-010 done (2026-05-08) |
+| **OVERALL** | ~~31~~ ~~42~~ ~~47~~ **49 / 100** | 15 findings fixed — F-012 done (2026-05-08) |
 
 ---
 

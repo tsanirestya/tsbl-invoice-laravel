@@ -109,32 +109,31 @@ class InvoiceController extends Controller
             }
         }
 
-        // Credit validation
-        [$subtotalForCredit] = $this->calcTotals($items, 0);
-        $partnerForCredit    = Partner::findOrFail($validated['partner_id']);
-        $creditLimit         = (float) $partnerForCredit->limit_credit;
-
-        if ($creditLimit > 0) {
-            $threshold   = (float) Setting::get('credit_warning_threshold', 80);
-            $creditAfter = $partnerForCredit->creditUsed() + $subtotalForCredit;
-            $utilAfter   = ($creditAfter / $creditLimit) * 100;
-
-            if ($creditAfter > $creditLimit) {
-                $overrideReason = trim($request->input('credit_override_reason', ''));
-                if (empty($overrideReason)) {
-                    return back()->withInput()->withErrors([
-                        'credit_override_reason' => 'Alasan override wajib diisi karena invoice ini akan melebihi credit limit partner.',
-                    ]);
-                }
-                session()->flash('warning', 'Invoice melampaui credit limit. Tersimpan dengan override reason.');
-            } elseif ($utilAfter >= $threshold) {
-                session()->flash('warning', 'Utilisasi kredit partner mencapai ' . number_format($utilAfter, 1) . '% setelah invoice ini.');
-            }
-        }
-
         DB::transaction(function () use ($validated, $items, $depositAmount) {
             $invoiceNo = $this->generateInvoiceNo();
-            $partner   = Partner::findOrFail($validated['partner_id']);
+            $partner   = Partner::lockForUpdate()->findOrFail($validated['partner_id']);
+
+            // Credit validation inside transaction after partner lock — prevents TOCTOU race condition (F-012)
+            [$subtotalForCredit] = $this->calcTotals($items, 0);
+            $creditLimit = (float) $partner->limit_credit;
+
+            if ($creditLimit > 0) {
+                $threshold   = (float) Setting::get('credit_warning_threshold', 80);
+                $creditAfter = $partner->creditUsed() + $subtotalForCredit;
+                $utilAfter   = ($creditAfter / $creditLimit) * 100;
+
+                if ($creditAfter > $creditLimit) {
+                    $overrideReason = trim($validated['credit_override_reason'] ?? '');
+                    if (empty($overrideReason)) {
+                        throw \Illuminate\Validation\ValidationException::withMessages([
+                            'credit_override_reason' => 'Alasan override wajib diisi karena invoice ini akan melebihi credit limit partner.',
+                        ]);
+                    }
+                    session()->flash('warning', 'Invoice melampaui credit limit. Tersimpan dengan override reason.');
+                } elseif ($utilAfter >= $threshold) {
+                    session()->flash('warning', 'Utilisasi kredit partner mencapai ' . number_format($utilAfter, 1) . '% setelah invoice ini.');
+                }
+            }
             $dueDays   = $partner->payment_due_days ?? (int) Setting::get('default_due_days', 14);
             $dueDate   = $validated['due_date'] ?? date('Y-m-d', strtotime($validated['invoice_date'] . " +{$dueDays} days"));
 
@@ -255,34 +254,33 @@ class InvoiceController extends Controller
             }
         }
 
-        // Credit validation (exclude current invoice from baseline since creditUsed includes it)
-        [$subtotalForCredit] = $this->calcTotals($items, 0);
-        $partnerForCredit    = Partner::findOrFail($validated['partner_id']);
-        $creditLimit         = (float) $partnerForCredit->limit_credit;
-
-        if ($creditLimit > 0) {
-            $threshold    = (float) Setting::get('credit_warning_threshold', 80);
-            // Subtract current invoice grand_total only if it's still outstanding (included in creditUsed)
-            $invoiceInCredit = in_array($invoice->payment_status, ['UNPAID', 'PARTIAL', 'OVERDUE']);
-            $baseUsed     = $partnerForCredit->creditUsed() - ($invoiceInCredit ? (float) $invoice->grand_total : 0);
-            $creditAfter  = $baseUsed + $subtotalForCredit;
-            $utilAfter    = ($creditAfter / $creditLimit) * 100;
-
-            if ($creditAfter > $creditLimit) {
-                $overrideReason = trim($request->input('credit_override_reason', ''));
-                if (empty($overrideReason)) {
-                    return back()->withInput()->withErrors([
-                        'credit_override_reason' => 'Alasan override wajib diisi karena invoice ini akan melebihi credit limit partner.',
-                    ]);
-                }
-                session()->flash('warning', 'Invoice melampaui credit limit. Tersimpan dengan override reason.');
-            } elseif ($utilAfter >= $threshold) {
-                session()->flash('warning', 'Utilisasi kredit partner mencapai ' . number_format($utilAfter, 1) . '% setelah invoice ini.');
-            }
-        }
-
         DB::transaction(function () use ($invoice, $validated, $items, $newDeposit, $oldDeposit) {
-            $partner = Partner::findOrFail($validated['partner_id']);
+            $partner = Partner::lockForUpdate()->findOrFail($validated['partner_id']);
+
+            // Credit validation inside transaction after partner lock — prevents TOCTOU race condition (F-012)
+            [$subtotalForCredit] = $this->calcTotals($items, 0);
+            $creditLimit = (float) $partner->limit_credit;
+
+            if ($creditLimit > 0) {
+                $threshold       = (float) Setting::get('credit_warning_threshold', 80);
+                // Subtract current invoice grand_total only if it's still outstanding (included in creditUsed)
+                $invoiceInCredit = in_array($invoice->payment_status, ['UNPAID', 'PARTIAL', 'OVERDUE']);
+                $baseUsed        = $partner->creditUsed() - ($invoiceInCredit ? (float) $invoice->grand_total : 0);
+                $creditAfter     = $baseUsed + $subtotalForCredit;
+                $utilAfter       = ($creditAfter / $creditLimit) * 100;
+
+                if ($creditAfter > $creditLimit) {
+                    $overrideReason = trim($validated['credit_override_reason'] ?? '');
+                    if (empty($overrideReason)) {
+                        throw \Illuminate\Validation\ValidationException::withMessages([
+                            'credit_override_reason' => 'Alasan override wajib diisi karena invoice ini akan melebihi credit limit partner.',
+                        ]);
+                    }
+                    session()->flash('warning', 'Invoice melampaui credit limit. Tersimpan dengan override reason.');
+                } elseif ($utilAfter >= $threshold) {
+                    session()->flash('warning', 'Utilisasi kredit partner mencapai ' . number_format($utilAfter, 1) . '% setelah invoice ini.');
+                }
+            }
             $dueDays = $partner->payment_due_days ?? (int) Setting::get('default_due_days', 14);
             $dueDate = $validated['due_date'] ?? date('Y-m-d', strtotime($validated['invoice_date'] . " +{$dueDays} days"));
 

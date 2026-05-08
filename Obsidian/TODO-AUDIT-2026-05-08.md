@@ -34,21 +34,21 @@
 
 ## 🟡 THIS MONTH — Selesaikan Bulan Ini
 
-| # | Finding | Task | File | Status |
-|---|---------|------|------|--------|
-| 12 | FINDING-009 | Implement password reset — artisan command `user:reset-password` atau Laravel forgot-password flow | `routes/web.php`, new controller | ✅ 2026-05-08 |
-| 13 | FINDING-010 | Tambah `->lockForUpdate()` ke sequence query invoice/deposit/memo/batch — fix race condition | `InvoiceController`, `DepositInvoiceController`, `PaymentMemo`, `CreditPayment` | ✅ 2026-05-08 |
-| 14 | FINDING-012 | Pindahkan credit limit check ke dalam `DB::transaction` setelah `Partner::lockForUpdate()` — fix TOCTOU | `app/Http/Controllers/InvoiceController.php` | 🔲 |
-| 15 | FINDING-014 | Tambah HTTP security headers — CSP, X-Frame-Options, HSTS, X-Content-Type-Options via middleware atau `.htaccess` | `app/Http/Middleware/` atau `.htaccess` | ✅ 2026-05-08 |
-| 16 | FINDING-016 | Gate `deposits.adjustment` route behind `role:ADMIN,FINANCE` (combined dengan FINDING-002) | `routes/web.php` | 🔲 |
-| 17 | FINDING-017 | Pindahkan `markOverdue` dari `DashboardController` ke scheduled artisan command + log perubahan status ke `invoice_logs` | `app/Console/Commands/`, `routes/console.php` | 🔲 |
-| 18 | FINDING-018 | Cache `Setting::get()` — `Cache::remember('settings_all', 300, ...)` untuk eliminasi 28+ DB hit per request | `app/Models/Setting.php` | 🔲 |
-| 19 | FINDING-019 | Fix null komisi — treat null sebagai 0 dalam agregasi; require explicit komisi saat override approval | `app/Http/Controllers/ImportController.php` | 🔲 |
-| 20 | FINDING-020 | Hitung `PaymentMemo.sisa_tagihan` secara dinamis saat view — `max(0, grand_total - payments sum)` | `app/Models/PaymentMemo.php` atau view | 🔲 |
-| 21 | FINDING-021 | Gate `CreditPaymentController::destroy` behind `role:ADMIN`; implement two-step void (FINANCE propose → ADMIN approve) | `app/Http/Controllers/CreditPaymentController.php` | 🔲 |
-| 22 | FINDING-023 | `PartnerController::destroy` — cek `$partner->invoices()->exists()` sebelum delete; tambah soft deletes | `app/Http/Controllers/PartnerController.php` | 🔲 |
-| 23 | FINDING-024 | Tambah UNIQUE constraint pada `invoices.import_row_id` — cegah double-invoicing | new migration | 🔲 |
-| 24 | FINDING-026 | Schedule `invoices:mark-overdue` di `routes/console.php` — `->dailyAt('00:01')` | `routes/console.php` | 🔲 |
+| #   | Finding     | Task                                                                                                                     | File                                                                            | Status       |
+| --- | ----------- | ------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------- | ------------ |
+| 12  | FINDING-009 | Implement password reset — artisan command `user:reset-password` atau Laravel forgot-password flow                       | `routes/web.php`, new controller                                                | ✅ 2026-05-08 |
+| 13  | FINDING-010 | Tambah `->lockForUpdate()` ke sequence query invoice/deposit/memo/batch — fix race condition                             | `InvoiceController`, `DepositInvoiceController`, `PaymentMemo`, `CreditPayment` | ✅ 2026-05-08 |
+| 14  | FINDING-012 | Pindahkan credit limit check ke dalam `DB::transaction` setelah `Partner::lockForUpdate()` — fix TOCTOU                  | `app/Http/Controllers/InvoiceController.php`                                    | ✅ 2026-05-08 |
+| 15  | FINDING-014 | Tambah HTTP security headers — CSP, X-Frame-Options, HSTS, X-Content-Type-Options via middleware atau `.htaccess`        | `app/Http/Middleware/` atau `.htaccess`                                         | ✅ 2026-05-08 |
+| 16  | FINDING-016 | Gate `deposits.adjustment` route behind `role:ADMIN,FINANCE` (combined dengan FINDING-002)                               | `routes/web.php`                                                                | 🔲           |
+| 17  | FINDING-017 | Pindahkan `markOverdue` dari `DashboardController` ke scheduled artisan command + log perubahan status ke `invoice_logs` | `app/Console/Commands/`, `routes/console.php`                                   | 🔲           |
+| 18  | FINDING-018 | Cache `Setting::get()` — `Cache::remember('settings_all', 300, ...)` untuk eliminasi 28+ DB hit per request              | `app/Models/Setting.php`                                                        | 🔲           |
+| 19  | FINDING-019 | Fix null komisi — treat null sebagai 0 dalam agregasi; require explicit komisi saat override approval                    | `app/Http/Controllers/ImportController.php`                                     | 🔲           |
+| 20  | FINDING-020 | Hitung `PaymentMemo.sisa_tagihan` secara dinamis saat view — `max(0, grand_total - payments sum)`                        | `app/Models/PaymentMemo.php` atau view                                          | 🔲           |
+| 21  | FINDING-021 | Gate `CreditPaymentController::destroy` behind `role:ADMIN`; implement two-step void (FINANCE propose → ADMIN approve)   | `app/Http/Controllers/CreditPaymentController.php`                              | 🔲           |
+| 22  | FINDING-023 | `PartnerController::destroy` — cek `$partner->invoices()->exists()` sebelum delete; tambah soft deletes                  | `app/Http/Controllers/PartnerController.php`                                    | 🔲           |
+| 23  | FINDING-024 | Tambah UNIQUE constraint pada `invoices.import_row_id` — cegah double-invoicing                                          | new migration                                                                   | 🔲           |
+| 24  | FINDING-026 | Schedule `invoices:mark-overdue` di `routes/console.php` — `->dailyAt('00:01')`                                          | `routes/console.php`                                                            | 🔲           |
 
 ---
 
@@ -69,9 +69,9 @@
 |------|-------|------|-----------|
 | 🔴 IMMEDIATE | 4 | 4 | 0 |
 | 🟠 THIS WEEK | 7 | 7 | 0 |
-| 🟡 THIS MONTH | 13 | 3 | 10 |
+| 🟡 THIS MONTH | 13 | 4 | 9 |
 | ⚪ LONG TERM | 4 | 0 | 4 |
-| **TOTAL** | **28** | **14** | **14** |
+| **TOTAL** | **28** | **15** | **13** |
 
 ---
 
