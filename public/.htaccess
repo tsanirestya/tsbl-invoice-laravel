@@ -1,6 +1,16 @@
 # Force PHP 8.2 on shared hosting (cPanel)
 AddHandler application/x-httpd-php82 .php
 
+# HTTP Security Headers
+<IfModule mod_headers.c>
+    Header always set X-Frame-Options "SAMEORIGIN"
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-XSS-Protection "1; mode=block"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+    Header always set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' cdn.jsdelivr.net; font-src 'self' cdn.jsdelivr.net data:; img-src 'self' data: blob:; object-src 'none'; base-uri 'self'; form-action 'self';"
+    Header always set Permissions-Policy "geolocation=(), microphone=(), camera=()"
+</IfModule>
+
 <IfModule mod_rewrite.c>
     <IfModule mod_negotiation.c>
         Options -MultiViews -Indexes
@@ -22,9 +32,10 @@ AddHandler application/x-httpd-php82 .php
     RewriteCond %{REQUEST_URI} (.+)/$
     RewriteRule ^ %1 [L,R=301]
 
-    # Proxy storage requests when symlink is absent (production shared hosting)
+    # Route storage requests through Laravel for auth enforcement (F-013)
+    # Falls back to direct file serve when symlink exists (local dev)
     RewriteCond %{REQUEST_FILENAME} !-f
-    RewriteRule ^storage/(.+)$ storage-proxy.php?path=$1 [L,QSA]
+    RewriteRule ^storage/(.+)$ index.php [L,QSA]
 
     # Send Requests To Front Controller...
     RewriteCond %{REQUEST_FILENAME} !-d

@@ -11,7 +11,7 @@
     <a href="{{ route('deposit-invoices.create', ['partner_id' => $partner->id]) }}" class="btn btn-sm btn-success">
         <i class="bi bi-plus-circle me-1"></i> Top-up Deposit
     </a>
-    @if(auth()->user()->role === 'ADMIN')
+    @if(in_array(auth()->user()->user_status, ['ADMIN', 'FINANCE']))
     <button type="button" class="btn btn-sm btn-outline-warning" data-bs-toggle="modal" data-bs-target="#modalAdjustment">
         <i class="bi bi-sliders me-1"></i> Adjustment
     </button>
@@ -132,8 +132,8 @@
     @endif
 </div>
 
-{{-- Adjustment Modal (ADMIN only) --}}
-@if(auth()->user()->role === 'ADMIN')
+{{-- Adjustment Modal (ADMIN & FINANCE) --}}
+@if(in_array(auth()->user()->user_status, ['ADMIN', 'FINANCE']))
 <div class="modal fade" id="modalAdjustment" tabindex="-1">
     <div class="modal-dialog">
         <form method="POST" action="{{ route('deposits.adjustment', $partner) }}">

@@ -22,29 +22,20 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', fn() => redirect('/dashboard'));
 
-// Temporary route to run migrations and clear cache since SSH is unavailable
-Route::get('/setup-production', function() {
-    $output = '<b>Setup started...</b><br><br>';
-    try {
-        \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
-        $output .= "Migration Output:<br>" . nl2br(\Illuminate\Support\Facades\Artisan::output() ?: '(no output)') . "<br><br>";
-
-        \Illuminate\Support\Facades\Artisan::call('optimize:clear');
-        $output .= "Optimize Clear Output:<br>" . nl2br(\Illuminate\Support\Facades\Artisan::output() ?: '(no output)') . "<br><br>";
-
-        \Illuminate\Support\Facades\Artisan::call('optimize');
-        $output .= "Optimize Output:<br>" . nl2br(\Illuminate\Support\Facades\Artisan::output() ?: '(no output)') . "<br><br>";
-
-        return response($output . "<b>Setup Complete!</b>")->header('Content-Type', 'text/html');
-    } catch (\Throwable $e) {
-        return response("<b>Error:</b> " . $e->getMessage() . "<br><pre>" . $e->getTraceAsString() . "</pre>")->header('Content-Type', 'text/html');
+// Authenticated storage file proxy (F-013: protect partner legal docs from unauthenticated access)
+Route::get('/storage/{path}', function (string $path) {
+    $base = storage_path('app/public');
+    $file = realpath($base . '/' . $path);
+    if ($file === false || !str_starts_with($file, $base) || !is_file($file)) {
+        abort(404);
     }
-});
+    return response()->file($file);
+})->middleware('auth')->where('path', '.*');
 
 // Guest routes
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
-    Route::post('/login', [AuthController::class, 'login']);
+    Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:5,1');
 });
 
 // Authenticated routes
@@ -56,7 +47,7 @@ Route::middleware('auth')->group(function () {
     // Invoice management
     Route::post('invoices/mark-overdue', [InvoiceController::class, 'markOverdue'])->name('invoices.mark-overdue');
     Route::resource('invoices', InvoiceController::class);
-    Route::post('invoices/{invoice}/finalize', [InvoiceController::class, 'finalize'])->name('invoices.finalize');
+    Route::post('invoices/{invoice}/finalize', [InvoiceController::class, 'finalize'])->name('invoices.finalize')->middleware('role:FINANCE,ADMIN');
     Route::post('invoices/{invoice}/auto-create-products', [InvoiceController::class, 'autoCreateProducts'])->name('invoices.auto-create-products');
     Route::post('invoices/{invoice}/duplicate', [InvoiceController::class, 'duplicate'])->name('invoices.duplicate');
     Route::get('invoices/{invoice}/pdf', [InvoiceController::class, 'pdf'])->name('invoices.pdf');
@@ -70,8 +61,10 @@ Route::middleware('auth')->group(function () {
 
     // Payment management
     Route::get('payments', [PaymentController::class, 'index'])->name('payments.index');
-    Route::post('invoices/{invoice}/payments', [PaymentController::class, 'store'])->name('payments.store');
-    Route::delete('invoices/{invoice}/payments/{payment}', [PaymentController::class, 'destroy'])->name('payments.destroy');
+    Route::middleware('role:FINANCE,ADMIN')->group(function () {
+        Route::post('invoices/{invoice}/payments', [PaymentController::class, 'store'])->name('payments.store');
+        Route::delete('invoices/{invoice}/payments/{payment}', [PaymentController::class, 'destroy'])->name('payments.destroy');
+    });
 
     // Partner management
     Route::get('partners/performance', [PartnerController::class, 'performance'])->name('partners.performance');
@@ -81,8 +74,10 @@ Route::middleware('auth')->group(function () {
     Route::prefix('partners/{partner}/deposits')->group(function () {
         Route::get('/',       [PartnerDepositController::class, 'index'])->name('deposits.index');
         Route::get('/topup',  [PartnerDepositController::class, 'create'])->name('deposits.create');
-        Route::post('/',      [PartnerDepositController::class, 'store'])->name('deposits.store');
-        Route::post('/adjustment', [PartnerDepositController::class, 'adjustment'])->name('deposits.adjustment');
+        Route::middleware('role:FINANCE,ADMIN')->group(function () {
+            Route::post('/',           [PartnerDepositController::class, 'store'])->name('deposits.store');
+            Route::post('/adjustment', [PartnerDepositController::class, 'adjustment'])->name('deposits.adjustment');
+        });
     });
 
     // AJAX — deposit balance for invoice form
@@ -105,7 +100,7 @@ Route::middleware('auth')->group(function () {
     Route::resource('imports', TransactionImportController::class)->only(['index', 'create', 'store', 'show', 'destroy']);
 
     // Import Review actions
-    Route::post('imports/{import}/approve-rows',  [ImportReviewController::class, 'approveRows'])->name('import-review.approve');
+    Route::post('imports/{import}/approve-rows',  [ImportReviewController::class, 'approveRows'])->name('import-review.approve')->middleware('role:FINANCE,ADMIN');
     Route::post('imports/{import}/reject-rows',   [ImportReviewController::class, 'rejectRows'])->name('import-review.reject');
     Route::post('imports/{import}/override-row',  [ImportReviewController::class, 'overrideRow'])->name('import-review.override');
     Route::post('imports/{import}/override-group',[ImportReviewController::class, 'overrideGroup'])->name('import-review.override-group');
@@ -125,7 +120,10 @@ Route::middleware('auth')->group(function () {
         ->name('api.partner.outstanding-invoices');
 
     // Batch Credit Payments
-    Route::resource('credit-payments', CreditPaymentController::class)->except(['edit', 'update']);
+    Route::resource('credit-payments', CreditPaymentController::class)->except(['edit', 'update', 'destroy']);
+    Route::delete('credit-payments/{creditPayment}', [CreditPaymentController::class, 'destroy'])
+        ->name('credit-payments.destroy')
+        ->middleware('role:FINANCE,ADMIN');
     Route::get('/api/partners/{partner}/outstanding-invoices-cp', [CreditPaymentController::class, 'outstandingInvoices'])
         ->name('api.partner.outstanding-invoices-cp');
 

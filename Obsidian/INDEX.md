@@ -48,6 +48,7 @@
 ## 🔍 Audit
 - [[AUDIT-PROMPT-TEMPLATE]] — Template prompt audit menyeluruh (security, fraud, finance, ops)
 - [[AUDIT-REPORT-2026-05-08]] — Comprehensive audit result: 28 findings (4 CRITICAL), Health Score 31/100
+- [[TODO-AUDIT-2026-05-08]] — Remediation TODO: 28 task (4 IMMEDIATE, 7 this week, 13 this month, 4 long term)
 
 ## 📝 Logs
 → Folder: `Logs/`

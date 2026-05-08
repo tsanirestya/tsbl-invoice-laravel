@@ -55,8 +55,18 @@ class PaymentController extends Controller
 
     public function store(Request $request, Invoice $invoice)
     {
+        if (!$invoice->is_finalized) {
+            abort(403, 'Invoice belum difinalisasi.');
+        }
+
+        $remaining = max(0, (float) $invoice->grand_total - $invoice->totalPaid());
+
+        if ($remaining <= 0) {
+            return back()->withErrors(['amount' => 'Invoice sudah lunas, tidak dapat menambah pembayaran.']);
+        }
+
         $request->validate([
-            'amount'         => 'required|numeric|min:0.01',
+            'amount'         => "required|numeric|min:0.01|max:{$remaining}",
             'payment_date'   => 'required|date',
             'payment_method' => 'nullable|string|max:50',
             'reference_no'   => 'nullable|string|max:100',

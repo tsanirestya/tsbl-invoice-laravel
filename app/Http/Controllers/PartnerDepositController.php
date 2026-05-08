@@ -48,9 +48,19 @@ class PartnerDepositController extends Controller
     public function adjustment(Request $request, Partner $partner)
     {
         $validated = $request->validate([
-            'amount' => 'required|numeric',
+            'amount' => 'required|numeric|not_in:0',
             'notes'  => 'required|string',
         ]);
+
+        $amount = (float) $validated['amount'];
+
+        if (abs($amount) > 500_000_000) {
+            return back()->withErrors(['amount' => 'Nilai adjustment tidak boleh melebihi Rp 500.000.000.']);
+        }
+
+        if ($partner->depositBalance() + $amount < 0) {
+            return back()->withErrors(['amount' => 'Adjustment akan membuat saldo deposit menjadi negatif.']);
+        }
 
         PartnerDeposit::create([
             'partner_id' => $partner->id,

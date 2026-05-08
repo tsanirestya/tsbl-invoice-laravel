@@ -364,7 +364,8 @@ class InvoiceController extends Controller
         $newInvoice = DB::transaction(function () use ($invoice) {
             $invoice->load('items');
 
-            $newInvoice = $invoice->replicate(['invoice_no', 'pdf_path', 'is_finalized', 'payment_status', 'created_by', 'updated_by']);
+            $newInvoice = $invoice->replicate(['invoice_no', 'pdf_path', 'is_finalized', 'payment_status', 'created_by', 'updated_by', 'deposit']);
+            $newInvoice->deposit = 0;
             $newInvoice->invoice_no   = $this->generateInvoiceNo();
             $newInvoice->invoice_date = now()->toDateString();
             $newInvoice->due_date     = now()->addDays(
@@ -587,7 +588,6 @@ class InvoiceController extends Controller
         PartnerDeposit::where('invoice_id', $invoice->id)->where('type', 'DEDUCTION')->delete();
 
         $invoice->items()->delete();
-        $invoice->logs()->delete();
         $invoice->delete();
 
         return redirect()->route('invoices.index')->with('success', 'Invoice berhasil dihapus.');
