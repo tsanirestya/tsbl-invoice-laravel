@@ -158,8 +158,53 @@
                        value="{{ old('limit_credit', $partner->limit_credit ?? 0) }}" required>
                 @error('limit_credit') <div class="invalid-feedback">{{ $message }}</div> @enderror
             </div>
+
+            <div class="col-md-4">
+                <label class="form-label fw-semibold">Credit Class</label>
+                <select name="credit_class_id" id="creditClassSelect" class="form-select @error('credit_class_id') is-invalid @enderror">
+                    <option value="">— Auto-assign berdasarkan limit —</option>
+                    @foreach($creditClasses as $cc)
+                        <option value="{{ $cc->id }}"
+                            data-color="{{ $cc->color }}"
+                            @selected(old('credit_class_id', $partner->credit_class_id ?? '') == $cc->id)>
+                            {{ $cc->name }}
+                            @if($cc->max_limit)
+                                (Rp {{ number_format($cc->min_limit, 0, ',', '.') }} – Rp {{ number_format($cc->max_limit, 0, ',', '.') }})
+                            @else
+                                (≥ Rp {{ number_format($cc->min_limit, 0, ',', '.') }})
+                            @endif
+                        </option>
+                    @endforeach
+                </select>
+                <div class="form-text text-muted">Kosongkan untuk auto-assign saat simpan.</div>
+                @error('credit_class_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                <div id="creditClassBadgePreview" class="mt-1"></div>
+            </div>
         </div>
     </div>
+
+    @push('scripts')
+    <script>
+    (function () {
+        const sel = document.getElementById('creditClassSelect');
+        const preview = document.getElementById('creditClassBadgePreview');
+        if (!sel) return;
+
+        function updatePreview() {
+            const opt = sel.options[sel.selectedIndex];
+            const color = opt?.dataset?.color;
+            if (color && sel.value) {
+                preview.innerHTML = `<span class="badge bg-${color} text-dark">${opt.text.split('(')[0].trim()}</span>`;
+            } else {
+                preview.innerHTML = '';
+            }
+        }
+
+        sel.addEventListener('change', updatePreview);
+        updatePreview();
+    })();
+    </script>
+    @endpush
 
     {{-- Tab: Docs --}}
     <div class="tab-pane fade" id="tab-docs">

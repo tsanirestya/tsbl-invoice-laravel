@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\CreditClass;
 use App\Models\Partner;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -37,7 +38,7 @@ class PartnerController extends Controller
         $partners = $query->orderBy('nama_partner')->paginate(15)->withQueryString();
 
         // Eager-load for credit status (15 rows max, no N+1 concern)
-        $partners->load('invoices.payments');
+        $partners->load('invoices.payments', 'creditClass');
 
         $creditData = [];
         foreach ($partners as $p) {
@@ -75,7 +76,8 @@ class PartnerController extends Controller
 
     public function create()
     {
-        return view('partners.create');
+        $creditClasses = CreditClass::orderBy('sort_order')->get();
+        return view('partners.create', compact('creditClasses'));
     }
 
     public function store(Request $request)
@@ -92,6 +94,11 @@ class PartnerController extends Controller
         $validated['created_by'] = auth()->id();
         $validated['updated_by'] = auth()->id();
 
+        // Auto-assign credit class if not manually selected
+        if (empty($validated['credit_class_id'])) {
+            $validated['credit_class_id'] = CreditClass::autoAssign((float) $validated['limit_credit'])?->id;
+        }
+
         Partner::create($validated);
 
         return redirect()->route('partners.index')->with('success', 'Partner berhasil ditambahkan.');
@@ -99,12 +106,19 @@ class PartnerController extends Controller
 
     public function show(Partner $partner)
     {
-        $partner->load('invoices.payments');
+        $partner->load('invoices.payments', 'creditClass');
         $scorecard      = $this->computeScorecard($partner);
         $recentInvoices = $partner->invoices->sortByDesc('invoice_date')->take(10);
         $depositInfo    = $partner->depositInfo();
+        $creditInfo     = $partner->creditInfo();
 
-        return view('partners.show', compact('partner', 'scorecard', 'recentInvoices', 'depositInfo'));
+        return view('partners.show', compact('partner', 'scorecard', 'recentInvoices', 'depositInfo', 'creditInfo'));
+    }
+
+    public function creditInfo(Partner $partner)
+    {
+        $partner->load('creditClass');
+        return response()->json($partner->creditInfo());
     }
 
     public function performance(Request $request)
@@ -228,7 +242,8 @@ class PartnerController extends Controller
 
     public function edit(Partner $partner)
     {
-        return view('partners.edit', compact('partner'));
+        $creditClasses = CreditClass::orderBy('sort_order')->get();
+        return view('partners.edit', compact('partner', 'creditClasses'));
     }
 
     public function update(Request $request, Partner $partner)
@@ -246,6 +261,11 @@ class PartnerController extends Controller
 
         $validated['is_active']  = $request->boolean('is_active');
         $validated['updated_by'] = auth()->id();
+
+        // Re-auto-assign if not manually overridden
+        if (empty($validated['credit_class_id'])) {
+            $validated['credit_class_id'] = CreditClass::autoAssign((float) $validated['limit_credit'])?->id;
+        }
 
         $partner->update($validated);
 
@@ -285,6 +305,7 @@ class PartnerController extends Controller
             'payment_type'       => 'nullable|string|max:50',
             'payment_due_days'   => 'required|integer|min:0',
             'limit_credit'       => 'required|numeric|min:0',
+            'credit_class_id'    => 'nullable|exists:credit_classes,id',
             'contract_start'     => 'nullable|date',
             'contract_end'       => 'nullable|date|after_or_equal:contract_start',
             'notes'              => 'nullable|string',

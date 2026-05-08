@@ -14,6 +14,7 @@ class Payment extends Model
     protected $fillable = [
         'invoice_id', 'amount', 'payment_date', 'payment_method',
         'reference_no', 'proof_file', 'notes', 'created_by',
+        'credit_payment_id',
     ];
 
     protected function casts(): array
@@ -28,5 +29,10 @@ class Payment extends Model
     public function invoice()
     {
         return $this->belongsTo(Invoice::class);
+    }
+
+    public function creditPayment()
+    {
+        return $this->belongsTo(CreditPayment::class);
     }
 }

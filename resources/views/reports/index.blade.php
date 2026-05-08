@@ -295,7 +295,7 @@
             </div>
         </form>
     </div>
-    <div class="rpt-export-bar">
+    <div class="rpt-export-bar" id="export-bar-invoice">
         <span class="label"><i class="bi bi-download me-1"></i>Export hasil filter:</span>
         <a href="{{ route('reports.export-csv', request()->query()) }}"
            class="btn btn-sm"
@@ -308,21 +308,37 @@
             <i class="bi bi-file-earmark-pdf me-1"></i>PDF
         </a>
     </div>
+    <div class="rpt-export-bar d-none" id="export-bar-credit">
+        <span class="label"><i class="bi bi-download me-1"></i>Export laporan kredit:</span>
+        <a href="{{ route('reports.export-credit-csv', request()->only(['credit_class_id','credit_status'])) }}"
+           class="btn btn-sm"
+           style="background:#f0fdf4;color:#059669;border:1px solid #bbf7d0;border-radius:7px;font-size:.75rem;font-weight:600;padding:.28rem .75rem;">
+            <i class="bi bi-filetype-csv me-1"></i>CSV
+        </a>
+        <a href="{{ route('reports.export-credit-pdf', request()->only(['credit_class_id','credit_status'])) }}"
+           class="btn btn-sm"
+           style="background:#fef2f2;color:#dc2626;border:1px solid #fecaca;border-radius:7px;font-size:.75rem;font-weight:600;padding:.28rem .75rem;">
+            <i class="bi bi-file-earmark-pdf me-1"></i>PDF
+        </a>
+    </div>
 </div>
 
 {{-- ── Pill Tabs ── --}}
 <div class="rpt-tabs" id="reportTabs" role="tablist">
-    <button class="rpt-tab-btn active" data-target="tab-invoices">
+    <button class="rpt-tab-btn" data-target="tab-invoices" data-export-bar="export-bar-invoice">
         <i class="bi bi-list-ul"></i> Invoice List
     </button>
-    <button class="rpt-tab-btn" data-target="tab-partners">
+    <button class="rpt-tab-btn" data-target="tab-partners" data-export-bar="export-bar-invoice">
         <i class="bi bi-people"></i> Per Partner
     </button>
-    <button class="rpt-tab-btn" data-target="tab-deposit">
+    <button class="rpt-tab-btn" data-target="tab-deposit" data-export-bar="export-bar-invoice">
         <i class="bi bi-wallet2"></i> Deposit
     </button>
-    <button class="rpt-tab-btn" data-target="tab-import">
+    <button class="rpt-tab-btn" data-target="tab-import" data-export-bar="export-bar-invoice">
         <i class="bi bi-file-earmark-spreadsheet"></i> Import
+    </button>
+    <button class="rpt-tab-btn" data-target="tab-kredit" data-export-bar="export-bar-credit">
+        <i class="bi bi-credit-card-2-front"></i> Kredit
     </button>
 </div>
 
@@ -638,26 +654,261 @@
     </div>
 </div>
 
+{{-- Kredit --}}
+<div class="tab-pane-content d-none" id="tab-kredit">
+
+    {{-- Credit-specific filter row --}}
+    <form method="GET" action="{{ route('reports.index') }}" class="mb-3">
+        {{-- preserve existing invoice filters --}}
+        @foreach(request()->only(['date_from','date_to','status','partner_id','search']) as $k => $v)
+            <input type="hidden" name="{{ $k }}" value="{{ $v }}">
+        @endforeach
+        <input type="hidden" name="tab" value="kredit">
+        <div class="rpt-filter-card">
+            <div class="rpt-filter-header">
+                <i class="bi bi-credit-card-2-front" style="color:#7c3aed;font-size:.82rem"></i>
+                Filter Kredit
+            </div>
+            <div class="rpt-filter-body">
+                <div class="row g-2 align-items-end">
+                    <div class="col-6 col-md-3">
+                        <label class="form-label">Credit Class</label>
+                        <select name="credit_class_id" class="form-select form-select-sm">
+                            <option value="">Semua Class</option>
+                            @foreach($creditClasses as $cc)
+                                <option value="{{ $cc->id }}" {{ request('credit_class_id') == $cc->id ? 'selected' : '' }}>
+                                    {{ $cc->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <label class="form-label">Status Kredit</label>
+                        <select name="credit_status" class="form-select form-select-sm">
+                            <option value="">Semua Status</option>
+                            @foreach(['NORMAL','WARNING','OVER_LIMIT'] as $cs)
+                                <option value="{{ $cs }}" {{ request('credit_status') === $cs ? 'selected' : '' }}>{{ $cs }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-auto d-flex gap-1">
+                        <button type="submit" class="btn btn-primary btn-sm"
+                            style="background:linear-gradient(135deg,#7c3aed,#6d28d9);border:none;border-radius:8px;font-size:.78rem;">
+                            <i class="bi bi-funnel me-1"></i>Filter
+                        </button>
+                        <a href="{{ route('reports.index', ['tab'=>'kredit']) }}" class="btn btn-outline-secondary btn-sm"
+                            style="border-color:#e2e8f0;color:#64748b;border-radius:8px;" title="Reset">
+                            <i class="bi bi-x-lg"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+
+    {{-- Credit Summary Table --}}
+    <div class="rpt-table-wrap mb-3">
+        <div style="padding:.75rem 1rem;border-bottom:1px solid #f1f5f9;font-size:.78rem;font-weight:700;color:#334155;display:flex;align-items:center;gap:.4rem;">
+            <i class="bi bi-person-check-fill" style="color:#7c3aed;font-size:.78rem"></i> Credit Summary per Partner
+        </div>
+        <div class="table-responsive">
+            <table class="rpt-table">
+                <thead>
+                    <tr>
+                        <th>Partner</th>
+                        <th>Credit Class</th>
+                        <th class="text-end">Limit</th>
+                        <th class="text-end">Used</th>
+                        <th class="text-end">Available</th>
+                        <th style="width:120px">Utilization</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($creditSummary as $row)
+                    @php
+                        $util  = $row->utilization_percent;
+                        $color = $util > 100 ? '#dc2626' : ($util >= \App\Models\Setting::get('credit_warning_threshold', 80) ? '#d97706' : '#059669');
+                    @endphp
+                    <tr>
+                        <td style="font-weight:600;color:#0f1729">
+                            <a href="{{ route('partners.show', $row->partner) }}" style="color:#0f1729;text-decoration:none;">
+                                {{ $row->partner->nama_partner }}
+                            </a>
+                        </td>
+                        <td>
+                            @if($row->credit_class_name)
+                                <span class="badge bg-{{ $row->credit_class_color ?? 'secondary' }}">{{ $row->credit_class_name }}</span>
+                            @else
+                                <span style="color:#94a3b8;font-size:.78rem">—</span>
+                            @endif
+                        </td>
+                        <td class="text-end" style="font-weight:600">{{ number_format($row->limit, 0, ',', '.') }}</td>
+                        <td class="text-end" style="color:#dc2626;font-weight:600">{{ number_format($row->used, 0, ',', '.') }}</td>
+                        <td class="text-end" style="color:{{ $row->available >= 0 ? '#059669' : '#dc2626' }};font-weight:600">
+                            {{ number_format($row->available, 0, ',', '.') }}
+                        </td>
+                        <td>
+                            <div style="display:flex;align-items:center;gap:6px;">
+                                <div style="flex:1;height:5px;background:#f1f5f9;border-radius:10px;overflow:hidden;min-width:50px;">
+                                    <div style="width:{{ min(100, $util) }}%;height:100%;background:{{ $color }};border-radius:10px;"></div>
+                                </div>
+                                <span style="font-size:.72rem;font-weight:700;color:{{ $color }};white-space:nowrap;">{{ number_format($util, 1) }}%</span>
+                            </div>
+                        </td>
+                        <td>
+                            @if($row->status === 'OVER_LIMIT')
+                                <span style="background:#fee2e2;color:#991b1b;font-size:.68rem;font-weight:700;padding:.22em .55em;border-radius:5px;">OVER LIMIT</span>
+                            @elseif($row->status === 'WARNING')
+                                <span style="background:#fef3c7;color:#92400e;font-size:.68rem;font-weight:700;padding:.22em .55em;border-radius:5px;">WARNING</span>
+                            @else
+                                <span style="background:#dcfce7;color:#166534;font-size:.68rem;font-weight:700;padding:.22em .55em;border-radius:5px;">NORMAL</span>
+                            @endif
+                        </td>
+                    </tr>
+                    @empty
+                    <tr>
+                        <td colspan="7">
+                            <div class="rpt-empty">
+                                <i class="bi bi-credit-card"></i>
+                                <p>Tidak ada partner dengan credit limit.</p>
+                            </div>
+                        </td>
+                    </tr>
+                    @endforelse
+                </tbody>
+                @if($creditSummary->count() > 0)
+                <tfoot>
+                    <tr>
+                        <td colspan="2" style="color:#64748b;font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.5px;">Total</td>
+                        <td class="text-end">{{ number_format($creditSummary->sum('limit'), 0, ',', '.') }}</td>
+                        <td class="text-end" style="color:#dc2626">{{ number_format($creditSummary->sum('used'), 0, ',', '.') }}</td>
+                        <td class="text-end">{{ number_format($creditSummary->sum('available'), 0, ',', '.') }}</td>
+                        <td colspan="2"></td>
+                    </tr>
+                </tfoot>
+                @endif
+            </table>
+        </div>
+    </div>
+
+    {{-- Credit Aging Table --}}
+    @php
+        $agingBuckets = $creditAging['buckets'];
+        $agingRows    = $creditAging['rows'];
+        $agingTotals  = $creditAging['totals'];
+        $b1 = $agingBuckets['b1']; $b2 = $agingBuckets['b2'];
+        $b3 = $agingBuckets['b3']; $b4 = $agingBuckets['b4'];
+    @endphp
+    <div class="rpt-table-wrap">
+        <div style="padding:.75rem 1rem;border-bottom:1px solid #f1f5f9;font-size:.78rem;font-weight:700;color:#334155;display:flex;align-items:center;gap:.4rem;">
+            <i class="bi bi-calendar-week-fill" style="color:#dc2626;font-size:.78rem"></i>
+            Credit Aging
+            <span style="font-size:.68rem;font-weight:500;color:#94a3b8;margin-left:4px;">
+                Bucket: Current | 1–{{ $b1 }} | {{ $b1+1 }}–{{ $b2 }} | {{ $b2+1 }}–{{ $b3 }} | {{ $b3+1 }}–{{ $b4 }} | >{{ $b4 }} hari
+            </span>
+        </div>
+        <div class="table-responsive">
+            <table class="rpt-table">
+                <thead>
+                    <tr>
+                        <th>Partner</th>
+                        <th>Class</th>
+                        <th class="text-end">Current</th>
+                        <th class="text-end">1–{{ $b1 }}</th>
+                        <th class="text-end">{{ $b1+1 }}–{{ $b2 }}</th>
+                        <th class="text-end">{{ $b2+1 }}–{{ $b3 }}</th>
+                        <th class="text-end">{{ $b3+1 }}–{{ $b4 }}</th>
+                        <th class="text-end">>{{ $b4 }}</th>
+                        <th class="text-end">Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($agingRows as $row)
+                    <tr>
+                        <td style="font-weight:600;color:#0f1729">{{ $row->partner->nama_partner }}</td>
+                        <td>
+                            @if($row->partner->creditClass)
+                                <span class="badge bg-{{ $row->partner->creditClass->color ?? 'secondary' }}" style="font-size:.65rem;">{{ $row->partner->creditClass->name }}</span>
+                            @else
+                                <span style="color:#94a3b8;font-size:.78rem">—</span>
+                            @endif
+                        </td>
+                        @foreach(['current','b1','b2','b3','b4','b5'] as $bk)
+                        <td class="text-end" style="{{ $bk !== 'current' && $row->buckets[$bk] > 0 ? 'color:#dc2626;font-weight:600' : 'color:#64748b' }}">
+                            {{ $row->buckets[$bk] > 0 ? number_format($row->buckets[$bk], 0, ',', '.') : '—' }}
+                        </td>
+                        @endforeach
+                        <td class="text-end" style="font-weight:700;color:#0f1729">{{ number_format($row->total, 0, ',', '.') }}</td>
+                    </tr>
+                    @empty
+                    <tr>
+                        <td colspan="9">
+                            <div class="rpt-empty">
+                                <i class="bi bi-calendar-check"></i>
+                                <p>Tidak ada outstanding piutang kredit.</p>
+                            </div>
+                        </td>
+                    </tr>
+                    @endforelse
+                </tbody>
+                @if(count($agingRows) > 0)
+                <tfoot>
+                    <tr>
+                        <td colspan="2" style="color:#64748b;font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.5px;">Grand Total</td>
+                        @foreach(['current','b1','b2','b3','b4','b5'] as $bk)
+                        <td class="text-end" style="{{ $bk !== 'current' && $agingTotals[$bk] > 0 ? 'color:#dc2626' : '' }}">
+                            {{ $agingTotals[$bk] > 0 ? number_format($agingTotals[$bk], 0, ',', '.') : '—' }}
+                        </td>
+                        @endforeach
+                        <td class="text-end">{{ number_format(array_sum($agingTotals), 0, ',', '.') }}</td>
+                    </tr>
+                </tfoot>
+                @endif
+            </table>
+        </div>
+    </div>
+</div>
+
 @endsection
 
 @push('scripts')
 <script>
 (function () {
-    const tabs    = document.querySelectorAll('.rpt-tab-btn');
-    const panes   = document.querySelectorAll('.tab-pane-content');
+    const tabs       = document.querySelectorAll('.rpt-tab-btn');
+    const panes      = document.querySelectorAll('.tab-pane-content');
+    const exportBars = document.querySelectorAll('[id^="export-bar-"]');
+
+    function activateTab(btn) {
+        const target    = btn.dataset.target;
+        const exportBar = btn.dataset.exportBar;
+
+        tabs.forEach(function (b) { b.classList.remove('active'); });
+        btn.classList.add('active');
+
+        panes.forEach(function (p) {
+            p.id === target ? p.classList.remove('d-none') : p.classList.add('d-none');
+        });
+
+        exportBars.forEach(function (bar) {
+            bar.id === exportBar ? bar.classList.remove('d-none') : bar.classList.add('d-none');
+        });
+    }
 
     tabs.forEach(function (btn) {
-        btn.addEventListener('click', function () {
-            const target = btn.dataset.target;
-
-            tabs.forEach(function (b) { b.classList.remove('active'); });
-            btn.classList.add('active');
-
-            panes.forEach(function (p) {
-                p.id === target ? p.classList.remove('d-none') : p.classList.add('d-none');
-            });
-        });
+        btn.addEventListener('click', function () { activateTab(btn); });
     });
+
+    // Auto-activate tab from URL param or credit filter
+    const urlTab = new URLSearchParams(window.location.search).get('tab');
+    const hasCreditFilter = new URLSearchParams(window.location.search).get('credit_class_id')
+                         || new URLSearchParams(window.location.search).get('credit_status');
+    let defaultTarget = 'tab-invoices';
+    if (urlTab === 'kredit' || hasCreditFilter) defaultTarget = 'tab-kredit';
+
+    const defaultBtn = Array.from(tabs).find(function (b) { return b.dataset.target === defaultTarget; });
+    if (defaultBtn) activateTab(defaultBtn);
+    else if (tabs.length) activateTab(tabs[0]);
 })();
 </script>
 @endpush

@@ -173,6 +173,78 @@
                 </div>
             </div>
 
+            {{-- Credit Config --}}
+            <div class="card mb-4">
+                <div class="card-header fw-semibold d-flex align-items-center gap-2">
+                    <i class="bi bi-graph-up-arrow text-danger"></i> Pengaturan Kredit
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-12 col-md-4">
+                            <label class="form-label">Credit Warning Threshold <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <input type="number" name="credit_warning_threshold"
+                                    class="form-control @error('credit_warning_threshold') is-invalid @enderror"
+                                    value="{{ old('credit_warning_threshold', $settings['credit_warning_threshold'] ?? 80) }}"
+                                    min="1" max="100" id="creditThreshold">
+                                <span class="input-group-text">%</span>
+                            </div>
+                            <div class="form-text">Utilisasi di atas ini → peringatan kuning di form invoice.</div>
+                            @error('credit_warning_threshold')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Credit Aging Buckets <span class="text-danger">*</span></label>
+                            <div class="row g-2 mb-2">
+                                <div class="col-6 col-md-3">
+                                    <label class="form-label small text-muted">Bucket 1 (hari)</label>
+                                    <div class="input-group input-group-sm">
+                                        <input type="number" name="credit_aging_bucket_1" id="bucket1"
+                                            class="form-control @error('credit_aging_bucket_1') is-invalid @enderror"
+                                            value="{{ old('credit_aging_bucket_1', $settings['credit_aging_bucket_1'] ?? 30) }}"
+                                            min="1" max="999">
+                                        <span class="input-group-text">hr</span>
+                                    </div>
+                                </div>
+                                <div class="col-6 col-md-3">
+                                    <label class="form-label small text-muted">Bucket 2 (hari)</label>
+                                    <div class="input-group input-group-sm">
+                                        <input type="number" name="credit_aging_bucket_2" id="bucket2"
+                                            class="form-control @error('credit_aging_bucket_2') is-invalid @enderror"
+                                            value="{{ old('credit_aging_bucket_2', $settings['credit_aging_bucket_2'] ?? 60) }}"
+                                            min="1" max="999">
+                                        <span class="input-group-text">hr</span>
+                                    </div>
+                                    @error('credit_aging_bucket_2')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
+                                </div>
+                                <div class="col-6 col-md-3">
+                                    <label class="form-label small text-muted">Bucket 3 (hari)</label>
+                                    <div class="input-group input-group-sm">
+                                        <input type="number" name="credit_aging_bucket_3" id="bucket3"
+                                            class="form-control @error('credit_aging_bucket_3') is-invalid @enderror"
+                                            value="{{ old('credit_aging_bucket_3', $settings['credit_aging_bucket_3'] ?? 90) }}"
+                                            min="1" max="999">
+                                        <span class="input-group-text">hr</span>
+                                    </div>
+                                </div>
+                                <div class="col-6 col-md-3">
+                                    <label class="form-label small text-muted">Bucket 4 (hari)</label>
+                                    <div class="input-group input-group-sm">
+                                        <input type="number" name="credit_aging_bucket_4" id="bucket4"
+                                            class="form-control @error('credit_aging_bucket_4') is-invalid @enderror"
+                                            value="{{ old('credit_aging_bucket_4', $settings['credit_aging_bucket_4'] ?? 120) }}"
+                                            min="1" max="999">
+                                        <span class="input-group-text">hr</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="alert alert-light border py-2 px-3 mb-0 small" id="agingPreview"></div>
+                            <div class="form-text">Bucket harus urut: Bucket 1 &lt; Bucket 2 &lt; Bucket 3 &lt; Bucket 4.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div class="d-flex gap-2 justify-content-end mb-4">
                 <button type="submit" class="btn btn-primary px-4">
                     <i class="bi bi-check-lg me-1"></i> Simpan Pengaturan
@@ -190,5 +262,23 @@ document.querySelector('[name=invoice_prefix]')?.addEventListener('input', funct
     if (preview) preview.textContent = `Format: ${this.value || 'INV'}-2026-0001`;
     this.value = this.value.toUpperCase();
 });
+
+(function () {
+    const ids = ['bucket1', 'bucket2', 'bucket3', 'bucket4'];
+    const preview = document.getElementById('agingPreview');
+
+    function updatePreview() {
+        const [b1, b2, b3, b4] = ids.map(id => parseInt(document.getElementById(id)?.value) || 0);
+        if (b1 && b2 && b3 && b4) {
+            preview.innerHTML = `<i class="bi bi-info-circle me-1"></i><strong>Aging tampil sebagai:</strong> `
+                + `Current | 1–${b1} hr | ${b1+1}–${b2} hr | ${b2+1}–${b3} hr | ${b3+1}–${b4} hr | >${b4} hr`;
+            const invalid = !(b1 < b2 && b2 < b3 && b3 < b4);
+            preview.className = 'alert border py-2 px-3 mb-0 small ' + (invalid ? 'alert-danger' : 'alert-light');
+        }
+    }
+
+    ids.forEach(id => document.getElementById(id)?.addEventListener('input', updatePreview));
+    updatePreview();
+})();
 </script>
 @endpush

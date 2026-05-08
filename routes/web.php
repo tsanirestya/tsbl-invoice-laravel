@@ -12,6 +12,9 @@ use App\Http\Controllers\ProductAliasController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\TransactionImportController;
+use App\Http\Controllers\CreditClassController;
+use App\Http\Controllers\CreditPaymentController;
+use App\Http\Controllers\PaymentMemoController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\PartnerController;
 use App\Http\Controllers\ProductController;
@@ -66,6 +69,10 @@ Route::middleware('auth')->group(function () {
     Route::get('/api/partners/{partner}/deposit-balance', [PartnerDepositController::class, 'balance'])
         ->name('api.deposit.balance');
 
+    // AJAX — credit info for invoice form
+    Route::get('/api/partners/{partner}/credit-info', [PartnerController::class, 'creditInfo'])
+        ->name('api.partner.credit-info');
+
     // Product management
     Route::resource('products', ProductController::class)->except(['show']);
 
@@ -91,14 +98,28 @@ Route::middleware('auth')->group(function () {
     // Anomaly export Excel (per import session)
     Route::get('imports/{import}/export-anomaly', [ReportController::class, 'exportAnomalyExcel'])->name('imports.export-anomaly');
 
+    // Payment Memos
+    Route::resource('payment-memos', PaymentMemoController::class)->except(['edit', 'update']);
+    Route::get('payment-memos/{paymentMemo}/pdf', [PaymentMemoController::class, 'pdf'])->name('payment-memos.pdf');
+    Route::get('/api/partners/{partner}/outstanding-invoices', [PaymentMemoController::class, 'outstandingInvoices'])
+        ->name('api.partner.outstanding-invoices');
+
+    // Batch Credit Payments
+    Route::resource('credit-payments', CreditPaymentController::class)->except(['edit', 'update']);
+    Route::get('/api/partners/{partner}/outstanding-invoices-cp', [CreditPaymentController::class, 'outstandingInvoices'])
+        ->name('api.partner.outstanding-invoices-cp');
+
     // Reports
     Route::get('reports', [ReportController::class, 'index'])->name('reports.index');
     Route::get('reports/export-csv', [ReportController::class, 'exportCsv'])->name('reports.export-csv');
     Route::get('reports/export-pdf', [ReportController::class, 'exportPdf'])->name('reports.export-pdf');
+    Route::get('reports/export-credit-csv', [ReportController::class, 'exportCreditCsv'])->name('reports.export-credit-csv');
+    Route::get('reports/export-credit-pdf', [ReportController::class, 'exportCreditPdf'])->name('reports.export-credit-pdf');
 
     // Admin-only
     Route::middleware('role:ADMIN')->group(function () {
         Route::resource('users', UserController::class)->except(['show']);
+        Route::resource('credit-classes', CreditClassController::class)->except(['show']);
         Route::get('settings', [SettingsController::class, 'index'])->name('settings.index');
         Route::put('settings', [SettingsController::class, 'update'])->name('settings.update');
     });

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\CreditClass;
 use App\Models\Invoice;
 use App\Models\Partner;
 use App\Models\PartnerDeposit;
@@ -30,8 +31,15 @@ class ReportController extends Controller
         $partnerSummary = $this->buildPartnerSummary($request);
         $depositReport  = $this->buildDepositReport();
         $importSummary  = $this->buildImportSummary();
+        $creditClasses  = CreditClass::orderBy('sort_order')->get(['id', 'name', 'color']);
+        $creditSummary  = $this->buildCreditSummary($request);
+        $creditAging    = $this->buildCreditAging();
 
-        return view('reports.index', compact('invoices', 'summary', 'partners', 'partnerSummary', 'depositReport', 'importSummary'));
+        return view('reports.index', compact(
+            'invoices', 'summary', 'partners', 'partnerSummary',
+            'depositReport', 'importSummary',
+            'creditClasses', 'creditSummary', 'creditAging'
+        ));
     }
 
     public function exportCsv(Request $request)
@@ -278,5 +286,196 @@ class ReportController extends Controller
             if ($p) $labels[] = 'Partner: ' . $p->nama_partner;
         }
         return $labels;
+    }
+
+    private function buildCreditSummary(Request $request): \Illuminate\Support\Collection
+    {
+        $query = Partner::creditPartners()->with('creditClass');
+
+        if ($request->filled('credit_class_id')) {
+            $query->where('credit_class_id', $request->credit_class_id);
+        }
+
+        $partners = $query->orderBy('nama_partner')->get();
+
+        $rows = $partners->map(function ($partner) {
+            $info = $partner->creditInfo();
+            return (object) [
+                'partner'             => $partner,
+                'limit'               => $info['limit'],
+                'used'                => $info['used'],
+                'available'           => $info['available'],
+                'utilization_percent' => $info['utilization_percent'],
+                'status'              => $info['status'],
+                'credit_class_name'   => $info['credit_class_name'],
+                'credit_class_color'  => $info['credit_class_color'],
+            ];
+        });
+
+        if ($request->filled('credit_status')) {
+            $rows = $rows->filter(fn($r) => $r->status === $request->credit_status);
+        }
+
+        return $rows->sortByDesc('utilization_percent')->values();
+    }
+
+    private function buildCreditAging(): array
+    {
+        $b1 = (int) Setting::get('credit_aging_bucket_1', 30);
+        $b2 = (int) Setting::get('credit_aging_bucket_2', 60);
+        $b3 = (int) Setting::get('credit_aging_bucket_3', 90);
+        $b4 = (int) Setting::get('credit_aging_bucket_4', 120);
+
+        $today = now()->startOfDay();
+
+        $invoices = Invoice::whereIn('payment_status', ['UNPAID', 'PARTIAL', 'OVERDUE'])
+            ->whereHas('partner', fn($q) => $q->where('limit_credit', '>', 0))
+            ->with(['partner.creditClass', 'payments'])
+            ->get();
+
+        $byPartner = $invoices->groupBy('partner_id');
+
+        $rows = [];
+        foreach ($byPartner as $partnerInvoices) {
+            $partner = $partnerInvoices->first()->partner;
+            $buckets = ['current' => 0, 'b1' => 0, 'b2' => 0, 'b3' => 0, 'b4' => 0, 'b5' => 0];
+
+            foreach ($partnerInvoices as $inv) {
+                $outstanding = max(0, $inv->grand_total - $inv->payments->sum('amount'));
+                if ($outstanding <= 0) continue;
+
+                if (!$inv->due_date) {
+                    $buckets['current'] += $outstanding;
+                    continue;
+                }
+
+                $diff        = $today->diffInDays($inv->due_date, false);
+                $daysOverdue = $diff < 0 ? abs($diff) : 0;
+
+                if ($daysOverdue === 0) {
+                    $buckets['current'] += $outstanding;
+                } elseif ($daysOverdue <= $b1) {
+                    $buckets['b1'] += $outstanding;
+                } elseif ($daysOverdue <= $b2) {
+                    $buckets['b2'] += $outstanding;
+                } elseif ($daysOverdue <= $b3) {
+                    $buckets['b3'] += $outstanding;
+                } elseif ($daysOverdue <= $b4) {
+                    $buckets['b4'] += $outstanding;
+                } else {
+                    $buckets['b5'] += $outstanding;
+                }
+            }
+
+            $rows[] = (object) [
+                'partner' => $partner,
+                'buckets' => $buckets,
+                'total'   => array_sum($buckets),
+            ];
+        }
+
+        usort($rows, fn($a, $b) => $b->total <=> $a->total);
+
+        $totals = ['current' => 0, 'b1' => 0, 'b2' => 0, 'b3' => 0, 'b4' => 0, 'b5' => 0];
+        foreach ($rows as $row) {
+            foreach ($totals as $key => $_) {
+                $totals[$key] += $row->buckets[$key];
+            }
+        }
+
+        return [
+            'rows'    => $rows,
+            'buckets' => compact('b1', 'b2', 'b3', 'b4'),
+            'totals'  => $totals,
+        ];
+    }
+
+    public function exportCreditCsv(Request $request)
+    {
+        $creditSummary = $this->buildCreditSummary($request);
+        $creditAging   = $this->buildCreditAging();
+
+        $filename = 'laporan-kredit-' . now()->format('Ymd-His') . '.csv';
+        $headers  = [
+            'Content-Type'        => 'text/csv',
+            'Content-Disposition' => "attachment; filename=\"{$filename}\"",
+        ];
+
+        $callback = function () use ($creditSummary, $creditAging) {
+            $out = fopen('php://output', 'w');
+            fprintf($out, chr(0xEF) . chr(0xBB) . chr(0xBF));
+
+            // Section 1: Credit Summary
+            fputcsv($out, ['=== CREDIT SUMMARY ===']);
+            fputcsv($out, ['Partner', 'Credit Class', 'Limit', 'Used', 'Available', 'Utilization %', 'Status']);
+            foreach ($creditSummary as $row) {
+                fputcsv($out, [
+                    $row->partner->nama_partner,
+                    $row->credit_class_name ?? '-',
+                    number_format($row->limit, 2, '.', ''),
+                    number_format($row->used, 2, '.', ''),
+                    number_format($row->available, 2, '.', ''),
+                    number_format($row->utilization_percent, 2, '.', ''),
+                    $row->status,
+                ]);
+            }
+
+            fputcsv($out, []);
+
+            // Section 2: Credit Aging
+            $b  = $creditAging['buckets'];
+            $b1 = $b['b1']; $b2 = $b['b2']; $b3 = $b['b3']; $b4 = $b['b4'];
+            fputcsv($out, ['=== CREDIT AGING ===']);
+            fputcsv($out, [
+                'Partner', 'Credit Class',
+                'Current', "1–{$b1} hari", "{$b1}+1–{$b2} hari", "{$b2}+1–{$b3} hari",
+                "{$b3}+1–{$b4} hari", ">{$b4} hari", 'Total',
+            ]);
+            foreach ($creditAging['rows'] as $row) {
+                $bk = $row->buckets;
+                fputcsv($out, [
+                    $row->partner->nama_partner,
+                    $row->partner->creditClass->name ?? '-',
+                    number_format($bk['current'], 2, '.', ''),
+                    number_format($bk['b1'], 2, '.', ''),
+                    number_format($bk['b2'], 2, '.', ''),
+                    number_format($bk['b3'], 2, '.', ''),
+                    number_format($bk['b4'], 2, '.', ''),
+                    number_format($bk['b5'], 2, '.', ''),
+                    number_format($row->total, 2, '.', ''),
+                ]);
+            }
+
+            // Totals row
+            $t = $creditAging['totals'];
+            fputcsv($out, [
+                'TOTAL', '',
+                number_format($t['current'], 2, '.', ''),
+                number_format($t['b1'], 2, '.', ''),
+                number_format($t['b2'], 2, '.', ''),
+                number_format($t['b3'], 2, '.', ''),
+                number_format($t['b4'], 2, '.', ''),
+                number_format($t['b5'], 2, '.', ''),
+                number_format(array_sum($t), 2, '.', ''),
+            ]);
+
+            fclose($out);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
+    public function exportCreditPdf(Request $request)
+    {
+        $creditSummary = $this->buildCreditSummary($request);
+        $creditAging   = $this->buildCreditAging();
+        $settings      = Setting::all()->pluck('value', 'key');
+
+        $pdf = Pdf::loadView('reports.credit-pdf', compact('creditSummary', 'creditAging', 'settings'))
+            ->setPaper('a4', 'landscape');
+
+        $filename = 'laporan-kredit-' . now()->format('Ymd-His') . '.pdf';
+
+        return $pdf->download($filename);
     }
 }

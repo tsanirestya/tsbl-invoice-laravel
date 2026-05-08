@@ -306,6 +306,210 @@
     </div>
 </div>
 
+{{-- ── Credit Widgets ── --}}
+@if($creditOutstanding > 0 || $overLimitPartners->count() > 0 || $top5Outstanding->count() > 0)
+<div class="sect-label mb-2 mt-1" style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:#94a3b8;">
+    <i class="bi bi-shield-lock-fill me-1" style="color:#6366f1"></i>Kredit
+</div>
+
+{{-- Row 1: Total Outstanding + Over Limit --}}
+<div class="row g-2 mb-2">
+    {{-- Widget 1: Total Credit Outstanding --}}
+    <div class="col-12 col-sm-6 col-lg-4">
+        <div class="card rev-card h-100" style="background:linear-gradient(135deg,#f5f3ff,#ede9fe);border-left:4px solid #8b5cf6;">
+            <div class="card-body">
+                <div class="rev-label" style="color:#7c3aed">Total Kredit Outstanding</div>
+                <div class="rev-value" style="color:#6d28d9">Rp {{ number_format($creditOutstanding, 0, ',', '.') }}</div>
+                <div style="font-size:.67rem;color:#8b5cf6;margin-top:3px;">
+                    {{ $top5Outstanding->count() }} credit partner aktif
+                </div>
+                <i class="bi bi-credit-card-fill rev-icon" style="color:#8b5cf6"></i>
+            </div>
+        </div>
+    </div>
+
+    {{-- Widget 2: Partner Over Limit --}}
+    <div class="col-12 col-sm-6 col-lg-4">
+        @php $overCount = $overLimitPartners->count(); @endphp
+        <div class="card rev-card h-100"
+             style="background:{{ $overCount > 0 ? 'linear-gradient(135deg,#fef2f2,#fee2e2)' : 'linear-gradient(135deg,#f0fdf4,#dcfce7)' }};
+                    border-left:4px solid {{ $overCount > 0 ? '#ef4444' : '#22c55e' }};">
+            <div class="card-body">
+                <div class="rev-label" style="color:{{ $overCount > 0 ? '#991b1b' : '#166534' }}">Partner Over Limit</div>
+                <div class="rev-value" style="color:{{ $overCount > 0 ? '#dc2626' : '#16a34a' }}">{{ $overCount }}</div>
+                @if($overCount > 0)
+                <div class="mt-2">
+                    <a class="text-decoration-none d-flex align-items-center gap-1" data-bs-toggle="collapse"
+                       href="#overLimitList" style="font-size:.72rem;font-weight:600;color:#dc2626;">
+                        <i class="bi bi-chevron-down" style="font-size:.6rem"></i> Lihat daftar
+                    </a>
+                    <div class="collapse mt-1" id="overLimitList">
+                        @foreach($overLimitPartners as $op)
+                        <a href="{{ route('partners.show', $op->id) }}"
+                           class="d-block text-decoration-none py-1"
+                           style="font-size:.73rem;color:#dc2626;border-bottom:1px solid #fecaca;">
+                            {{ $op->nama_partner }}
+                            <span class="text-muted" style="font-size:.66rem">
+                                — Rp {{ number_format($op->credit_used_computed, 0, ',', '.') }}
+                                / {{ number_format((float)$op->limit_credit, 0, ',', '.') }}
+                            </span>
+                        </a>
+                        @endforeach
+                    </div>
+                </div>
+                @else
+                <div style="font-size:.67rem;color:#16a34a;margin-top:3px;">Semua dalam batas normal</div>
+                @endif
+                <i class="bi bi-exclamation-triangle-fill rev-icon" style="color:{{ $overCount > 0 ? '#ef4444' : '#22c55e' }}"></i>
+            </div>
+        </div>
+    </div>
+
+    {{-- Widget 3: Credit Breakdown per Class --}}
+    <div class="col-12 col-lg-4">
+        <div class="card h-100">
+            <div class="card-header d-flex align-items-center gap-2" style="padding:.75rem 1rem;">
+                <i class="bi bi-award-fill" style="color:#8b5cf6;font-size:.9rem"></i>
+                <span class="fw-bold" style="font-size:.82rem">Kredit per Class</span>
+            </div>
+            <div class="card-body p-0">
+                @php $maxClassOut = $creditByClass->max('outstanding') ?: 1; @endphp
+                @forelse($creditByClass as $cls)
+                @php
+                    $clsPct = $maxClassOut > 0 ? min(100, ($cls['outstanding'] / $maxClassOut) * 100) : 0;
+                    $clsColorMap = ['primary'=>'#3b82f6','success'=>'#22c55e','warning'=>'#f59e0b','danger'=>'#ef4444','secondary'=>'#94a3b8','info'=>'#06b6d4','dark'=>'#1e293b'];
+                    $clsHex = $clsColorMap[$cls['color']] ?? '#8b5cf6';
+                @endphp
+                <div style="padding:.6rem 1rem;border-bottom:1px solid #f1f5f9;">
+                    <div class="d-flex align-items-center justify-content-between mb-1">
+                        <div class="d-flex align-items-center gap-1">
+                            <span class="badge bg-{{ $cls['color'] }}" style="font-size:.63rem;border-radius:5px;">{{ $cls['name'] }}</span>
+                            <span style="font-size:.67rem;color:#94a3b8">{{ $cls['count'] }} partner</span>
+                        </div>
+                        <span style="font-size:.73rem;font-weight:700;color:#1e293b">
+                            Rp {{ number_format($cls['outstanding'], 0, ',', '.') }}
+                        </span>
+                    </div>
+                    <div style="height:4px;background:#f1f5f9;border-radius:10px;overflow:hidden;">
+                        <div style="height:100%;width:{{ $clsPct }}%;background:{{ $clsHex }};border-radius:10px;"></div>
+                    </div>
+                </div>
+                @empty
+                <div class="text-center text-muted py-4" style="font-size:.8rem">
+                    <i class="bi bi-inbox d-block fs-3 mb-1 opacity-40"></i>Tidak ada data kredit
+                </div>
+                @endforelse
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- Widget 4: Top 5 Highest Outstanding --}}
+@if($top5Outstanding->count() > 0)
+<div class="card mb-3">
+    <div class="card-header d-flex align-items-center gap-2" style="padding:.75rem 1rem;">
+        <i class="bi bi-bar-chart-fill" style="color:#8b5cf6;font-size:.9rem"></i>
+        <span class="fw-bold" style="font-size:.82rem">Top 5 Kredit Tertinggi</span>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-sm mb-0" style="font-size:.78rem;">
+            <thead style="background:#f8fafc;">
+                <tr>
+                    <th style="padding:.5rem .9rem;font-weight:600;color:#64748b;border-bottom:1px solid #e2e8f0;">Partner</th>
+                    <th style="padding:.5rem .6rem;font-weight:600;color:#64748b;border-bottom:1px solid #e2e8f0;" class="d-none d-sm-table-cell">Class</th>
+                    <th style="padding:.5rem .6rem;font-weight:600;color:#64748b;border-bottom:1px solid #e2e8f0;text-align:right;">Outstanding</th>
+                    <th style="padding:.5rem .6rem;font-weight:600;color:#64748b;border-bottom:1px solid #e2e8f0;text-align:right;" class="d-none d-md-table-cell">Limit</th>
+                    <th style="padding:.5rem .9rem;font-weight:600;color:#64748b;border-bottom:1px solid #e2e8f0;min-width:100px;">Utilisasi</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach($top5Outstanding as $tp)
+                @php
+                    $utilColor = $tp['util_pct'] > 100 ? '#ef4444' : ($tp['util_pct'] >= 80 ? '#f59e0b' : '#22c55e');
+                    $utilBg    = $tp['util_pct'] > 100 ? '#fee2e2' : ($tp['util_pct'] >= 80 ? '#fef3c7' : '#f0fdf4');
+                    $barWidth  = min(100, $tp['util_pct']);
+                @endphp
+                <tr>
+                    <td style="padding:.55rem .9rem;">
+                        <a href="{{ route('partners.show', $tp['id']) }}" class="text-decoration-none fw-semibold" style="color:#1e293b;">
+                            {{ $tp['name'] }}
+                        </a>
+                    </td>
+                    <td style="padding:.55rem .6rem;" class="d-none d-sm-table-cell">
+                        @if($tp['class_name'])
+                        <span class="badge bg-{{ $tp['class_color'] ?? 'secondary' }}" style="font-size:.62rem;border-radius:5px;">
+                            {{ $tp['class_name'] }}
+                        </span>
+                        @else
+                        <span class="text-muted">—</span>
+                        @endif
+                    </td>
+                    <td style="padding:.55rem .6rem;text-align:right;font-weight:700;color:#1e293b;">
+                        Rp {{ number_format($tp['used'], 0, ',', '.') }}
+                    </td>
+                    <td style="padding:.55rem .6rem;text-align:right;color:#64748b;" class="d-none d-md-table-cell">
+                        Rp {{ number_format($tp['limit'], 0, ',', '.') }}
+                    </td>
+                    <td style="padding:.55rem .9rem;">
+                        <div class="d-flex align-items-center gap-2">
+                            <div style="flex:1;height:6px;background:#e2e8f0;border-radius:10px;overflow:hidden;min-width:50px;">
+                                <div style="height:100%;width:{{ $barWidth }}%;background:{{ $utilColor }};border-radius:10px;"></div>
+                            </div>
+                            <span style="font-size:.7rem;font-weight:700;color:{{ $utilColor }};white-space:nowrap;
+                                         background:{{ $utilBg }};padding:.1rem .35rem;border-radius:5px;">
+                                {{ $tp['util_pct'] }}%
+                            </span>
+                        </div>
+                    </td>
+                </tr>
+                @endforeach
+            </tbody>
+        </table>
+    </div>
+</div>
+@endif
+@endif
+
+{{-- ── Widget: Partner Perlu Ditagih ── --}}
+@if($needCollectionPartners->count() > 0)
+<div class="card mb-3" style="border:none;border-radius:12px;box-shadow:0 1px 3px rgba(15,23,41,.07);overflow:hidden;">
+    <div class="card-header d-flex align-items-center justify-content-between" style="background:#fff;border-bottom:1px solid #f1f5f9;padding:.75rem 1rem;">
+        <span class="fw-bold d-flex align-items-center gap-2" style="font-size:.88rem">
+            <i class="bi bi-bell-fill" style="color:#f59e0b"></i> Partner dengan Outstanding Kredit
+        </span>
+        <a href="{{ route('payment-memos.index') }}" class="btn btn-xs btn-sm btn-outline-secondary" style="font-size:.72rem;padding:.2rem .55rem">
+            Lihat semua →
+        </a>
+    </div>
+    <div class="card-body p-0">
+        @foreach($needCollectionPartners as $np)
+        <div class="d-flex align-items-center gap-3 px-3 py-2" style="border-bottom:1px solid #f8fafc;">
+            <div style="flex:1;min-width:0;">
+                <a href="{{ route('partners.show', $np['id']) }}" class="fw-semibold text-decoration-none text-dark d-block" style="font-size:.84rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                    {{ $np['name'] }}
+                </a>
+                <span style="font-size:.72rem;color:#64748b;">
+                    @if($np['overdue_count'] > 0)
+                        <span class="text-danger fw-semibold">{{ $np['overdue_count'] }} invoice OVERDUE</span>
+                    @elseif($np['days_to_due'] !== null && $np['days_to_due'] <= 7)
+                        <span class="text-warning fw-semibold">Jatuh tempo {{ $np['days_to_due'] }} hari lagi</span>
+                    @else
+                        Ada invoice outstanding
+                    @endif
+                </span>
+            </div>
+            <div class="text-end" style="white-space:nowrap;">
+                <div class="fw-bold text-danger" style="font-size:.84rem;">Rp {{ number_format($np['outstanding'], 0, ',', '.') }}</div>
+            </div>
+            <a href="{{ $np['memo_url'] }}" class="btn btn-sm btn-outline-warning" style="font-size:.72rem;padding:.25rem .6rem;white-space:nowrap;">
+                <i class="bi bi-file-earmark-plus me-1"></i> Buat Memo
+            </a>
+        </div>
+        @endforeach
+    </div>
+</div>
+@endif
+
 {{-- ── Antrian + Due Soon ── --}}
 <div class="row g-2">
 

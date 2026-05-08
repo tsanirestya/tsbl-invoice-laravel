@@ -304,6 +304,12 @@
         <a href="{{ route('payments.index') }}" class="nav-link {{ request()->routeIs('payments.*') ? 'active' : '' }}">
             <i class="bi bi-cash-stack"></i> Pembayaran
         </a>
+        <a href="{{ route('payment-memos.index') }}" class="nav-link {{ request()->routeIs('payment-memos.*') ? 'active' : '' }}">
+            <i class="bi bi-file-earmark-medical-fill"></i> Memo Tagihan
+        </a>
+        <a href="{{ route('credit-payments.index') }}" class="nav-link {{ request()->routeIs('credit-payments.*') ? 'active' : '' }}">
+            <i class="bi bi-credit-card-2-front-fill"></i> Pembayaran Credit
+        </a>
         <a href="{{ route('reports.index') }}" class="nav-link {{ request()->routeIs('reports.*') ? 'active' : '' }}">
             <i class="bi bi-bar-chart-line-fill"></i> Laporan
         </a>
@@ -315,6 +321,9 @@
         @if(auth()->user()->isAdmin())
         <a href="{{ route('users.index') }}" class="nav-link {{ request()->routeIs('users.*') ? 'active' : '' }}">
             <i class="bi bi-person-gear"></i> Pengguna
+        </a>
+        <a href="{{ route('credit-classes.index') }}" class="nav-link {{ request()->routeIs('credit-classes.*') ? 'active' : '' }}">
+            <i class="bi bi-award-fill"></i> Credit Classes
         </a>
         <a href="{{ route('settings.index') }}" class="nav-link {{ request()->routeIs('settings.*') ? 'active' : '' }}">
             <i class="bi bi-gear-fill"></i> Pengaturan
@@ -368,6 +377,14 @@
                  style="background:#fef2f2;border-left:4px solid #ef4444;color:#991b1b;">
                 <i class="bi bi-exclamation-circle-fill flex-shrink-0" style="color:#ef4444;font-size:1rem"></i>
                 <span>{{ session('error') }}</span>
+                <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"></button>
+            </div>
+        @endif
+        @if(session('warning'))
+            <div class="alert alert-dismissible fade show alert-modern mb-3 d-flex align-items-center gap-2" role="alert"
+                 style="background:#fffbeb;border-left:4px solid #f59e0b;color:#92400e;">
+                <i class="bi bi-exclamation-triangle-fill flex-shrink-0" style="color:#f59e0b;font-size:1rem"></i>
+                <span>{{ session('warning') }}</span>
                 <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"></button>
             </div>
         @endif

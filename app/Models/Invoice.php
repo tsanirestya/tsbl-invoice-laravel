@@ -10,7 +10,7 @@ class Invoice extends Model
         'invoice_no', 'partner_id', 'guest_name', 'visit_date', 'booking_pass_no',
         'invoice_date', 'due_date', 'dsi_transaction_no', 'import_row_id',
         'subtotal', 'deposit', 'grand_total', 'terbilang',
-        'payment_status', 'notes', 'pdf_path', 'is_finalized',
+        'payment_status', 'notes', 'credit_override_reason', 'pdf_path', 'is_finalized',
         'created_by', 'updated_by',
     ];
 

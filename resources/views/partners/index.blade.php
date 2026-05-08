@@ -204,6 +204,7 @@
                     <th>Nama PT</th>
                     <th>Tipe</th>
                     <th>PIC</th>
+                    <th>Class</th>
                     <th>Kredit</th>
                     <th>Kontrak</th>
                     <th>Status</th>
@@ -235,6 +236,15 @@
                         <span class="badge-type {{ $typeBadgeClass }}">{{ $partner->partner_type }}</span>
                     </td>
                     <td style="color:#64748b;">{{ $partner->pic_partner ?? '—' }}</td>
+                    <td>
+                        @if($partner->creditClass)
+                            <span class="badge bg-{{ $partner->creditClass->color }} text-dark" style="font-size:.67rem;">
+                                {{ $partner->creditClass->name }}
+                            </span>
+                        @else
+                            <span style="color:#cbd5e1;">—</span>
+                        @endif
+                    </td>
                     <td>
                         @php
                             $creditBadgeClass = match($cr['color']) {
@@ -285,7 +295,7 @@
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="9" class="empty-state">
+                    <td colspan="10" class="empty-state">
                         <i class="bi bi-inbox d-block mb-2"></i>
                         Tidak ada partner ditemukan.
                     </td>
@@ -326,6 +336,9 @@
                     @endif
                     <div class="partner-meta d-flex align-items-center gap-2 mt-1 flex-wrap">
                         <span class="badge-type {{ $typeBadgeClass }}">{{ $partner->partner_type }}</span>
+                        @if($partner->creditClass)
+                            <span class="badge bg-{{ $partner->creditClass->color }} text-dark" style="font-size:.67rem;">{{ $partner->creditClass->name }}</span>
+                        @endif
                         <span class="badge-credit {{ $creditBadgeClass }}">
                             @if($cr['color'] === 'danger') <i class="bi bi-exclamation-triangle-fill"></i> @endif
                             {{ $cr['label'] }}

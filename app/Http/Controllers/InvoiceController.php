@@ -109,6 +109,29 @@ class InvoiceController extends Controller
             }
         }
 
+        // Credit validation
+        [$subtotalForCredit] = $this->calcTotals($items, 0);
+        $partnerForCredit    = Partner::findOrFail($validated['partner_id']);
+        $creditLimit         = (float) $partnerForCredit->limit_credit;
+
+        if ($creditLimit > 0) {
+            $threshold   = (float) Setting::get('credit_warning_threshold', 80);
+            $creditAfter = $partnerForCredit->creditUsed() + $subtotalForCredit;
+            $utilAfter   = ($creditAfter / $creditLimit) * 100;
+
+            if ($creditAfter > $creditLimit) {
+                $overrideReason = trim($request->input('credit_override_reason', ''));
+                if (empty($overrideReason)) {
+                    return back()->withInput()->withErrors([
+                        'credit_override_reason' => 'Alasan override wajib diisi karena invoice ini akan melebihi credit limit partner.',
+                    ]);
+                }
+                session()->flash('warning', 'Invoice melampaui credit limit. Tersimpan dengan override reason.');
+            } elseif ($utilAfter >= $threshold) {
+                session()->flash('warning', 'Utilisasi kredit partner mencapai ' . number_format($utilAfter, 1) . '% setelah invoice ini.');
+            }
+        }
+
         DB::transaction(function () use ($validated, $items, $depositAmount) {
             $invoiceNo = $this->generateInvoiceNo();
             $partner   = Partner::findOrFail($validated['partner_id']);
@@ -124,24 +147,25 @@ class InvoiceController extends Controller
             $grandTotal = $subtotal;
 
             $invoice = Invoice::create([
-                'invoice_no'        => $invoiceNo,
-                'partner_id'        => $validated['partner_id'],
-                'guest_name'        => $validated['guest_name'],
-                'visit_date'        => $validated['visit_date'],
-                'booking_pass_no'   => $validated['booking_pass_no'],
-                'invoice_date'      => $validated['invoice_date'],
-                'due_date'          => $dueDate,
-                'dsi_transaction_no'=> $validated['dsi_transaction_no'],
-                'subtotal'          => $subtotal,
-                'deposit'           => $depositAmount,
-                'grand_total'       => $grandTotal,
-                'terbilang'         => ucfirst(Terbilang::convert($grandTotal)),
-                'payment_status'    => 'UNPAID',
-                'notes'             => $validated['notes'] ?? null,
-                'import_row_id'     => $validated['import_row_id'] ?? null,
-                'is_finalized'      => false,
-                'created_by'        => auth()->id(),
-                'updated_by'        => auth()->id(),
+                'invoice_no'              => $invoiceNo,
+                'partner_id'              => $validated['partner_id'],
+                'guest_name'              => $validated['guest_name'],
+                'visit_date'              => $validated['visit_date'],
+                'booking_pass_no'         => $validated['booking_pass_no'],
+                'invoice_date'            => $validated['invoice_date'],
+                'due_date'                => $dueDate,
+                'dsi_transaction_no'      => $validated['dsi_transaction_no'],
+                'subtotal'                => $subtotal,
+                'deposit'                 => $depositAmount,
+                'grand_total'             => $grandTotal,
+                'terbilang'               => ucfirst(Terbilang::convert($grandTotal)),
+                'payment_status'          => 'UNPAID',
+                'notes'                   => $validated['notes'] ?? null,
+                'credit_override_reason'  => $validated['credit_override_reason'] ?? null,
+                'import_row_id'           => $validated['import_row_id'] ?? null,
+                'is_finalized'            => false,
+                'created_by'              => auth()->id(),
+                'updated_by'              => auth()->id(),
             ]);
 
             foreach ($itemsData as $idx => $item) {
@@ -231,6 +255,32 @@ class InvoiceController extends Controller
             }
         }
 
+        // Credit validation (exclude current invoice from baseline since creditUsed includes it)
+        [$subtotalForCredit] = $this->calcTotals($items, 0);
+        $partnerForCredit    = Partner::findOrFail($validated['partner_id']);
+        $creditLimit         = (float) $partnerForCredit->limit_credit;
+
+        if ($creditLimit > 0) {
+            $threshold    = (float) Setting::get('credit_warning_threshold', 80);
+            // Subtract current invoice grand_total only if it's still outstanding (included in creditUsed)
+            $invoiceInCredit = in_array($invoice->payment_status, ['UNPAID', 'PARTIAL', 'OVERDUE']);
+            $baseUsed     = $partnerForCredit->creditUsed() - ($invoiceInCredit ? (float) $invoice->grand_total : 0);
+            $creditAfter  = $baseUsed + $subtotalForCredit;
+            $utilAfter    = ($creditAfter / $creditLimit) * 100;
+
+            if ($creditAfter > $creditLimit) {
+                $overrideReason = trim($request->input('credit_override_reason', ''));
+                if (empty($overrideReason)) {
+                    return back()->withInput()->withErrors([
+                        'credit_override_reason' => 'Alasan override wajib diisi karena invoice ini akan melebihi credit limit partner.',
+                    ]);
+                }
+                session()->flash('warning', 'Invoice melampaui credit limit. Tersimpan dengan override reason.');
+            } elseif ($utilAfter >= $threshold) {
+                session()->flash('warning', 'Utilisasi kredit partner mencapai ' . number_format($utilAfter, 1) . '% setelah invoice ini.');
+            }
+        }
+
         DB::transaction(function () use ($invoice, $validated, $items, $newDeposit, $oldDeposit) {
             $partner = Partner::findOrFail($validated['partner_id']);
             $dueDays = $partner->payment_due_days ?? (int) Setting::get('default_due_days', 14);
@@ -243,19 +293,20 @@ class InvoiceController extends Controller
             $grandTotal = $subtotal;
 
             $invoice->update([
-                'partner_id'        => $validated['partner_id'],
-                'guest_name'        => $validated['guest_name'],
-                'visit_date'        => $validated['visit_date'],
-                'booking_pass_no'   => $validated['booking_pass_no'],
-                'invoice_date'      => $validated['invoice_date'],
-                'due_date'          => $dueDate,
-                'dsi_transaction_no'=> $validated['dsi_transaction_no'],
-                'subtotal'          => $subtotal,
-                'deposit'           => $depositAmount,
-                'grand_total'       => $grandTotal,
-                'terbilang'         => ucfirst(Terbilang::convert($grandTotal)),
-                'notes'             => $validated['notes'] ?? null,
-                'updated_by'        => auth()->id(),
+                'partner_id'             => $validated['partner_id'],
+                'guest_name'             => $validated['guest_name'],
+                'visit_date'             => $validated['visit_date'],
+                'booking_pass_no'        => $validated['booking_pass_no'],
+                'invoice_date'           => $validated['invoice_date'],
+                'due_date'               => $dueDate,
+                'dsi_transaction_no'     => $validated['dsi_transaction_no'],
+                'subtotal'               => $subtotal,
+                'deposit'                => $depositAmount,
+                'grand_total'            => $grandTotal,
+                'terbilang'              => ucfirst(Terbilang::convert($grandTotal)),
+                'notes'                  => $validated['notes'] ?? null,
+                'credit_override_reason' => $validated['credit_override_reason'] ?? null,
+                'updated_by'             => auth()->id(),
             ]);
 
             $invoice->items()->delete();
@@ -493,10 +544,11 @@ class InvoiceController extends Controller
             'booking_pass_no'    => 'required|string|max:100',
             'invoice_date'       => 'required|date',
             'due_date'           => 'nullable|date|after_or_equal:invoice_date',
-            'dsi_transaction_no' => 'required|string|max:100',
-            'deposit'            => 'nullable|numeric|min:0',
-            'notes'              => 'nullable|string',
-            'import_row_id'      => 'nullable|integer|exists:transaction_import_rows,id',
+            'dsi_transaction_no' => 'nullable|string|max:100',
+            'deposit'                   => 'nullable|numeric|min:0',
+            'notes'                     => 'nullable|string',
+            'credit_override_reason'    => 'nullable|string|max:500',
+            'import_row_id'             => 'nullable|integer|exists:transaction_import_rows,id',
         ]);
     }
 

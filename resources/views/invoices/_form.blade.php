@@ -191,39 +191,98 @@
     .ts-dropdown .ts-option-dsi { display: flex; align-items: center; gap: .4rem; padding: .3rem .5rem; }
     .ts-dropdown .ts-option-dsi .badge { font-size: .7rem; }
 
-    /* Mobile: stack item rows as cards */
+    /* Mobile: card layout — break table context with !important */
     @media (max-width: 575px) {
-        #items-table thead { display: none; }
-        #items-table tfoot { display: none; }
+        #items-table                { display: block !important; width: 100% !important; }
+        #items-table thead          { display: none !important; }
+        #items-table tfoot          { display: none !important; }
+        #items-table tbody          { display: block !important; width: 100% !important; }
+
         #items-table tbody tr.item-row {
-            display: block;
-            border: 1px solid #dee2e6;
-            border-radius: .5rem;
-            margin-bottom: .75rem;
-            padding: .5rem .25rem;
-            background: #fff;
-            box-shadow: 0 1px 3px rgba(0,0,0,.06);
+            display: block !important;
+            position: relative !important;
+            width: 100% !important;
+            border: 1px solid #dee2e6 !important;
+            border-radius: .5rem !important;
+            margin-bottom: .75rem !important;
+            padding: .6rem !important;
+            background: #fff !important;
+            box-shadow: 0 1px 4px rgba(0,0,0,.08) !important;
+            box-sizing: border-box !important;
         }
-        #items-table tbody td {
-            display: flex;
-            align-items: center;
+
+        /* Each cell: full-width block, label above */
+        #items-table tbody tr.item-row td {
+            display: block !important;
+            width: 100% !important;
             border: none !important;
-            padding: .2rem .5rem;
-            gap: .5rem;
+            padding: .2rem 0 !important;
+            box-sizing: border-box !important;
         }
-        #items-table tbody td::before {
-            content: attr(data-label);
-            font-size: .72rem;
-            font-weight: 600;
+
+        /* Label above each field */
+        #items-table tbody tr.item-row td[data-label]::before {
+            content: attr(data-label) !important;
+            display: block !important;
+            font-size: .65rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .04em;
             color: #6c757d;
-            min-width: 80px;
-            flex-shrink: 0;
+            margin-bottom: .18rem;
         }
-        #items-table tbody td:not([data-label])::before { display: none; }
-        #items-table tbody td input,
-        #items-table tbody td .ts-wrapper { flex: 1; min-width: 0; }
-        #items-table tbody td:last-child { justify-content: flex-end; padding-top: .4rem; }
-        .item-row .btn-remove-row { opacity: 1; }
+
+        /* Produk: pad-right agar tidak tertimpa tombol hapus */
+        #items-table tbody tr.item-row td:nth-child(1) {
+            padding-right: 2.5rem !important;
+        }
+
+        /* DSI: full width */
+        #items-table tbody tr.item-row td:nth-child(2) { }
+
+        /* Pax + Harga/Pax: side by side */
+        #items-table tbody tr.item-row td:nth-child(3) {
+            display: inline-block !important;
+            width: 40% !important;
+        }
+        #items-table tbody tr.item-row td:nth-child(4) {
+            display: inline-block !important;
+            width: 58% !important;
+            padding-left: .5rem !important;
+        }
+        #items-table tbody tr.item-row td:nth-child(3) input { text-align: center !important; width: 100% !important; }
+        #items-table tbody tr.item-row td:nth-child(4) input { text-align: right !important;  width: 100% !important; }
+
+        /* Jumlah: label kiri, angka kanan */
+        #items-table tbody tr.item-row td:nth-child(5) {
+            display: flex !important;
+            align-items: center !important;
+            justify-content: space-between !important;
+            padding: .35rem 0 .1rem !important;
+            margin-top: .3rem;
+            border-top: 1px dashed #dee2e6 !important;
+        }
+        #items-table tbody tr.item-row td:nth-child(5)::before { margin-bottom: 0 !important; }
+        #items-table tbody tr.item-row td:nth-child(5) .item-amount {
+            font-weight: 700 !important;
+            color: #0d6efd !important;
+            font-size: .95rem !important;
+        }
+
+        /* Delete: absolute top-right dalam card */
+        #items-table tbody tr.item-row td:nth-child(6) {
+            display: block !important;
+            position: absolute !important;
+            top: .4rem !important;
+            right: .4rem !important;
+            width: auto !important;
+            padding: 0 !important;
+        }
+
+        /* Tom Select fill cell */
+        #items-table tbody tr.item-row td .ts-wrapper { width: 100% !important; }
+
+        .item-row .btn-remove-row { opacity: 1 !important; }
     }
 </style>
 @endpush
@@ -437,9 +496,9 @@
                 );
             @endphp
             <div class="col-12 col-md-4">
-                <label class="form-label fw-semibold">No. Transaksi DSI <span class="text-danger">*</span></label>
+                <label class="form-label fw-semibold">No. Transaksi DSI</label>
                 <input type="text" name="dsi_transaction_no" class="form-control @error('dsi_transaction_no') is-invalid @enderror"
-                       value="{{ $trxNoValue }}" maxlength="100" required
+                       value="{{ $trxNoValue }}" maxlength="100"
                        {{ $fromImport ? 'readonly' : '' }}>
                 @if($fromImport)
                     <div class="form-text text-muted"><i class="bi bi-lock-fill me-1"></i>Terisi otomatis dari data transaksi</div>
@@ -490,6 +549,24 @@
     </div>
 </div>
 
+{{-- Credit Status Panel — appears via JS when partner with credit limit is selected --}}
+<div id="credit-panel" class="mb-3"></div>
+
+{{-- Override reason — shown by JS when projected usage > credit limit --}}
+<div id="credit-override-wrap" class="mb-3" style="{{ $errors->has('credit_override_reason') ? '' : 'display:none' }}">
+    <div class="alert alert-danger border-danger p-3 mb-0">
+        <div class="fw-semibold mb-2 small">
+            <i class="bi bi-exclamation-octagon-fill me-1"></i>
+            Credit Limit Terlampaui — Alasan Override Wajib Diisi
+        </div>
+        <textarea name="credit_override_reason" id="credit-override-reason"
+                  class="form-control @error('credit_override_reason') is-invalid @enderror"
+                  rows="2" maxlength="500"
+                  placeholder="Jelaskan alasan mengapa invoice ini melebihi credit limit partner...">{{ old('credit_override_reason', $invoice?->credit_override_reason ?? '') }}</textarea>
+        @error('credit_override_reason')<div class="invalid-feedback">{{ $message }}</div>@enderror
+    </div>
+</div>
+
 {{-- Hidden deposit field always submitted --}}
 <input type="hidden" name="deposit" id="deposit" value="{{ old('deposit', $invoice?->deposit ?? 0) }}">
 
@@ -524,11 +601,23 @@
                     @endphp
                     @forelse($existingItems as $i => $item)
                     @php $existingProductId = $item['product_id'] ?? ''; @endphp
+                    @php $existingName = $item['product_name'] ?? ''; @endphp
                     <tr class="item-row" data-product-id="{{ $existingProductId }}">
                         <td class="ps-3" data-label="Produk">
-                            <input type="text" name="items[{{ $i }}][product_name]"
-                                   class="form-control form-control-sm item-name @error("items.{$i}.product_name") is-invalid @enderror"
-                                   value="{{ $item['product_name'] ?? '' }}" required placeholder="Nama layanan">
+                            <select name="items[{{ $i }}][product_name]"
+                                    class="form-select form-select-sm product-name-picker @error("items.{$i}.product_name") is-invalid @enderror"
+                                    required>
+                                <option value=""></option>
+                                @foreach($products as $prod)
+                                    <option value="{{ $prod->product_name }}"
+                                            @selected($existingName === $prod->product_name)>
+                                        {{ $prod->product_name }}
+                                    </option>
+                                @endforeach
+                                @if($existingName && !$products->contains('product_name', $existingName))
+                                    <option value="{{ $existingName }}" selected>{{ $existingName }}</option>
+                                @endif
+                            </select>
                             @error("items.{$i}.product_name")<div class="invalid-feedback">{{ $message }}</div>@enderror
                         </td>
                         <td data-label="DSI">
@@ -714,15 +803,37 @@ let rowIdx = {{ count($existingItems) }};
 const defaultDue = {{ $defaultDue ?? 14 }};
 const depositBalanceBaseUrl = '{{ url('/api/partners') }}';
 const depositTopupBaseUrl   = '{{ url('/partners') }}';
+const creditApiBaseUrl      = '{{ url('/api/partners') }}';
+const creditWarningThreshold = {{ (float) \App\Models\Setting::get('credit_warning_threshold', 80) }};
+// In edit mode: current invoice grand_total is included in creditUsed() → subtract it for projection
+const currentInvoiceGrandTotal = {{ ($invoice && in_array($invoice->payment_status ?? '', ['UNPAID', 'PARTIAL', 'OVERDUE'])) ? (float) $invoice->grand_total : 0 }};
 
 function fmt(n) {
     return new Intl.NumberFormat('id-ID').format(Math.round(n));
 }
 
-// ── Tom Select: product picker ─────────────────────────────────────────────
-function makePicker(sel) {
+// ── Tom Select: product NAME picker ────────────────────────────────────────
+function makeNamePicker(sel) {
+    const row = sel.closest('tr');
     const ts = new TomSelect(sel, {
-        placeholder: '— Ketik DSI Code / nama —',
+        create: true,
+        createOnBlur: true,
+        placeholder: '— Pilih atau ketik nama layanan —',
+        dropdownParent: 'body',
+        searchField: ['text'],
+        onChange: function(value) {
+            pickProductByName(row, value);
+        }
+    });
+    if (row) row._tsName = ts;
+    return ts;
+}
+
+// ── Tom Select: DSI code picker ────────────────────────────────────────────
+function makePicker(sel) {
+    const row = sel.closest('tr');
+    const ts = new TomSelect(sel, {
+        placeholder: '— Ketik DSI Code —',
         dropdownParent: 'body',
         searchField: ['text', 'product_name'],
         render: {
@@ -747,10 +858,57 @@ function makePicker(sel) {
             }
         },
         onChange: function(value) {
-            pickProduct(sel, value);
+            pickProduct(row, value);
         }
     });
+    if (row) row._tsDsi = ts;
     return ts;
+}
+
+// When DSI code selected → sync name picker + price
+function pickProduct(row, value) {
+    const idInput = row.querySelector('.item-product-id');
+    if (idInput) idInput.value = value || '';
+    row.dataset.productId = value || '';
+
+    if (value) {
+        const prod = products.find(p => p.id == value);
+        if (prod) {
+            const tsName = row._tsName;
+            if (tsName) {
+                if (!tsName.options[prod.name]) {
+                    tsName.addOption({ value: prod.name, text: prod.name });
+                }
+                tsName.setValue(prod.name, true); // silent — no loop
+            }
+            row.querySelector('.item-price').value = fmtCurrency(prod.price);
+            recalcRow(row.querySelector('.item-pax'));
+            return;
+        }
+    }
+    const tsName = row._tsName;
+    if (tsName) tsName.setValue('', true);
+    refreshFinance();
+}
+
+// When product name selected → sync DSI picker + price
+function pickProductByName(row, value) {
+    const prod = products.find(p => p.name === value);
+    const idInput = row.querySelector('.item-product-id');
+    if (idInput) idInput.value = prod ? prod.id : '';
+    row.dataset.productId = prod ? prod.id : '';
+
+    if (prod) {
+        const tsDsi = row._tsDsi;
+        if (tsDsi) tsDsi.setValue(String(prod.id), true); // silent — no loop
+        row.querySelector('.item-price').value = fmtCurrency(prod.price);
+        recalcRow(row.querySelector('.item-pax'));
+    } else {
+        // Custom name — clear DSI
+        const tsDsi = row._tsDsi;
+        if (tsDsi) tsDsi.setValue('', true);
+        refreshFinance();
+    }
 }
 
 // ── Tom Select: partner picker ─────────────────────────────────────────────
@@ -762,8 +920,13 @@ function makePartnerPicker() {
         searchField: ['text'],
         onChange: function(value) {
             applyDueDate(value);
-            if (value) loadDepositInfo(value);
-            else clearDepositPanel();
+            if (value) {
+                loadDepositInfo(value);
+                loadCreditInfo(value);
+            } else {
+                clearDepositPanel();
+                clearCreditPanel();
+            }
         }
     });
 }
@@ -911,6 +1074,119 @@ function getCurrentSubtotal() {
     return s;
 }
 
+// ── Credit panel ──────────────────────────────────────────────────────────
+let creditData = null;
+
+async function loadCreditInfo(partnerId) {
+    try {
+        const res = await fetch(`${creditApiBaseUrl}/${partnerId}/credit-info`);
+        creditData = await res.json();
+    } catch(e) {
+        creditData = null;
+    }
+    updateCreditFromSubtotal();
+}
+
+function clearCreditPanel() {
+    creditData = null;
+    document.getElementById('credit-panel').innerHTML = '';
+    setOverLimit(false);
+}
+
+function updateCreditFromSubtotal() {
+    const panel = document.getElementById('credit-panel');
+    if (!creditData || creditData.limit <= 0) {
+        panel.innerHTML = '';
+        setOverLimit(false);
+        return;
+    }
+
+    const subtotal   = getCurrentSubtotal();
+    // Subtract current invoice's grand_total from base (edit mode: it's already in creditUsed)
+    const baseUsed   = creditData.used - currentInvoiceGrandTotal;
+    const projUsed   = baseUsed + subtotal;
+    const projUtil   = creditData.limit > 0 ? (projUsed / creditData.limit * 100) : 0;
+
+    let borderColor = 'success';
+    let statusClass = 'success';
+    let statusText  = 'Normal';
+    let bannerHtml  = '';
+
+    if (projUtil > 100) {
+        borderColor = 'danger';
+        statusClass = 'danger';
+        statusText  = 'Over Limit';
+        bannerHtml  = `<div class="alert alert-danger py-2 mt-2 mb-0 small">
+            <i class="bi bi-exclamation-octagon-fill me-1"></i>
+            <strong>Credit limit akan terlampaui!</strong>
+            Proyeksi terpakai: <strong>Rp ${fmt(projUsed)}</strong> dari limit <strong>Rp ${fmt(creditData.limit)}</strong>
+            (${projUtil.toFixed(1)}%). Alasan override wajib diisi di bawah.
+        </div>`;
+        setOverLimit(true);
+    } else if (projUtil >= creditWarningThreshold) {
+        borderColor = 'warning';
+        statusClass = 'warning text-dark';
+        statusText  = 'Warning';
+        bannerHtml  = `<div class="alert alert-warning py-2 mt-2 mb-0 small">
+            <i class="bi bi-exclamation-triangle-fill me-1"></i>
+            Utilisasi kredit partner akan mencapai <strong>${projUtil.toFixed(1)}%</strong> setelah invoice ini ditambahkan.
+        </div>`;
+        setOverLimit(false);
+    } else {
+        setOverLimit(false);
+    }
+
+    const barColor  = projUtil > 100 ? 'danger' : (projUtil >= creditWarningThreshold ? 'warning' : 'success');
+    const barWidth  = Math.min(projUtil, 100);
+    const textColor = projUtil > 100 ? 'text-danger' : (projUtil >= creditWarningThreshold ? 'text-warning' : 'text-success');
+    const classHtml = creditData.credit_class_name
+        ? `<span class="badge bg-${creditData.credit_class_color} text-dark ms-1">${creditData.credit_class_name}</span>`
+        : '';
+
+    panel.innerHTML = `
+        <div class="card border-${borderColor} shadow-sm" style="border-width:2px!important">
+            <div class="card-header fw-semibold d-flex justify-content-between align-items-center py-2">
+                <span class="small"><i class="bi bi-shield-check me-1"></i>Status Kredit Partner${classHtml}</span>
+                <span class="badge bg-${statusClass}">${statusText}</span>
+            </div>
+            <div class="card-body py-2">
+                <div class="row g-2 text-center mb-2">
+                    <div class="col-4">
+                        <div class="p-2 bg-light rounded small">
+                            <div class="text-muted">Limit</div>
+                            <div class="fw-bold">Rp ${fmt(creditData.limit)}</div>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="p-2 bg-light rounded small">
+                            <div class="text-muted">Terpakai saat ini</div>
+                            <div class="fw-bold">Rp ${fmt(baseUsed < 0 ? 0 : baseUsed)}</div>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="p-2 bg-light rounded small">
+                            <div class="text-muted">Setelah invoice ini</div>
+                            <div class="fw-bold ${textColor}">Rp ${fmt(projUsed)}</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="mb-1 d-flex justify-content-between small">
+                    <span class="text-muted">Proyeksi Utilisasi</span>
+                    <span class="fw-semibold ${textColor}">${projUtil.toFixed(1)}%</span>
+                </div>
+                <div class="progress" style="height:6px">
+                    <div class="progress-bar bg-${barColor}" style="width:${barWidth}%"></div>
+                </div>
+                ${bannerHtml}
+            </div>
+        </div>`;
+}
+
+function setOverLimit(isOver) {
+    const wrap = document.getElementById('credit-override-wrap');
+    if (wrap) wrap.style.display = isOver ? '' : 'none';
+}
+
 // ── Invoice date change → recalc due date ─────────────────────────────────
 document.getElementById('invoice_date')?.addEventListener('change', function() {
     const partnerSel = document.getElementById('partner_id');
@@ -927,6 +1203,11 @@ function addRow(name = '', productId = '', pax = 1, price = 0, lockPicker = fals
             data-product-name="${p.name}"
             ${p.id == productId ? 'selected' : ''}>${p.dsi_code}</option>`
     ).join('');
+    const nameOpts = products.map(p =>
+        `<option value="${p.name}" ${p.name === name ? 'selected' : ''}>${p.name}</option>`
+    ).join('');
+    const isCustomName = name && !products.find(p => p.name === name);
+    const customOpt    = isCustomName ? `<option value="${name}" selected>${name}</option>` : '';
 
     const amount = pax * price;
     const tbody  = document.getElementById('items-body');
@@ -935,8 +1216,9 @@ function addRow(name = '', productId = '', pax = 1, price = 0, lockPicker = fals
     tr.dataset.productId = productId;
     tr.innerHTML = `
         <td class="ps-3" data-label="Produk">
-            <input type="text" name="items[${i}][product_name]" class="form-control form-control-sm item-name"
-                   value="${name}" required placeholder="Nama layanan">
+            <select name="items[${i}][product_name]" class="form-select form-select-sm product-name-picker" required>
+                <option value=""></option>${nameOpts}${customOpt}
+            </select>
         </td>
         <td data-label="DSI">
             <input type="hidden" name="items[${i}][product_id]" class="item-product-id" value="${productId}">
@@ -962,12 +1244,15 @@ function addRow(name = '', productId = '', pax = 1, price = 0, lockPicker = fals
         </td>`;
     tbody.appendChild(tr);
     initCurrencyInputs(tr);
-    const ts = makePicker(tr.querySelector('.product-picker'));
+    // Name picker first — so row._tsName is ready when DSI picker's onChange fires
+    const tsName = makeNamePicker(tr.querySelector('.product-name-picker'));
+    const ts     = makePicker(tr.querySelector('.product-picker'));
 
     if (lockPicker) {
-        // Auto-pick DSI → triggers onChange → pickProduct → fills product_name + price
-        if (productId) ts.setValue(productId);
+        // setValue triggers pickProduct → syncs tsName silently
+        if (productId) ts.setValue(String(productId));
         ts.disable();
+        tsName.disable();
     }
 
     recalc();
@@ -978,22 +1263,6 @@ function removeRow(btn) {
     if (rows.length <= 1) return;
     btn.closest('tr').remove();
     recalc();
-}
-
-function pickProduct(sel, value) {
-    const row = sel.closest('tr');
-    row.querySelector('.item-product-id').value = value || '';
-    row.dataset.productId = value || '';
-    if (value) {
-        const opt = Array.from(sel.options).find(o => o.value == value);
-        if (opt) {
-            row.querySelector('.item-name').value  = opt.dataset.name;
-            row.querySelector('.item-price').value = fmtCurrency(parseFloat(opt.dataset.price) || 0);
-            recalcRow(row.querySelector('.item-pax'));
-            return;
-        }
-    }
-    refreshFinance();
 }
 
 // ── Calculations ───────────────────────────────────────────────────────────
@@ -1042,6 +1311,7 @@ function recalc() {
     }
 
     refreshFinance();
+    updateCreditFromSubtotal();
 }
 
 function refreshFinance() {
@@ -1133,16 +1403,35 @@ document.addEventListener('DOMContentLoaded', function() {
             addRow();
         }
     } else {
-        rows.forEach(row => makePicker(row.querySelector('.product-picker')));
+        rows.forEach(row => {
+            makeNamePicker(row.querySelector('.product-name-picker'));
+            makePicker(row.querySelector('.product-picker'));
+        });
     }
 
     recalc();
 
-    // Load deposit info if partner already selected (edit mode)
+    // Load deposit + credit info if partner already selected (edit mode)
     const partnerSel = document.getElementById('partner_id');
     if (partnerSel?.value) {
         loadDepositInfo(partnerSel.value);
+        loadCreditInfo(partnerSel.value);
     }
+
+    // Submit guard: require override reason if over limit
+    document.querySelector('form')?.addEventListener('submit', function(e) {
+        const wrap = document.getElementById('credit-override-wrap');
+        if (wrap && wrap.style.display !== 'none') {
+            const reason = document.getElementById('credit-override-reason')?.value?.trim();
+            if (!reason) {
+                e.preventDefault();
+                const ta = document.getElementById('credit-override-reason');
+                ta?.classList.add('is-invalid');
+                ta?.focus();
+                ta?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }
+    });
 });
 </script>
 @endpush

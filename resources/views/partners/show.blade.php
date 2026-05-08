@@ -39,6 +39,15 @@
                     <dt class="col-5 text-muted">Channel</dt>
                     <dd class="col-7">{{ $partner->channel ?? '—' }}</dd>
 
+                    <dt class="col-5 text-muted">Credit Class</dt>
+                    <dd class="col-7">
+                        @if($partner->creditClass)
+                            <span class="badge bg-{{ $partner->creditClass->color }} text-dark">{{ $partner->creditClass->name }}</span>
+                        @else
+                            <span class="text-muted">—</span>
+                        @endif
+                    </dd>
+
                     <dt class="col-5 text-muted">Status</dt>
                     <dd class="col-7">
                         @if($partner->is_active)
@@ -158,6 +167,138 @@
             </div>
         </div>
     </div>
+
+    {{-- Credit Info --}}
+    @if($creditInfo['limit'] > 0)
+    <div class="col-12">
+        <div class="card border-{{ match($creditInfo['status']) { 'OVER_LIMIT' => 'danger', 'WARNING' => 'warning', default => 'success' } }}" style="border-width:2px!important">
+            <div class="card-header fw-semibold d-flex justify-content-between align-items-center">
+                <span>
+                    <i class="bi bi-shield-check me-1"></i> Kredit
+                    @if($partner->creditClass)
+                        &nbsp;<span class="badge bg-{{ $partner->creditClass->color }} text-dark">{{ $partner->creditClass->name }}</span>
+                    @endif
+                </span>
+                @php
+                    $statusBadge = match($creditInfo['status']) {
+                        'OVER_LIMIT' => ['danger',  'Over Limit'],
+                        'WARNING'    => ['warning text-dark', 'Warning'],
+                        default      => ['success',  'Normal'],
+                    };
+                @endphp
+                <span class="badge bg-{{ $statusBadge[0] }}">{{ $statusBadge[1] }}</span>
+            </div>
+            <div class="card-body">
+                <div class="row g-2 mb-3 text-center">
+                    <div class="col-4">
+                        <div class="p-2 bg-light rounded">
+                            <div class="small text-muted">Limit</div>
+                            <div class="fw-bold">{{ $creditInfo['limit_formatted'] }}</div>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="p-2 bg-light rounded">
+                            <div class="small text-muted">Terpakai</div>
+                            <div class="fw-bold {{ $creditInfo['status'] === 'OVER_LIMIT' ? 'text-danger' : '' }}">
+                                {{ $creditInfo['used_formatted'] }}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="p-2 bg-light rounded">
+                            <div class="small text-muted">Tersedia</div>
+                            <div class="fw-bold {{ $creditInfo['available'] < 0 ? 'text-danger' : 'text-success' }}">
+                                {{ $creditInfo['available_formatted'] }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                @php
+                    $util       = $creditInfo['utilization_percent'];
+                    $barColor   = $util > 100 ? 'danger' : ($util >= (float)\App\Models\Setting::get('credit_warning_threshold', 80) ? 'warning' : 'success');
+                    $barWidth   = min($util, 100);
+                @endphp
+                <div class="mb-1 d-flex justify-content-between small">
+                    <span class="text-muted">Utilisasi Kredit</span>
+                    <span class="fw-semibold text-{{ $barColor }}">{{ number_format($util, 1) }}%</span>
+                </div>
+                <div class="progress" style="height:8px;">
+                    <div class="progress-bar bg-{{ $barColor }}" style="width:{{ $barWidth }}%"></div>
+                </div>
+
+                {{-- Outstanding invoices --}}
+                @php
+                    $outstandingInvoices = $partner->invoices
+                        ->whereIn('payment_status', ['UNPAID', 'PARTIAL', 'OVERDUE'])
+                        ->sortBy('due_date');
+                    $today = \Carbon\Carbon::today();
+                @endphp
+                @if($outstandingInvoices->count() > 0)
+                <div class="mt-3">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <div class="small text-uppercase text-muted fw-semibold">Invoice Outstanding ({{ $outstandingInvoices->count() }})</div>
+                        <a href="{{ route('payment-memos.create', ['partner_id' => $partner->id]) }}" class="btn btn-sm btn-outline-warning" style="font-size:.72rem;padding:.25rem .7rem;">
+                            <i class="bi bi-file-earmark-plus me-1"></i> Buat Memo Tagihan
+                        </a>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover mb-0 small">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>No Invoice</th>
+                                    <th>Tgl Invoice</th>
+                                    <th class="text-end">Grand Total</th>
+                                    <th>Jatuh Tempo</th>
+                                    <th class="text-center">Hari</th>
+                                    <th class="text-center">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($outstandingInvoices as $inv)
+                                @php
+                                    $dueDate   = $inv->due_date ? \Carbon\Carbon::parse($inv->due_date) : null;
+                                    $daysLeft  = $dueDate ? $today->diffInDays($dueDate, false) : null;
+                                    $statusColors = ['UNPAID'=>'secondary','PARTIAL'=>'info','OVERDUE'=>'danger'];
+                                @endphp
+                                <tr>
+                                    <td>
+                                        <a href="{{ route('invoices.show', $inv) }}" class="text-decoration-none">
+                                            {{ $inv->invoice_no }}
+                                        </a>
+                                    </td>
+                                    <td>{{ $inv->invoice_date->format('d/m/Y') }}</td>
+                                    <td class="text-end fw-semibold">Rp {{ number_format($inv->grand_total, 0, ',', '.') }}</td>
+                                    <td>{{ $dueDate?->format('d/m/Y') ?? '—' }}</td>
+                                    <td class="text-center">
+                                        @if($daysLeft !== null)
+                                            @if($daysLeft > 0)
+                                                <span class="text-success">+{{ $daysLeft }}h</span>
+                                            @elseif($daysLeft === 0)
+                                                <span class="text-warning fw-semibold">Hari ini</span>
+                                            @else
+                                                <span class="text-danger fw-semibold">{{ abs($daysLeft) }}h lewat</span>
+                                            @endif
+                                        @else
+                                            <span class="text-muted">—</span>
+                                        @endif
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge bg-{{ $statusColors[$inv->payment_status] ?? 'secondary' }}">
+                                            {{ $inv->payment_status }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                @endif
+            </div>
+        </div>
+    </div>
+    @endif
 
     {{-- Dokumen --}}
     <div class="col-lg-6">

@@ -14,7 +14,12 @@ class SettingsController extends Controller
         'bank_account_name', 'invoice_notes', 'terms_conditions',
     ];
 
-    private array $numericKeys = ['default_due_days', 'deposit_low_threshold'];
+    private array $numericKeys = [
+        'default_due_days', 'deposit_low_threshold',
+        'credit_warning_threshold',
+        'credit_aging_bucket_1', 'credit_aging_bucket_2',
+        'credit_aging_bucket_3', 'credit_aging_bucket_4',
+    ];
 
     public function index()
     {
@@ -38,10 +43,26 @@ class SettingsController extends Controller
             'bank_account_name'  => 'nullable|string|max:150',
             'invoice_notes'      => 'nullable|string',
             'terms_conditions'   => 'nullable|string',
+            'credit_warning_threshold'  => 'required|integer|min:1|max:100',
+            'credit_aging_bucket_1'     => 'required|integer|min:1|max:999',
+            'credit_aging_bucket_2'     => 'required|integer|min:1|max:999',
+            'credit_aging_bucket_3'     => 'required|integer|min:1|max:999',
+            'credit_aging_bucket_4'     => 'required|integer|min:1|max:999',
             'logo'               => 'nullable|file|mimes:png,jpg,jpeg|max:2048',
             'favicon'            => 'nullable|file|mimes:png,jpg,jpeg,ico|max:512',
             'navbar_logo'        => 'nullable|file|mimes:png,jpg,jpeg|max:1024',
         ]);
+
+        $b1 = (int) $request->credit_aging_bucket_1;
+        $b2 = (int) $request->credit_aging_bucket_2;
+        $b3 = (int) $request->credit_aging_bucket_3;
+        $b4 = (int) $request->credit_aging_bucket_4;
+
+        if (!($b1 < $b2 && $b2 < $b3 && $b3 < $b4)) {
+            return back()->withInput()->withErrors([
+                'credit_aging_bucket_2' => 'Urutan bucket harus: Bucket 1 < Bucket 2 < Bucket 3 < Bucket 4.',
+            ]);
+        }
 
         foreach (array_merge($this->textKeys, $this->numericKeys) as $key) {
             if ($request->has($key)) {
