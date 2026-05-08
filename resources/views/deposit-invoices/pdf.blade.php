@@ -111,11 +111,16 @@
     {{-- Header --}}
     @php
         $logoPath = $settings['logo_path'] ?? null;
-        $logoAbs  = $logoPath ? public_path($logoPath) : null;
         $logoSrc  = null;
-        if ($logoAbs && file_exists($logoAbs)) {
-            $mime = mime_content_type($logoAbs) ?: 'image/png';
-            $logoSrc = 'data:' . $mime . ';base64,' . base64_encode(file_get_contents($logoAbs));
+        if ($logoPath) {
+            $logoKey = ltrim(preg_replace('#^storage/#', '', $logoPath), '/');
+            $logoAbs = \Storage::disk('public')->exists($logoKey)
+                ? \Storage::disk('public')->path($logoKey)
+                : null;
+            if ($logoAbs && file_exists($logoAbs)) {
+                $mime    = mime_content_type($logoAbs) ?: 'image/png';
+                $logoSrc = 'data:' . $mime . ';base64,' . base64_encode(file_get_contents($logoAbs));
+            }
         }
     @endphp
     <table class="header">

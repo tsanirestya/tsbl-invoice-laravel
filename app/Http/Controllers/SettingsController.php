@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Setting;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 
 class SettingsController extends Controller
 {
@@ -86,31 +87,20 @@ class SettingsController extends Controller
             ->with('success', 'Pengaturan berhasil disimpan.');
     }
 
-    private function uploadsBase(): string
-    {
-        // Production webroot is separate from public_path() — use DOCUMENT_ROOT
-        if (app()->environment('production')) {
-            return rtrim($_SERVER['DOCUMENT_ROOT'] ?? public_path(), '/\\');
-        }
-        return public_path();
-    }
-
     private function saveFile(UploadedFile $file, ?string $old): string
     {
-        $base = $this->uploadsBase();
-        $dir  = $base . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . 'settings';
-
-        if ($old && file_exists($base . DIRECTORY_SEPARATOR . ltrim($old, '/\\'))) {
-            @unlink($base . DIRECTORY_SEPARATOR . ltrim($old, '/\\'));
-        }
-
-        if (!is_dir($dir)) {
-            mkdir($dir, 0755, true);
+        // Delete old file from storage disk (strip leading 'storage/' prefix)
+        if ($old) {
+            $oldKey = ltrim(preg_replace('#^storage/#', '', $old), '/');
+            if ($oldKey && Storage::disk('public')->exists($oldKey)) {
+                Storage::disk('public')->delete($oldKey);
+            }
         }
 
         $filename = uniqid() . '_' . time() . '.' . $file->getClientOriginalExtension();
-        $file->move($dir, $filename);
+        Storage::disk('public')->putFileAs('settings', $file, $filename);
 
-        return 'uploads/settings/' . $filename;
+        // Return URL-relative path so asset('storage/settings/...') works in views
+        return 'storage/settings/' . $filename;
     }
 }
