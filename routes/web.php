@@ -24,20 +24,20 @@ Route::get('/', fn() => redirect('/dashboard'));
 
 // Temporary route to run migrations and clear cache since SSH is unavailable
 Route::get('/setup-production', function() {
+    $output = '<b>Setup started...</b><br><br>';
     try {
-        $output = '';
         \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
-        $output .= "Migration Output:<br>" . nl2br(\Illuminate\Support\Facades\Artisan::output()) . "<br><br>";
-        
+        $output .= "Migration Output:<br>" . nl2br(\Illuminate\Support\Facades\Artisan::output() ?: '(no output)') . "<br><br>";
+
         \Illuminate\Support\Facades\Artisan::call('optimize:clear');
-        $output .= "Optimize Clear Output:<br>" . nl2br(\Illuminate\Support\Facades\Artisan::output()) . "<br><br>";
-        
+        $output .= "Optimize Clear Output:<br>" . nl2br(\Illuminate\Support\Facades\Artisan::output() ?: '(no output)') . "<br><br>";
+
         \Illuminate\Support\Facades\Artisan::call('optimize');
-        $output .= "Optimize Output:<br>" . nl2br(\Illuminate\Support\Facades\Artisan::output()) . "<br><br>";
-        
-        return $output . "<b>Setup Complete!</b>";
-    } catch (\Exception $e) {
-        return "<b>Error:</b> " . $e->getMessage();
+        $output .= "Optimize Output:<br>" . nl2br(\Illuminate\Support\Facades\Artisan::output() ?: '(no output)') . "<br><br>";
+
+        return response($output . "<b>Setup Complete!</b>")->header('Content-Type', 'text/html');
+    } catch (\Throwable $e) {
+        return response("<b>Error:</b> " . $e->getMessage() . "<br><pre>" . $e->getTraceAsString() . "</pre>")->header('Content-Type', 'text/html');
     }
 });
 

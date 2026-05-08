@@ -12,7 +12,7 @@ return new class extends Migration
 
         Schema::create('payment_memo_invoices', function (Blueprint $table) {
             $table->increments('id');
-            $table->unsignedBigInteger('payment_memo_id');
+            $table->unsignedInteger('payment_memo_id');
             $table->unsignedInteger('invoice_id');
             $table->decimal('grand_total', 15, 2);     // snapshot saat memo dibuat
             $table->decimal('sisa_tagihan', 15, 2);    // snapshot sisa bayar saat memo dibuat
