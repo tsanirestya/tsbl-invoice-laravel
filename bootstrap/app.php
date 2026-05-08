@@ -14,6 +14,9 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'role' => \App\Http\Middleware\CheckRole::class,
         ]);
+
+        // F-009: force password change after admin reset
+        $middleware->appendToGroup('web', \App\Http\Middleware\RequirePasswordChange::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

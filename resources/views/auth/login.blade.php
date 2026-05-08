@@ -85,6 +85,9 @@
                         <input type="checkbox" name="remember" class="form-check-input" id="remember">
                         <label class="form-check-label small" for="remember">Ingat saya</label>
                     </div>
+                    <a href="{{ route('password.request') }}" class="small text-primary text-decoration-none">
+                        Lupa password?
+                    </a>
                 </div>
 
                 <button type="submit" class="btn btn-primary w-100 btn-login">

@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Auth\AuthController;
+use App\Http\Controllers\Auth\PasswordResetController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DepositInvoiceController;
 use App\Http\Controllers\ImportReviewController;
@@ -36,11 +37,26 @@ Route::get('/storage/{path}', function (string $path) {
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
     Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:5,1');
+
+    // F-009: Password reset request (no email needed — admin mediates)
+    Route::get('/forgot-password', [PasswordResetController::class, 'showRequestForm'])->name('password.request');
+    Route::post('/forgot-password', [PasswordResetController::class, 'submitRequest'])->name('password.request.submit')->middleware('throttle:3,60');
 });
 
 // Authenticated routes
 Route::middleware('auth')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+
+    // F-009: Force change password (exempt from RequirePasswordChange middleware)
+    Route::get('/change-password', [PasswordResetController::class, 'showChangeForm'])->name('password.change.form');
+    Route::post('/change-password', [PasswordResetController::class, 'changePassword'])->name('password.change');
+
+    // F-009: Admin — manage password reset requests
+    Route::middleware('role:ADMIN')->group(function () {
+        Route::get('/admin/password-requests', [PasswordResetController::class, 'listRequests'])->name('admin.password-requests.index');
+        Route::post('/admin/password-requests/{user}/resolve', [PasswordResetController::class, 'resolveRequest'])->name('admin.password-requests.resolve');
+    });
+
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/pending-invoices', [PendingInvoiceController::class, 'index'])->name('pending-invoices.index');
 

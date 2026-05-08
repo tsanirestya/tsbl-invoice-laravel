@@ -322,6 +322,13 @@
         <a href="{{ route('users.index') }}" class="nav-link {{ request()->routeIs('users.*') ? 'active' : '' }}">
             <i class="bi bi-person-gear"></i> Pengguna
         </a>
+        @php $pendingResets = \App\Models\User::whereNotNull('reset_requested_at')->count(); @endphp
+        <a href="{{ route('admin.password-requests.index') }}" class="nav-link {{ request()->routeIs('admin.password-requests.*') ? 'active' : '' }}">
+            <i class="bi bi-key"></i> Reset Password
+            @if($pendingResets > 0)
+                <span class="badge bg-warning text-dark ms-1">{{ $pendingResets }}</span>
+            @endif
+        </a>
         <a href="{{ route('credit-classes.index') }}" class="nav-link {{ request()->routeIs('credit-classes.*') ? 'active' : '' }}">
             <i class="bi bi-award-fill"></i> Credit Classes
         </a>
