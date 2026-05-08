@@ -8,6 +8,10 @@
 ## 📋 Planning
 - [[MASTER-PLAN]] — Roadmap lengkap semua phase, decisions, status
 - [[LARAVEL-STRUCTURE]] — Architecture, module map, route groups, storage
+- [[FEATURE-PARTNER-DEPOSIT]] — Feature planning: sistem deposit partner (Phase 6)
+- [[FEATURE-CREDIT-FACILITY]] — Feature planning: credit facility per partner (Phase 8)
+- [[FEATURE-BATCH-CREDIT-PAYMENT]] — Feature planning: batch credit payment (Phase 9)
+- [[FEATURE-PAYMENT-MEMO]] — Feature planning: memo pengajuan pembayaran ke partner (Phase 9b)
 
 ## 🗄️ Database
 - [[SCHEMA]] — Semua table, columns, FK, data existing
@@ -23,6 +27,11 @@
 | Phase 3 — Invoice Engine | [[PHASE-3-SUMMARY]] | ✅ Done |
 | Phase 4 — Finance Operations | [[TODO-PHASE-4-FINANCE]] | 🔲 Pending |
 | Phase 5 — Settings & Reports | [[TODO-PHASE-5-SETTINGS-REPORTS]] | 🔲 Pending |
+| Phase 6 — Partner Deposit | [[TODO-PHASE-6-PARTNER-DEPOSIT]] | 📋 Planning |
+| Phase 7 — Excel Import System | [[TODO-PHASE-7-EXCEL-IMPORT]] | ✅ Done |
+| Phase 8 — Credit Facility | [[TODO-PHASE-8-CREDIT-FACILITY]] | 📋 Planning |
+| Phase 9a — Memo Tagihan | [[FEATURE-PAYMENT-MEMO]] | ✅ Done (2026-05-08) |
+| Phase 9b — Batch Credit Payment | [[FEATURE-BATCH-CREDIT-PAYMENT]] | 📋 Planning |
 
 ## 📦 Features (akan dibuat per feature selesai)
 → Folder: `Features/`

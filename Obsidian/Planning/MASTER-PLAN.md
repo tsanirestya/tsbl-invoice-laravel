@@ -53,6 +53,79 @@ Mobile-first finance operational web system built di Laravel 11.
 - [x] Reports (outstanding, overdue, paid, revenue, partner summary) with date/status/partner filters
 - [x] Export CSV (UTF-8 BOM, Excel-ready) + Export PDF (DomPDF A4 landscape)
 
+### ✅ Phase 6 — Partner Deposit System (SELESAI 2026-05-06)
+→ TODO: [[TODO-PHASE-6-PARTNER-DEPOSIT]]
+→ Planning: [[FEATURE-PARTNER-DEPOSIT]]
+- [x] Migration `partner_deposits` table (type TOPUP/DEDUCTION/ADJUSTMENT, immutable records)
+- [x] Setting `deposit_low_threshold` seeded (default Rp 1.000.000)
+- [x] Model `PartnerDeposit` + `Partner::depositBalance()` + `Partner::depositInfo()`
+- [x] `PartnerDepositController` (index, create/store top-up, adjustment, AJAX balance API)
+- [x] Invoice form: AJAX deposit panel (4 skenario: cukup/rendah/kosong/habis) + real-time grand total
+- [x] Auto DEDUCTION record saat invoice dibuat/diedit dengan deposit
+- [x] Reverse DEDUCTION otomatis jika invoice diedit atau dihapus
+- [x] Server-side validation: deposit ≤ min(saldo, subtotal)
+- [x] Views: riwayat deposit + top-up form + deposit card di partner detail (badge rendah/habis)
+- [x] Dashboard widget: partner deposit rendah/habis
+- [x] Settings: field `deposit_low_threshold` bisa diubah ADMIN
+- [x] Report tab Deposit (saldo per partner, total topup, total terpakai)
+
+### ✅ Phase 7 — Excel Transaction Import System (SELESAI 2026-05-06)
+→ TODO: [[TODO-PHASE-7-EXCEL-IMPORT]]
+- [x] Migration: `transaction_imports`, `transaction_import_rows`, `import_anomalies`, `import_rejections`, `product_aliases`
+- [x] Models: TransactionImport, TransactionImportRow, ImportAnomaly, ImportRejection, ProductAlias
+- [x] ImportPipelineService: parse → normalize → filter → match → anomaly detect → commission calc
+- [x] Product matching: 3-layer (exact / alias / fuzzy — fuzzy TIDAK auto-accept)
+- [x] Anomaly types: CATEGORY_MISMATCH, REVERSE_MISMATCH, PRODUCT_NOT_FOUND, PRICE_MISMATCH, SUSPICIOUS_PRICING, FUZZY_CANDIDATE
+- [x] Review UI: color-coded table (green/red/grey), bulk checklist, override reason
+- [x] Invoice integration: from_import mode auto-fill (extend existing)
+- [x] Reports extension: tab Import Summary + anomaly export Excel (PhpSpreadsheet)
+- [x] Dashboard extension: widget pending imports + anomaly rate alert (>20%)
+
+### ✅ Phase 8 — Credit Facility (SELESAI 2026-05-08)
+→ TODO: [[TODO-PHASE-8-CREDIT-FACILITY]]
+→ Planning: [[FEATURE-CREDIT-FACILITY]]
+- [x] Migration: `credit_classes` table + `credit_class_id` FK di `partners`
+- [x] Settings keys: aging buckets (4 bucket editable) + credit warning threshold
+- [x] Model `CreditClass` + auto-assign logic berdasarkan `limit_credit`
+- [x] Partner model: `creditUsed()`, `creditAvailable()`, `creditUtilizationPercent()`, `creditStatus()`, `creditInfo()`
+- [x] Admin CRUD: Credit Class management
+- [x] Partner list + show: badge class + credit panel (limit/used/available/bar) + outstanding invoices table
+- [x] AJAX endpoint `GET /api/partners/{id}/credit-info`
+- [x] Invoice form: AJAX credit panel + warning/error banner + override reason
+- [x] Invoice controller: soft-block validation (warning >threshold%, error+reason >100%)
+- [x] Dashboard: 4 widget kredit (outstanding, over limit, per class, top 5)
+- [x] Report tab Kredit: credit summary + credit aging (bucket editable dari Settings)
+- [x] Settings: field warning threshold + 4 aging bucket (validasi urutan)
+
+### 📋 Phase 9 — Batch Credit Payment + Memo Tagihan (PLANNING 2026-05-08)
+
+#### 9a — Batch Credit Payment
+→ Planning: [[FEATURE-BATCH-CREDIT-PAYMENT]]
+- [ ] Migration: `credit_payments` table + `credit_payment_id` kolom di `payments`
+- [ ] Migration: kolom `is_voided`, `voided_at`, `voided_by` di `credit_payments`
+- [ ] Model `CreditPayment` + relasi ke Partner, Payment, PartnerDeposit
+- [ ] Update model `Payment` + `Partner` (tambah relasi)
+- [ ] `CreditPaymentController`: index, create, store (DB transaction), show, destroy (void)
+- [ ] AJAX endpoint: `GET /api/partners/{partner}/outstanding-invoices`
+- [ ] Views: index, create (FIFO JS + live summary), show (detail + void badge)
+- [ ] Nomor batch otomatis format `CP-{YYYYMM}-{seq}`
+- [ ] Logic sisa → deposit otomatis (TOPUP ke `partner_deposits`)
+- [ ] Void: set is_voided + rollback Payment + recalcStatus + reverse deposit
+- [ ] Menu tambah di layout: "Pembayaran Credit"
+
+#### 9b — Memo Pengajuan Pembayaran ✅ SELESAI 2026-05-08
+→ Planning: [[FEATURE-PAYMENT-MEMO]]
+- [x] Migration: `payment_memos` table + `payment_memo_invoices` pivot (dengan snapshot nilai)
+- [x] Model `PaymentMemo` + `PaymentMemoInvoice`
+- [x] `PaymentMemoController`: index, create, store, show, pdf, destroy
+- [x] AJAX: load outstanding invoices per partner
+- [x] Views: index, create (checklist invoice + auto batas bayar +7 hari), show (snapshot vs status kini)
+- [x] PDF template DomPDF — "MEMO OUTSTANDING PAYMENT" A4 portrait
+- [x] Nomor memo otomatis format `MP-{YYYYMM}-{seq}`
+- [x] Dashboard widget: "Partner Perlu Ditagih" (OVERDUE dulu, lalu hampir jatuh tempo)
+- [x] Shortcut tombol "Buat Memo" dari halaman partner show
+- [x] Menu tambah di layout: "Memo Tagihan"
+
 ---
 
 ## Architecture Overview
@@ -99,3 +172,8 @@ Mobile-first finance operational web system built di Laravel 11.
 
 ## Dev Log
 - 2026-05-05 — Project initiated. Master plan dibuat. Phase 1 selesai.
+- 2026-05-06 — Phase 6 (Partner Deposit) selesai.
+- 2026-05-06 — Phase 7 (Excel Import System) selesai. Tables: transaction_imports, transaction_import_rows, import_anomalies, import_rejections, product_aliases. Pipeline: parse→normalize→filter→match→anomaly→commission. PhpSpreadsheet (require-dev sudah ada).
+- 2026-05-07 — Phase 8 (Credit Facility) direncanakan.
+- 2026-05-08 — Phase 9 (Batch Credit Payment) direncanakan. Keputusan: sisa → deposit, void → rollback penuh, akses = FINANCE. Scope: credit classes, credit engine per partner, dashboard widgets, invoice soft-block validation, credit aging editable via settings.
+- 2026-05-08 — Phase 9b (Memo Tagihan) selesai. Tables: payment_memos, payment_memo_invoices. Features: CRUD memo, PDF DomPDF, AJAX invoice loader, dashboard widget "Partner Perlu Ditagih", shortcut di partner show.
