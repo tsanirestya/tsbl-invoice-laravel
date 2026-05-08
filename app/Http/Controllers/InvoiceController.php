@@ -602,6 +602,7 @@ class InvoiceController extends Controller
 
         $last = Invoice::where('invoice_no', 'like', "{$prefix}-{$year}-%")
             ->orderByDesc('id')
+            ->lockForUpdate()
             ->value('invoice_no');
 
         $seq = $last ? ((int) substr($last, -4)) + 1 : 1;

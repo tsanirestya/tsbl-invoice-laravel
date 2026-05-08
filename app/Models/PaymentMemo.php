@@ -44,6 +44,7 @@ class PaymentMemo extends Model
         $prefix = 'MP-' . now()->format('Ym') . '-';
         $last   = static::where('memo_no', 'like', $prefix . '%')
             ->orderByDesc('memo_no')
+            ->lockForUpdate()
             ->value('memo_no');
 
         $seq = $last ? (int) substr($last, -3) + 1 : 1;

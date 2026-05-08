@@ -55,6 +55,7 @@ class CreditPayment extends Model
         $prefix = 'CP-' . now()->format('Ym') . '-';
         $last   = static::where('batch_no', 'like', $prefix . '%')
             ->latest('id')
+            ->lockForUpdate()
             ->value('batch_no');
         $seq = $last ? ((int) substr($last, -3)) + 1 : 1;
         return $prefix . str_pad($seq, 3, '0', STR_PAD_LEFT);

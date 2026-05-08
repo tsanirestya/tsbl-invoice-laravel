@@ -37,7 +37,7 @@
 | # | Finding | Task | File | Status |
 |---|---------|------|------|--------|
 | 12 | FINDING-009 | Implement password reset — artisan command `user:reset-password` atau Laravel forgot-password flow | `routes/web.php`, new controller | ✅ 2026-05-08 |
-| 13 | FINDING-010 | Tambah `->lockForUpdate()` ke sequence query invoice/deposit/memo/batch — fix race condition | `InvoiceController`, `DepositInvoiceController`, `PaymentMemo`, `CreditPayment` | 🔲 |
+| 13 | FINDING-010 | Tambah `->lockForUpdate()` ke sequence query invoice/deposit/memo/batch — fix race condition | `InvoiceController`, `DepositInvoiceController`, `PaymentMemo`, `CreditPayment` | ✅ 2026-05-08 |
 | 14 | FINDING-012 | Pindahkan credit limit check ke dalam `DB::transaction` setelah `Partner::lockForUpdate()` — fix TOCTOU | `app/Http/Controllers/InvoiceController.php` | 🔲 |
 | 15 | FINDING-014 | Tambah HTTP security headers — CSP, X-Frame-Options, HSTS, X-Content-Type-Options via middleware atau `.htaccess` | `app/Http/Middleware/` atau `.htaccess` | ✅ 2026-05-08 |
 | 16 | FINDING-016 | Gate `deposits.adjustment` route behind `role:ADMIN,FINANCE` (combined dengan FINDING-002) | `routes/web.php` | 🔲 |
@@ -69,9 +69,9 @@
 |------|-------|------|-----------|
 | 🔴 IMMEDIATE | 4 | 4 | 0 |
 | 🟠 THIS WEEK | 7 | 7 | 0 |
-| 🟡 THIS MONTH | 13 | 2 | 11 |
+| 🟡 THIS MONTH | 13 | 3 | 10 |
 | ⚪ LONG TERM | 4 | 0 | 4 |
-| **TOTAL** | **28** | **13** | **15** |
+| **TOTAL** | **28** | **14** | **14** |
 
 ---
 

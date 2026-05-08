@@ -10,6 +10,7 @@ use App\Models\Setting;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class PaymentMemoController extends Controller
 {
@@ -63,26 +64,30 @@ class PaymentMemoController extends Controller
             return back()->withInput()->with('error', 'Tidak ada invoice outstanding yang valid.');
         }
 
-        $memo = PaymentMemo::create([
-            'memo_no'          => PaymentMemo::generateMemoNo(),
-            'partner_id'       => $partner->id,
-            'memo_date'        => Carbon::today(),
-            'payment_deadline' => Carbon::today()->addDays(7),
-            'notes'            => $validated['notes'] ?? null,
-            'created_by'       => auth()->id(),
-        ]);
-
-        foreach ($invoices as $invoice) {
-            $totalPaid    = (float) $invoice->payments()->sum('amount');
-            $sisaTagihan  = max(0, (float) $invoice->grand_total - $totalPaid);
-
-            PaymentMemoInvoice::create([
-                'payment_memo_id' => $memo->id,
-                'invoice_id'      => $invoice->id,
-                'grand_total'     => $invoice->grand_total,
-                'sisa_tagihan'    => $sisaTagihan,
+        $memo = DB::transaction(function () use ($partner, $validated, $invoices) {
+            $memo = PaymentMemo::create([
+                'memo_no'          => PaymentMemo::generateMemoNo(),
+                'partner_id'       => $partner->id,
+                'memo_date'        => Carbon::today(),
+                'payment_deadline' => Carbon::today()->addDays(7),
+                'notes'            => $validated['notes'] ?? null,
+                'created_by'       => auth()->id(),
             ]);
-        }
+
+            foreach ($invoices as $invoice) {
+                $totalPaid   = (float) $invoice->payments()->sum('amount');
+                $sisaTagihan = max(0, (float) $invoice->grand_total - $totalPaid);
+
+                PaymentMemoInvoice::create([
+                    'payment_memo_id' => $memo->id,
+                    'invoice_id'      => $invoice->id,
+                    'grand_total'     => $invoice->grand_total,
+                    'sisa_tagihan'    => $sisaTagihan,
+                ]);
+            }
+
+            return $memo;
+        });
 
         return redirect()->route('payment-memos.show', $memo)
             ->with('success', "Memo {$memo->memo_no} berhasil dibuat.");
