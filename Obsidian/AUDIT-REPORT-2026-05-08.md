@@ -1,7 +1,7 @@
 # TSBL Invoice System — Comprehensive Security & Fraud Audit Report
 
 **Audit Date:** 2026-05-08
-**Last Remediation:** 2026-05-08 — 12 findings fixed (F-001, F-003, F-004, F-005, F-006, F-007, F-008, F-011, F-013, F-014, F-015, F-002)
+**Last Remediation:** 2026-05-08 — 14 findings fixed (F-001, F-002, F-003, F-004, F-005, F-006, F-007, F-008, F-009, F-010, F-011, F-013, F-014, F-015)
 **Auditor Roles:** Senior System Auditor · Fraud Detection Specialist · Cyber Security Auditor · Financial Risk Analyst · Internal Control Consultant
 **Codebase:** `d:\XAMPP NEW\htdocs\tsbl-invoice-laravel`
 **Stack:** Laravel 11, PHP 8.2, MySQL/MariaDB, Bootstrap 5.3, DomPDF
@@ -18,7 +18,7 @@
 | MEDIUM | 9 |
 | LOW | 6 |
 | Estimated Financial Exposure | HIGH — deposit manipulation, overpayment, credit bypass, audit trail deletion all possible by any authenticated staff |
-| Overall System Health Score | **42 / 100** *(updated 2026-05-08 after 12 fixes)* |
+| Overall System Health Score | **47 / 100** *(updated 2026-05-08 after 14 fixes)* |
 
 **Bottom line:** System handles real money (invoices, deposits, credit limits, batch payments) but has no meaningful role-based access control beyond a single ADMIN gate. Any VIEWER-role employee can delete payments, override credit limits, manipulate deposits, and void batch payments. There is an unauthenticated remote code execution vector (`/setup-production`). Audit logs can be destroyed by deleting the invoice. **System is NOT safe for production** without at minimum fixing FINDING-001, FINDING-002, FINDING-003, FINDING-004 immediately.
 
@@ -588,12 +588,12 @@ Bootstrap 5.3.3 and Bootstrap Icons loaded from jsDelivr without `integrity` att
 | Security | ~~28~~ **55** | ✅ RCE route deleted, RBAC added, debug off, throttle login, security headers, session encrypted, storage auth |
 | Fraud Prevention | ~~22~~ **41** | ✅ RBAC on financial ops, payment guard, deposit constraint, audit trail preserved |
 | Financial Control | ~~40~~ **51** | ✅ Payment max cap, deposit floor/cap, draft invoice blocked |
-| Operational Control | 35 | No scheduled jobs, no password reset, manual overdue |
-| Scalability | 45 | N+1 on Settings::get, race conditions on sequence |
+| Operational Control | ~~35~~ **45** | ✅ F-009: admin-mediated password reset — no more single point of failure |
+| Scalability | ~~45~~ **52** | ✅ F-010: lockForUpdate on all 4 sequence generators — race condition eliminated |
 | Auditability | ~~30~~ **38** | ✅ Logs preserved on invoice delete |
 | Monitoring | 10 | No alerting, no anomaly detection |
 | Data Integrity | ~~38~~ **42** | ✅ Deposit duplicate bug fixed |
-| **OVERALL** | ~~31~~ **42 / 100** | 12 findings fixed — THIS WEEK tier cleared |
+| **OVERALL** | ~~31~~ ~~42~~ **47 / 100** | 14 findings fixed — F-009 + F-010 done (2026-05-08) |
 
 ---
 
