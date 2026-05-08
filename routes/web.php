@@ -22,6 +22,25 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', fn() => redirect('/dashboard'));
 
+// Temporary route to run migrations and clear cache since SSH is unavailable
+Route::get('/setup-production', function() {
+    try {
+        $output = '';
+        \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
+        $output .= "Migration Output:<br>" . nl2br(\Illuminate\Support\Facades\Artisan::output()) . "<br><br>";
+        
+        \Illuminate\Support\Facades\Artisan::call('optimize:clear');
+        $output .= "Optimize Clear Output:<br>" . nl2br(\Illuminate\Support\Facades\Artisan::output()) . "<br><br>";
+        
+        \Illuminate\Support\Facades\Artisan::call('optimize');
+        $output .= "Optimize Output:<br>" . nl2br(\Illuminate\Support\Facades\Artisan::output()) . "<br><br>";
+        
+        return $output . "<b>Setup Complete!</b>";
+    } catch (\Exception $e) {
+        return "<b>Error:</b> " . $e->getMessage();
+    }
+});
+
 // Guest routes
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
