@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "AUDIT-REPORT-2026-05-08.md",
+                "file": "MANUAL-BOOK.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "AUDIT-REPORT-2026-05-08"
+              "title": "MANUAL-BOOK"
             }
           }
         ]
@@ -78,7 +78,7 @@
       }
     ],
     "direction": "horizontal",
-    "width": 300
+    "width": 356.5
   },
   "right": {
     "id": "e1299e3249b6404c",
@@ -185,13 +185,34 @@
   },
   "active": "f75570c9470dc731",
   "lastOpenFiles": [
-    "AUDIT-PROMPT-TEMPLATE.md",
+    "images/manual/add_partner_form.png",
+    "images/manual/invoice_items_and_total.png",
+    "images/manual/reset_password_request.png",
+    "images/manual/credit_classes.png",
+    "images/manual/product_list.png",
+    "images/manual/credit_payment_create.png",
+    "images/manual/credit_payment_list.png",
+    "images/manual/memo_tagihan_create.png",
+    "images/manual/memo_tagihan_list.png",
+    "images/manual/payment_form.png",
+    "images/manual/settings_page.png",
+    "images/manual",
+    "images",
+    "MANUAL-BOOK.html",
+    "TODO-AUDIT-2026-05-08.md",
+    "MANUAL-BOOK.md",
     "AUDIT-REPORT-2026-05-08.md",
+    "AUDIT-PROMPT-TEMPLATE.md",
+    "INDEX.md",
+    "Untitled 2.canvas",
+    "Untitled 1.canvas",
+    "Untitled.canvas",
+    "UI-UX/DESIGN-SYSTEM.md",
+    "TODO-AUDIT-2026-05-08.md.tmp.26320.1778231416699",
     "Database/SCHEMA.md",
     "Logs/LOG-2026-05-05.md",
     "Architecture/LARAVEL-STRUCTURE.md",
     "TODO-PHASE-4-FINANCE.md",
-    "INDEX.md",
     "Bugs/BUG-006-PRODUCTION-FILE-UPLOADS-404.md",
     "TODO/TODO-PHASE-8-CREDIT-FACILITY.md",
     "Bugs/BUG-005-PRODUCTION-SETUP-FK-MIGRATION.md",
@@ -200,7 +221,6 @@
     "Planning/FEATURE-PAYMENT-MEMO.md",
     "TODO/TODO-PHASE-7-EXCEL-IMPORT.md",
     "Bugs/BUG-004-INVOICE-PDF-SUBTOTAL-ALIGNMENT.md",
-    "UI-UX/DESIGN-SYSTEM.md",
     "TODO/TODO-PHASE-6-PARTNER-DEPOSIT.md",
     "TODO/TODO-PHASE-1-FOUNDATION.md",
     "Planning/MASTER-PLAN.md",
@@ -208,18 +228,11 @@
     "Development-Phases/PHASE-5-SUMMARY.md",
     "Development-Phases/PHASE-4-SUMMARY.md",
     "Development-Phases/PHASE-3-SUMMARY.md",
-    "Development-Phases/PHASE-2-SUMMARY.md",
-    "Development-Phases/PHASE-1-SUMMARY.md",
-    "Bugs/BUG-003-PRODUCTS-PAGINATION.md",
     "TODO/TODO-PHASE-6-PARTNER-DEPOSIT.md.tmp.13364.1778033879884",
     "Planning/FEATURE-PARTNER-DEPOSIT.md.tmp.13364.1778033828793",
     "Planning/FEATURE-PARTNER-DEPOSIT.md.tmp.13364.1778033772128",
     "INDEX.md.tmp.13364.1778033461215",
     "INDEX.md.tmp.32056.1777997945270",
-    "Bugs/BUG-004-INVOICE-PDF-SUBTOTAL-ALIGNMENT.md.tmp.32056.1777997935616",
-    "INDEX.md.tmp.21840.1777997737111",
-    "Bugs/BUG-003-PRODUCTS-PAGINATION.md.tmp.21840.1777997726507",
-    "INDEX.md.tmp.23048.1777996659463",
-    "Development-Phases/PHASE-5-SUMMARY.md.tmp.22908.1777995932184"
+    "Bugs/BUG-004-INVOICE-PDF-SUBTOTAL-ALIGNMENT.md.tmp.32056.1777997935616"
   ]
 }

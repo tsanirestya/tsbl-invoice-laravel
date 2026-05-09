@@ -8,18 +8,11 @@ use App\Models\Partner;
 use App\Models\PartnerDeposit;
 use App\Models\TransactionImport;
 use App\Models\TransactionImportRow;
-use Carbon\Carbon;
 
 class DashboardController extends Controller
 {
     public function index()
     {
-        $today = Carbon::today();
-
-        Invoice::where('payment_status', '!=', 'PAID')
-            ->where('due_date', '<', $today)
-            ->update(['payment_status' => 'OVERDUE']);
-
         $stats = [
             'total'       => Invoice::count(),
             'unpaid'      => Invoice::where('payment_status', 'UNPAID')->count(),

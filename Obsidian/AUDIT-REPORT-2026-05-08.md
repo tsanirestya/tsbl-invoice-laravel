@@ -1,7 +1,7 @@
 # TSBL Invoice System — Comprehensive Security & Fraud Audit Report
 
 **Audit Date:** 2026-05-08
-**Last Remediation:** 2026-05-08 — 15 findings fixed (F-001, F-002, F-003, F-004, F-005, F-006, F-007, F-008, F-009, F-010, F-011, F-012, F-013, F-014, F-015)
+**Last Remediation:** 2026-05-09 — 18 findings fixed (F-001 through F-015, F-016, F-017, F-018)
 **Auditor Roles:** Senior System Auditor · Fraud Detection Specialist · Cyber Security Auditor · Financial Risk Analyst · Internal Control Consultant
 **Codebase:** `d:\XAMPP NEW\htdocs\tsbl-invoice-laravel`
 **Stack:** Laravel 11, PHP 8.2, MySQL/MariaDB, Bootstrap 5.3, DomPDF
@@ -586,14 +586,14 @@ Bootstrap 5.3.3 and Bootstrap Icons loaded from jsDelivr without `integrity` att
 | Area | Score / 100 | Notes |
 |------|------------|-------|
 | Security | ~~28~~ **55** | ✅ RCE route deleted, RBAC added, debug off, throttle login, security headers, session encrypted, storage auth |
-| Fraud Prevention | ~~22~~ **41** | ✅ RBAC on financial ops, payment guard, deposit constraint, audit trail preserved |
+| Fraud Prevention | ~~22~~ ~~41~~ **45** | ✅ F-016: deposit adjustment gated FINANCE,ADMIN confirmed |
 | Financial Control | ~~40~~ **51** | ✅ Payment max cap, deposit floor/cap, draft invoice blocked |
 | Operational Control | ~~35~~ **45** | ✅ F-009: admin-mediated password reset — no more single point of failure |
-| Scalability | ~~45~~ **55** | ✅ F-010: lockForUpdate on all 4 sequence generators — race condition eliminated; ✅ F-012: credit limit check moved inside transaction |
-| Auditability | ~~30~~ **38** | ✅ Logs preserved on invoice delete |
+| Scalability | ~~45~~ ~~55~~ **62** | ✅ F-018: Setting cache — 28+ DB hits → 1 per 5 min; ✅ F-010/F-012: race conditions fixed |
+| Auditability | ~~30~~ ~~38~~ **44** | ✅ F-017: markOverdue moved to cron + logs every status change |
 | Monitoring | 10 | No alerting, no anomaly detection |
 | Data Integrity | ~~38~~ **42** | ✅ Deposit duplicate bug fixed |
-| **OVERALL** | ~~31~~ ~~42~~ ~~47~~ **49 / 100** | 15 findings fixed — F-012 done (2026-05-08) |
+| **OVERALL** | ~~31~~ ~~42~~ ~~47~~ ~~49~~ **52 / 100** | 18 findings fixed — F-016, F-017, F-018 done (2026-05-09) |
 
 ---
 
