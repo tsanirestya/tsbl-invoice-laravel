@@ -2,15 +2,20 @@
 
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Auth\PasswordResetController;
+use App\Http\Controllers\BillingInvoiceController;
+use App\Http\Controllers\BillingPaymentController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DepositInvoiceController;
+use App\Http\Controllers\DsiController;
 use App\Http\Controllers\ImportReviewController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\PartnerDepositController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PendingInvoiceController;
 use App\Http\Controllers\ProductAliasController;
+use App\Http\Controllers\ReconciliationController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\ReservationController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\TransactionImportController;
 use App\Http\Controllers\CreditClassController;
@@ -19,7 +24,21 @@ use App\Http\Controllers\PaymentMemoController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\PartnerController;
 use App\Http\Controllers\ProductController;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
+
+// ─── TEMPORARY: No-SSH migration runner ──────────────────────────────────────
+// DELETE THIS ROUTE after running migrations on prod.
+// Access: /run-migrations?token=YOUR_DEPLOY_TOKEN
+Route::get('/run-migrations', function () {
+    $token = config('app.deploy_token');
+    if (! $token || request('token') !== $token) {
+        abort(403);
+    }
+    Artisan::call('migrate', ['--force' => true]);
+    return '<pre>' . Artisan::output() . '</pre>';
+});
+// ─────────────────────────────────────────────────────────────────────────────
 
 Route::get('/', fn() => redirect('/dashboard'));
 
@@ -168,5 +187,64 @@ Route::middleware('auth')->group(function () {
         // Audit Trail
         Route::get('audit-logs', [\App\Http\Controllers\Admin\AuditLogController::class, 'index'])->name('admin.audit-logs.index');
         Route::get('audit-logs/{log}', [\App\Http\Controllers\Admin\AuditLogController::class, 'show'])->name('admin.audit-logs.show');
+    });
+
+    // ================================================================
+    // PHASE D — Billing Redesign: Reservation, Invoice, DSI, Reconciliation, Payment
+    // ================================================================
+
+    // D1 — Reservations
+    Route::get('reservations', [ReservationController::class, 'index'])->name('reservations.index');
+    Route::get('reservations/create', [ReservationController::class, 'create'])->name('reservations.create');
+    Route::get('reservations/{reservation}', [ReservationController::class, 'show'])->name('reservations.show');
+    Route::middleware('role:FINANCE,ADMIN')->group(function () {
+        Route::post('reservations', [ReservationController::class, 'store'])->name('reservations.store');
+        Route::post('reservations/{reservation}/confirm', [ReservationController::class, 'confirm'])->name('reservations.confirm');
+        Route::post('reservations/{reservation}/cancel', [ReservationController::class, 'cancel'])->name('reservations.cancel');
+        Route::post('reservations/{reservation}/issue-proforma', [ReservationController::class, 'issueProforma'])->name('reservations.issue-proforma');
+    });
+
+    // D2 — Billing Invoices (enterprise types: PROFORMA, FINAL, CN, DN, CANCELLATION)
+    Route::get('billing-invoices', [BillingInvoiceController::class, 'index'])->name('billing-invoices.index');
+    Route::get('billing-invoices/{billingInvoice}', [BillingInvoiceController::class, 'show'])->name('billing-invoices.show');
+    Route::get('billing-invoices/{billingInvoice}/download', [BillingInvoiceController::class, 'download'])->name('billing-invoices.download');
+    Route::middleware('role:FINANCE,ADMIN')->group(function () {
+        Route::post('billing-invoices/{billingInvoice}/send', [BillingInvoiceController::class, 'send'])->name('billing-invoices.send');
+        Route::post('billing-invoices/{billingInvoice}/void', [BillingInvoiceController::class, 'void'])->name('billing-invoices.void');
+        Route::post('billing-invoices/{billingInvoice}/cancel-void', [BillingInvoiceController::class, 'cancelVoid'])->name('billing-invoices.cancel-void');
+    });
+    Route::middleware('role:ADMIN')->group(function () {
+        Route::post('billing-invoices/{billingInvoice}/approve-void', [BillingInvoiceController::class, 'approveVoid'])->name('billing-invoices.approve-void');
+    });
+
+    // D3 — DSI Import
+    Route::get('dsi/import', [DsiController::class, 'create'])->name('dsi.import.create');
+    Route::get('dsi/batches', [DsiController::class, 'batches'])->name('dsi.batches.index');
+    Route::get('dsi/batches/{batch}', [DsiController::class, 'batchShow'])->name('dsi.batches.show');
+    Route::get('dsi/duplicates', [DsiController::class, 'reviewDuplicate'])->name('dsi.duplicates.review');
+    Route::middleware('role:FINANCE,ADMIN')->group(function () {
+        Route::post('dsi/import', [DsiController::class, 'import'])->name('dsi.import');
+        Route::post('dsi/duplicates/{flag}/resolve', [DsiController::class, 'approveDuplicate'])->name('dsi.duplicates.resolve');
+    });
+
+    // D4 — Reconciliations
+    Route::get('reconciliations', [ReconciliationController::class, 'index'])->name('reconciliations.index');
+    Route::get('reconciliations/{reconciliation}', [ReconciliationController::class, 'show'])->name('reconciliations.show');
+    Route::middleware('role:FINANCE,ADMIN')->group(function () {
+        Route::post('reconciliations/{reconciliation}/approve', [ReconciliationController::class, 'approve'])->name('reconciliations.approve');
+        Route::post('reconciliations/{reconciliation}/dispute', [ReconciliationController::class, 'dispute'])->name('reconciliations.dispute');
+        Route::post('reconciliations/{reconciliation}/reject', [ReconciliationController::class, 'reject'])->name('reconciliations.reject');
+    });
+
+    // D5 — Billing Payments
+    Route::get('billing-payments', [BillingPaymentController::class, 'index'])->name('billing-payments.index');
+    Route::get('billing-payments/credit-balances', [BillingPaymentController::class, 'creditBalance'])->name('billing-payments.credit-balance');
+    Route::get('billing-payments/{billingPayment}', [BillingPaymentController::class, 'show'])->name('billing-payments.show');
+    Route::middleware('role:FINANCE,ADMIN')->group(function () {
+        Route::post('billing-payments', [BillingPaymentController::class, 'store'])->name('billing-payments.store');
+        Route::post('billing-payments/{billingPayment}/verify', [BillingPaymentController::class, 'verify'])->name('billing-payments.verify');
+        Route::post('billing-payments/{billingPayment}/reject', [BillingPaymentController::class, 'reject'])->name('billing-payments.reject');
+        Route::post('billing-payments/{billingPayment}/allocate', [BillingPaymentController::class, 'allocate'])->name('billing-payments.allocate');
+        Route::post('billing-payments/apply-credit', [BillingPaymentController::class, 'applyCreditBalance'])->name('billing-payments.apply-credit');
     });
 });
