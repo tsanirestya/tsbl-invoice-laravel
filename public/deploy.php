@@ -8,30 +8,25 @@ if (($_GET['token'] ?? '') !== '95b994ecf5f6f0225be998f267e03dcd02b51f5fc363426e
     exit('Forbidden');
 }
 
-// Auto-detect Laravel root (works whether deploy.php lands in root or public/)
-$candidates = [__DIR__, dirname(__DIR__)];
-$base = null;
-foreach ($candidates as $path) {
-    if (file_exists($path . '/vendor/autoload.php')) {
-        $base = $path;
-        break;
-    }
+echo '<pre>';
+echo '__DIR__: ' . __DIR__ . "\n\n";
+
+// List current dir
+echo "=== Contents of __DIR__ ===\n";
+foreach (scandir(__DIR__) as $f) echo "  $f\n";
+
+// List parent
+$parent = dirname(__DIR__);
+echo "\n=== Contents of dirname(__DIR__) ($parent) ===\n";
+foreach (scandir($parent) as $f) echo "  $f\n";
+
+// Search artisan up to 5 levels up
+echo "\n=== Searching for artisan + vendor ===\n";
+$dir = __DIR__;
+for ($i = 0; $i < 6; $i++) {
+    $hasArtisan = file_exists($dir . '/artisan');
+    $hasVendor  = file_exists($dir . '/vendor/autoload.php');
+    echo "$dir — artisan:" . ($hasArtisan ? 'YES' : 'no') . " vendor:" . ($hasVendor ? 'YES' : 'no') . "\n";
+    $dir = dirname($dir);
 }
-
-if (!$base) {
-    die('<pre>ERROR: vendor/autoload.php not found. Checked: ' . implode(', ', $candidates) . '</pre>');
-}
-
-echo '<pre>Base: ' . $base . "\n\n";
-
-define('LARAVEL_START', microtime(true));
-require $base . '/vendor/autoload.php';
-
-$app = require_once $base . '/bootstrap/app.php';
-$kernel = $app->make(Illuminate\Contracts\Console\Kernel::class);
-$kernel->bootstrap();
-
-$exitCode = \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
-echo 'Exit code: ' . $exitCode . "\n";
-echo htmlspecialchars(\Illuminate\Support\Facades\Artisan::output());
 echo '</pre>';
