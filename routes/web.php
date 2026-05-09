@@ -164,5 +164,9 @@ Route::middleware('auth')->group(function () {
         Route::resource('credit-classes', CreditClassController::class)->except(['show']);
         Route::get('settings', [SettingsController::class, 'index'])->name('settings.index');
         Route::put('settings', [SettingsController::class, 'update'])->name('settings.update');
+
+        // Audit Trail
+        Route::get('audit-logs', [\App\Http\Controllers\Admin\AuditLogController::class, 'index'])->name('admin.audit-logs.index');
+        Route::get('audit-logs/{log}', [\App\Http\Controllers\Admin\AuditLogController::class, 'show'])->name('admin.audit-logs.show');
     });
 });

@@ -2,10 +2,12 @@
 
 namespace App\Models;
 
+use App\Traits\Auditable;
 use Illuminate\Database\Eloquent\Model;
 
 class Payment extends Model
 {
+    use Auditable;
     public $timestamps = false;
 
     const CREATED_AT = 'created_at';

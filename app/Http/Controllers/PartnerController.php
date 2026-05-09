@@ -274,15 +274,24 @@ class PartnerController extends Controller
 
     public function destroy(Partner $partner)
     {
+        // FINDING-023: Prevent deletion if invoices or deposits exist
+        if ($partner->invoices()->exists() || $partner->deposits()->exists()) {
+            return redirect()->back()->with('error', 'Partner tidak dapat dihapus karena memiliki riwayat invoice atau deposit.');
+        }
+
+        // We are using soft deletes, so we DON'T delete physical files here.
+        // File deletion should only happen on forceDelete() if we ever implement it.
+        /*
         foreach (self::DOC_FIELDS as $field) {
             if ($partner->$field) {
                 Storage::disk('public')->delete($partner->$field);
             }
         }
+        */
 
         $partner->delete();
 
-        return redirect()->route('partners.index')->with('success', 'Partner berhasil dihapus.');
+        return redirect()->route('partners.index')->with('success', 'Partner berhasil dihapus (soft delete).');
     }
 
     private function validatePartner(Request $request, ?int $ignoreId = null): array

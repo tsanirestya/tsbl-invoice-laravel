@@ -2,10 +2,12 @@
 
 namespace App\Models;
 
+use App\Traits\Auditable;
 use Illuminate\Database\Eloquent\Model;
 
 class Invoice extends Model
 {
+    use Auditable;
     protected $fillable = [
         'invoice_no', 'partner_id', 'guest_name', 'visit_date', 'booking_pass_no',
         'invoice_date', 'due_date', 'dsi_transaction_no', 'import_row_id',

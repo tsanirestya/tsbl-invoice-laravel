@@ -4,7 +4,7 @@
 **Dibuat:** 2026-05-08
 **Total Finding:** 28 (4 CRITICAL, 9 HIGH, 9 MEDIUM, 6 LOW)
 **Health Score Awal:** 31 / 100
-**Health Score Saat Ini:** 55 / 100 (20/28 Findings)
+**Health Score Saat Ini:** 62 / 100 (22/28 Findings)
 
 ---
 
@@ -47,7 +47,7 @@
 | 19  | FINDING-019 | Fix null komisi — treat null sebagai 0 dalam agregasi; require explicit komisi saat override approval                    | `app/Http/Controllers/ImportReviewController.php`                               | ✅ 2026-05-09 |
 | 20  | FINDING-020 | Hitung `PaymentMemo.sisa_tagihan` secara dinamis saat view — `max(0, grand_total - payments sum)`                        | `app/Models/PaymentMemo.php` atau view                                          | ✅ 2026-05-09 |
 | 21  | FINDING-021 | Gate `CreditPaymentController::destroy` behind `role:ADMIN`; implement two-step void (FINANCE propose → ADMIN approve)   | `app/Http/Controllers/CreditPaymentController.php`                              | ✅ 2026-05-09 |
-| 22  | FINDING-023 | `PartnerController::destroy` — cek `$partner->invoices()->exists()` sebelum delete; tambah soft deletes                  | `app/Http/Controllers/PartnerController.php`                                    | 🔲           |
+| 22  | FINDING-023 | `PartnerController::destroy` — cek `$partner->invoices()->exists()` sebelum delete; tambah soft deletes                  | `app/Http/Controllers/PartnerController.php`                                    | ✅ 2026-05-09 |
 | 23  | FINDING-024 | Tambah UNIQUE constraint pada `invoices.import_row_id` — cegah double-invoicing                                          | new migration                                                                   | 🔲           |
 | 24  | FINDING-026 | Schedule `invoices:mark-overdue` di `routes/console.php` — `->dailyAt('00:01')`                                          | `routes/console.php`                                                            | 🔲           |
 
@@ -70,9 +70,9 @@
 |------|-------|------|-----------|
 | 🔴 IMMEDIATE | 4 | 4 | 0 |
 | 🟠 THIS WEEK | 7 | 7 | 0 |
-| 🟡 THIS MONTH | 13 | 9 | 4 |
+| 🟡 THIS MONTH | 13 | 11 | 2 |
 | ⚪ LONG TERM | 4 | 0 | 4 |
-| **TOTAL** | **28** | **20** | **8** |
+| **TOTAL** | **28** | **22** | **6** |
 
 ---
 

@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
+use App\Traits\Auditable;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Partner extends Model
 {
+    use SoftDeletes, Auditable;
     protected $fillable = [
         'partner_type', 'nama_partner', 'category', 'channel', 'nama_pt',
         'pic_tsbl', 'pic_partner', 'pic_partner_phone', 'pic_partner_email',

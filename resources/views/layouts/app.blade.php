@@ -335,6 +335,9 @@
         <a href="{{ route('settings.index') }}" class="nav-link {{ request()->routeIs('settings.*') ? 'active' : '' }}">
             <i class="bi bi-gear-fill"></i> Pengaturan
         </a>
+        <a href="{{ route('admin.audit-logs.index') }}" class="nav-link {{ request()->routeIs('admin.audit-logs.*') ? 'active' : '' }}">
+            <i class="bi bi-journal-text"></i> Audit Trail
+        </a>
         @endif
     </div>
 
