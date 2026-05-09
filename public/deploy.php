@@ -8,29 +8,20 @@ if (($_GET['token'] ?? '') !== '95b994ecf5f6f0225be998f267e03dcd02b51f5fc363426e
     exit('Forbidden');
 }
 
-$base = dirname(__DIR__);
-$output = [];
+define('LARAVEL_START', microtime(true));
 
-// 1. Clear bootstrap cache
-$cacheFiles = glob($base . '/bootstrap/cache/*.php') ?: [];
-if (empty($cacheFiles)) {
-    $output[] = 'No cache files found.';
-} else {
-    foreach ($cacheFiles as $file) {
-        $deleted = @unlink($file);
-        $output[] = ($deleted ? 'Deleted' : 'Failed') . ': ' . basename($file);
-    }
-}
+require dirname(__DIR__) . '/vendor/autoload.php';
 
-// 2. Run migrations
-$output[] = "\n=== migrate --force ===";
-if (function_exists('shell_exec')) {
-    chdir($base);
-    $php = PHP_BINARY ?: 'php';
-    $result = shell_exec($php . ' artisan migrate --force 2>&1');
-    $output[] = $result ?? '(no output)';
-} else {
-    $output[] = 'shell_exec disabled on this host.';
-}
+$app = require_once dirname(__DIR__) . '/bootstrap/app.php';
 
-echo '<pre>' . htmlspecialchars(implode("\n", $output)) . '</pre>';
+$kernel = $app->make(Illuminate\Contracts\Console\Kernel::class);
+$kernel->bootstrap();
+
+ob_start();
+$exitCode = Artisan::call('migrate', ['--force' => true]);
+$output = ob_get_clean();
+
+echo '<pre>';
+echo 'Exit code: ' . $exitCode . "\n\n";
+echo htmlspecialchars(Artisan::output());
+echo '</pre>';
