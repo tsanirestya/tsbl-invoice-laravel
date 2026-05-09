@@ -8,15 +8,31 @@ if (($_GET['token'] ?? '') !== '95b994ecf5f6f0225be998f267e03dcd02b51f5fc363426e
 }
 
 $base = dirname(__DIR__) . '/tsbl-invoice-laravel';
-$logFile = $base . '/storage/logs/laravel.log';
+
+define('LARAVEL_START', microtime(true));
+require $base . '/vendor/autoload.php';
+
+$app = require_once $base . '/bootstrap/app.php';
+$kernel = $app->make(Illuminate\Contracts\Console\Kernel::class);
+$kernel->bootstrap();
 
 echo '<pre>';
-if (!file_exists($logFile)) {
-    echo "Log file not found: $logFile\n";
-} else {
-    // Read last 100 lines
-    $lines = file($logFile);
-    $last = array_slice($lines, -100);
-    echo htmlspecialchars(implode('', $last));
-}
+
+// Clear stale view cache
+\Illuminate\Support\Facades\Artisan::call('view:clear');
+echo "view:clear\n" . htmlspecialchars(\Illuminate\Support\Facades\Artisan::output());
+
+// Clear route cache
+\Illuminate\Support\Facades\Artisan::call('route:clear');
+echo "route:clear\n" . htmlspecialchars(\Illuminate\Support\Facades\Artisan::output());
+
+// Clear config cache
+\Illuminate\Support\Facades\Artisan::call('config:clear');
+echo "config:clear\n" . htmlspecialchars(\Illuminate\Support\Facades\Artisan::output());
+
+// Run migrations
+\Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
+echo "migrate --force\n" . htmlspecialchars(\Illuminate\Support\Facades\Artisan::output());
+
+echo "\nDone. Test /login now.\n";
 echo '</pre>';
