@@ -30,7 +30,28 @@
             <strong>BATCH DIBATALKAN</strong>
             pada {{ $creditPayment->voided_at?->format('d/m/Y H:i') }}
             oleh {{ $creditPayment->voidedByUser?->name ?? '—' }}.
+            @if($creditPayment->void_reason)
+                <div class="mt-1 small">Alasan: <em>"{{ $creditPayment->void_reason }}"</em></div>
+            @endif
             Semua alokasi invoice telah di-rollback.
+        </div>
+    </div>
+@elseif($creditPayment->isVoidPending())
+    <div class="alert alert-info d-flex align-items-center gap-2 py-2">
+        <i class="bi bi-clock-history fs-5"></i>
+        <div>
+            <strong>PERMINTAAN PEMBATALAN PENDING</strong>
+            diajukan oleh {{ $creditPayment->voidRequestedBy?->name ?? '—' }}
+            pada {{ $creditPayment->void_requested_at?->format('d/m/Y H:i') }}.
+            <div class="mt-1 small">Alasan: <em>"{{ $creditPayment->void_reason }}"</em></div>
+            @if(auth()->user()->isAdmin())
+                <div class="mt-2">
+                    <button type="button" class="btn btn-xs btn-success py-0" id="btn-approve">Approve</button>
+                    <button type="button" class="btn btn-xs btn-outline-danger py-0" id="btn-reject">Reject</button>
+                </div>
+            @else
+                <div class="mt-1 small text-muted">Menunggu persetujuan Admin.</div>
+            @endif
         </div>
     </div>
 @endif
@@ -44,6 +65,8 @@
                 <span class="fw-bold fs-6">{{ $creditPayment->batch_no }}</span>
                 @if($creditPayment->is_voided)
                     <span class="badge bg-danger">DIBATALKAN</span>
+                @elseif($creditPayment->isVoidPending())
+                    <span class="badge bg-info">PENDING VOID</span>
                 @elseif($creditPayment->excess_to_deposit > 0)
                     <span class="badge bg-warning text-dark">PARTIAL → ADA SISA KE DEPOSIT</span>
                 @else
@@ -225,28 +248,65 @@
 
     {{-- Void Action --}}
     @if(!$creditPayment->is_voided)
-    <div class="col-12">
-        <div class="card card-clean border-danger">
-            <div class="card-body d-flex align-items-center gap-3 flex-wrap">
-                <div class="flex-grow-1">
-                    <div class="fw-semibold text-danger">Void / Batalkan Batch</div>
-                    <small class="text-muted">
-                        Semua alokasi invoice akan di-rollback (kembali ke status sebelumnya).
-                        Jika ada sisa yang masuk deposit, deposit tersebut juga akan dihapus.
-                    </small>
+        @php
+            $isFinance = auth()->user()->isFinance() && !auth()->user()->isAdmin();
+            $isAdmin = auth()->user()->isAdmin();
+            $isPending = $creditPayment->isVoidPending();
+        @endphp
+
+        <div class="col-12">
+            <div class="card card-clean border-danger">
+                <div class="card-body d-flex align-items-center gap-3 flex-wrap">
+                    <div class="flex-grow-1">
+                        <div class="fw-semibold text-danger">Void / Batalkan Batch</div>
+                        <small class="text-muted">
+                            Semua alokasi invoice akan di-rollback (kembali ke status sebelumnya).
+                            Jika ada sisa yang masuk deposit, deposit tersebut juga akan dihapus.
+                            @if($isFinance && !$isPending)
+                                <span class="d-block mt-1 text-info"><i class="bi bi-info-circle me-1"></i> Permintaan Anda akan dikirim ke Admin untuk disetujui.</span>
+                            @endif
+                        </small>
+                    </div>
+
+                    @if($isPending)
+                        @if($isAdmin)
+                            <div class="d-flex gap-2">
+                                <button type="button" class="btn btn-sm btn-success" id="btn-approve-main">
+                                    <i class="bi bi-check-lg me-1"></i> Setujui Pembatalan
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-danger" id="btn-reject-main">
+                                    <i class="bi bi-x-lg me-1"></i> Tolak
+                                </button>
+                            </div>
+                        @else
+                            <button type="button" class="btn btn-sm btn-secondary" disabled>
+                                <i class="bi bi-hourglass-split me-1"></i> Menunggu Admin
+                            </button>
+                        @endif
+                    @else
+                        <button type="button" class="btn btn-sm btn-danger" id="btn-void">
+                            <i class="bi bi-x-octagon me-1"></i> {{ $isAdmin ? 'Batalkan Batch' : 'Ajukan Pembatalan' }}
+                        </button>
+                    @endif
                 </div>
-                <button type="button" class="btn btn-sm btn-danger" id="btn-void">
-                    <i class="bi bi-x-octagon me-1"></i> Batalkan Batch
-                </button>
             </div>
         </div>
-    </div>
 
-    <form method="POST" action="{{ route('credit-payments.destroy', $creditPayment) }}"
-          id="void-form" class="d-none">
-        @csrf
-        @method('DELETE')
-    </form>
+        {{-- Hidden Forms --}}
+        <form method="POST" action="{{ route('credit-payments.destroy', $creditPayment) }}" id="void-form" class="d-none">
+            @csrf
+            @method('DELETE')
+            <input type="hidden" name="void_reason" id="void-reason-input">
+        </form>
+
+        @if($isAdmin)
+            <form method="POST" action="{{ route('credit-payments.confirm-void', $creditPayment) }}" id="approve-form" class="d-none">
+                @csrf
+            </form>
+            <form method="POST" action="{{ route('credit-payments.reject-void', $creditPayment) }}" id="reject-form" class="d-none">
+                @csrf
+            </form>
+        @endif
     @endif
 
 </div>
@@ -255,9 +315,37 @@
 @push('scripts')
 <script>
 document.getElementById('btn-void')?.addEventListener('click', function () {
-    if (confirm('Yakin ingin membatalkan batch {{ $creditPayment->batch_no }}?\n\nSemua alokasi invoice akan di-rollback dan tidak bisa dikembalikan.')) {
-        document.getElementById('void-form').submit();
-    }
+    @if(auth()->user()->isFinance() && !auth()->user()->isAdmin())
+        const reason = prompt('Masukkan alasan pembatalan batch {{ $creditPayment->batch_no }}:');
+        if (reason && reason.trim() !== '') {
+            document.getElementById('void-reason-input').value = reason;
+            document.getElementById('void-form').submit();
+        } else if (reason !== null) {
+            alert('Alasan pembatalan wajib diisi.');
+        }
+    @else
+        if (confirm('Yakin ingin membatalkan batch {{ $creditPayment->batch_no }}?\n\nSemua alokasi invoice akan di-rollback dan tidak bisa dikembalikan.')) {
+            document.getElementById('void-form').submit();
+        }
+    @endif
 });
+
+// Admin Approve/Reject buttons (top alert and bottom card)
+const approveAction = function() {
+    if (confirm('Setujui pembatalan batch {{ $creditPayment->batch_no }}?')) {
+        document.getElementById('approve-form').submit();
+    }
+};
+
+const rejectAction = function() {
+    if (confirm('Tolak permintaan pembatalan ini?')) {
+        document.getElementById('reject-form').submit();
+    }
+};
+
+document.getElementById('btn-approve')?.addEventListener('click', approveAction);
+document.getElementById('btn-approve-main')?.addEventListener('click', approveAction);
+document.getElementById('btn-reject')?.addEventListener('click', rejectAction);
+document.getElementById('btn-reject-main')?.addEventListener('click', rejectAction);
 </script>
 @endpush

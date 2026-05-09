@@ -163,6 +163,7 @@ class CreditPaymentController extends Controller
             'partner',
             'creator',
             'voidedByUser',
+            'voidRequestedBy',
             'depositTransaction',
             'invoicePayments.invoice',
         ]);
@@ -170,7 +171,54 @@ class CreditPaymentController extends Controller
         return view('credit-payments.show', compact('creditPayment'));
     }
 
-    public function destroy(CreditPayment $creditPayment)
+    public function destroy(CreditPayment $creditPayment, Request $request)
+    {
+        if ($creditPayment->is_voided) {
+            return back()->with('error', 'Batch ini sudah dibatalkan sebelumnya.');
+        }
+
+        // If user is FINANCE, they can only request a void
+        if (auth()->user()->isFinance() && !auth()->user()->isAdmin()) {
+            if ($creditPayment->isVoidPending()) {
+                return back()->with('error', 'Permintaan pembatalan sudah diajukan dan sedang menunggu persetujuan Admin.');
+            }
+
+            $request->validate([
+                'void_reason' => 'required|string|max:500',
+            ]);
+
+            $creditPayment->update([
+                'void_requested_at' => now(),
+                'void_requested_by' => auth()->id(),
+                'void_reason'       => $request->void_reason,
+            ]);
+
+            return back()->with('success', "Permintaan pembatalan untuk batch {$creditPayment->batch_no} telah dikirim ke Admin.");
+        }
+
+        // If user is ADMIN, they can execute the void immediately (or they are confirming a request)
+        return $this->executeVoid($creditPayment);
+    }
+
+    public function confirmVoid(CreditPayment $creditPayment)
+    {
+        // This method is gated by role:ADMIN in routes
+        return $this->executeVoid($creditPayment);
+    }
+
+    public function rejectVoid(CreditPayment $creditPayment)
+    {
+        // This method is gated by role:ADMIN in routes
+        $creditPayment->update([
+            'void_requested_at' => null,
+            'void_requested_by' => null,
+            'void_reason'       => null,
+        ]);
+
+        return back()->with('success', "Permintaan pembatalan untuk batch {$creditPayment->batch_no} telah ditolak.");
+    }
+
+    protected function executeVoid(CreditPayment $creditPayment)
     {
         if ($creditPayment->is_voided) {
             return back()->with('error', 'Batch ini sudah dibatalkan sebelumnya.');
@@ -190,9 +238,10 @@ class CreditPaymentController extends Controller
 
             // 2. Mark voided first (audit trail)
             $creditPayment->update([
-                'is_voided' => true,
-                'voided_at' => now(),
-                'voided_by' => auth()->id(),
+                'is_voided'         => true,
+                'voided_at'         => now(),
+                'voided_by'         => auth()->id(),
+                'void_requested_at' => $creditPayment->void_requested_at ?? now(), // Keep original request time if exists
             ]);
 
             // 3. Delete Payment records linked to this batch

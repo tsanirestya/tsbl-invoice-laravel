@@ -69,6 +69,8 @@
                         <td class="text-center">
                             @if($batch->is_voided)
                                 <span class="badge bg-danger">DIBATALKAN</span>
+                            @elseif($batch->isVoidPending())
+                                <span class="badge bg-info">PENDING VOID</span>
                             @elseif($batch->excess_to_deposit > 0)
                                 <span class="badge bg-warning text-dark">PARTIAL</span>
                             @else

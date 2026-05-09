@@ -140,6 +140,14 @@ Route::middleware('auth')->group(function () {
     Route::delete('credit-payments/{creditPayment}', [CreditPaymentController::class, 'destroy'])
         ->name('credit-payments.destroy')
         ->middleware('role:FINANCE,ADMIN');
+
+    Route::middleware('role:ADMIN')->group(function () {
+        Route::post('credit-payments/{creditPayment}/confirm-void', [CreditPaymentController::class, 'confirmVoid'])
+            ->name('credit-payments.confirm-void');
+        Route::post('credit-payments/{creditPayment}/reject-void', [CreditPaymentController::class, 'rejectVoid'])
+            ->name('credit-payments.reject-void');
+    });
+
     Route::get('/api/partners/{partner}/outstanding-invoices-cp', [CreditPaymentController::class, 'outstandingInvoices'])
         ->name('api.partner.outstanding-invoices-cp');
 

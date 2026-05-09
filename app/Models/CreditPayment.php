@@ -11,6 +11,7 @@ class CreditPayment extends Model
         'total_allocated', 'excess_to_deposit', 'deposit_transaction_id',
         'payment_method', 'reference_no', 'proof_file', 'notes',
         'is_voided', 'voided_at', 'voided_by', 'created_by',
+        'void_requested_at', 'void_requested_by', 'void_reason',
     ];
 
     protected function casts(): array
@@ -22,6 +23,7 @@ class CreditPayment extends Model
             'excess_to_deposit' => 'decimal:2',
             'is_voided'         => 'boolean',
             'voided_at'         => 'datetime',
+            'void_requested_at' => 'datetime',
         ];
     }
 
@@ -48,6 +50,16 @@ class CreditPayment extends Model
     public function voidedByUser()
     {
         return $this->belongsTo(User::class, 'voided_by');
+    }
+
+    public function voidRequestedBy()
+    {
+        return $this->belongsTo(User::class, 'void_requested_by');
+    }
+
+    public function isVoidPending(): bool
+    {
+        return $this->void_requested_at !== null && !$this->is_voided;
     }
 
     public static function generateBatchNo(): string
