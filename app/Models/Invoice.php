@@ -8,11 +8,19 @@ use Illuminate\Database\Eloquent\Model;
 class Invoice extends Model
 {
     use Auditable;
+    const TYPE_PROFORMA     = 'PROFORMA';
+    const TYPE_FINAL        = 'FINAL';
+    const TYPE_CREDIT_NOTE  = 'CREDIT_NOTE';
+    const TYPE_DEBIT_NOTE   = 'DEBIT_NOTE';
+    const TYPE_CANCELLATION = 'CANCELLATION';
+
     protected $fillable = [
-        'invoice_no', 'partner_id', 'guest_name', 'visit_date', 'booking_pass_no',
+        'invoice_no', 'invoice_type', 'partner_id', 'guest_name', 'visit_date', 'booking_pass_no',
         'invoice_date', 'due_date', 'dsi_transaction_no', 'import_row_id',
         'subtotal', 'deposit', 'grand_total', 'terbilang',
         'payment_status', 'notes', 'credit_override_reason', 'pdf_path', 'is_finalized',
+        'parent_invoice_id', 'replaces_invoice_id', 'delta_amount',
+        'source_type', 'source_id', 'is_locked', 'lock_reason',
         'created_by', 'updated_by',
     ];
 
@@ -25,7 +33,9 @@ class Invoice extends Model
             'subtotal'     => 'decimal:2',
             'deposit'      => 'decimal:2',
             'grand_total'  => 'decimal:2',
+            'delta_amount' => 'decimal:2',
             'is_finalized' => 'boolean',
+            'is_locked'    => 'boolean',
         ];
     }
 
@@ -57,6 +67,36 @@ class Invoice extends Model
     public function depositTransaction()
     {
         return $this->hasOne(PartnerDeposit::class)->where('type', 'DEDUCTION');
+    }
+
+    public function parentInvoice()
+    {
+        return $this->belongsTo(Invoice::class, 'parent_invoice_id');
+    }
+
+    public function childInvoices()
+    {
+        return $this->hasMany(Invoice::class, 'parent_invoice_id');
+    }
+
+    public function replacesInvoice()
+    {
+        return $this->belongsTo(Invoice::class, 'replaces_invoice_id');
+    }
+
+    public function replacedByInvoice()
+    {
+        return $this->hasOne(Invoice::class, 'replaces_invoice_id');
+    }
+
+    public function reconciliation()
+    {
+        return $this->hasOne(Reconciliation::class, 'proforma_invoice_id');
+    }
+
+    public function allocations()
+    {
+        return $this->hasMany(PaymentAllocation::class);
     }
 
     public function isOverdue(): bool

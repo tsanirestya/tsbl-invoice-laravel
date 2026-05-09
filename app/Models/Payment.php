@@ -14,17 +14,19 @@ class Payment extends Model
     const UPDATED_AT = null;
 
     protected $fillable = [
-        'invoice_id', 'amount', 'payment_date', 'payment_method',
-        'reference_no', 'proof_file', 'notes', 'created_by',
-        'credit_payment_id',
+        'invoice_id', 'amount', 'amount_allocated', 'amount_unallocated',
+        'payment_date', 'payment_method', 'reference_no', 'proof_file',
+        'notes', 'created_by', 'credit_payment_id',
     ];
 
     protected function casts(): array
     {
         return [
-            'payment_date' => 'date',
-            'amount'       => 'decimal:2',
-            'created_at'   => 'datetime',
+            'payment_date'      => 'date',
+            'amount'            => 'decimal:2',
+            'amount_allocated'  => 'decimal:2',
+            'amount_unallocated'=> 'decimal:2',
+            'created_at'        => 'datetime',
         ];
     }
 
@@ -36,5 +38,10 @@ class Payment extends Model
     public function creditPayment()
     {
         return $this->belongsTo(CreditPayment::class);
+    }
+
+    public function allocations()
+    {
+        return $this->hasMany(PaymentAllocation::class);
     }
 }

@@ -9,7 +9,8 @@ class InvoiceItem extends Model
     public $timestamps = false;
 
     protected $fillable = [
-        'invoice_id', 'product_id', 'product_name', 'pax', 'price_per_pax', 'amount', 'sort_order',
+        'invoice_id', 'dsi_line_item_id', 'product_id', 'product_name',
+        'pax', 'price_per_pax', 'amount', 'sort_order',
     ];
 
     protected function casts(): array
@@ -28,5 +29,10 @@ class InvoiceItem extends Model
     public function product()
     {
         return $this->belongsTo(Product::class);
+    }
+
+    public function dsiLineItem()
+    {
+        return $this->belongsTo(DsiLineItem::class, 'dsi_line_item_id');
     }
 }

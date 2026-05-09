@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "TODO-AUDIT-2026-05-08.md",
+                "file": "TODO/TODO-BILLING-REDESIGN.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "TODO-AUDIT-2026-05-08"
+              "title": "TODO-BILLING-REDESIGN"
             }
           }
         ]
@@ -185,6 +185,8 @@
   },
   "active": "f75570c9470dc731",
   "lastOpenFiles": [
+    "TODO-AUDIT-2026-05-08.md",
+    "TODO/TODO-BILLING-REDESIGN.md",
     "MANUAL-BOOK.md",
     "images/manual/add_partner_form.png",
     "images/manual/invoice_items_and_total.png",
@@ -199,7 +201,6 @@
     "images/manual",
     "images",
     "MANUAL-BOOK.html",
-    "TODO-AUDIT-2026-05-08.md",
     "AUDIT-REPORT-2026-05-08.md",
     "AUDIT-PROMPT-TEMPLATE.md",
     "INDEX.md",
