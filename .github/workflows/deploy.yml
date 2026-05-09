@@ -7,7 +7,7 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 40
 
     steps:
       - name: Checkout code
@@ -76,7 +76,7 @@ jobs:
           EOF
           sed -i 's/^[[:space:]]*//' _webroot/index.php
 
-      - name: Deploy app → /tsbl-invoice-laravel/ (no vendor)
+      - name: Deploy app → /tsbl-invoice-laravel/ (incremental, with vendor)
         uses: SamKirkland/FTP-Deploy-Action@v4.3.4
         with:
           server: ${{ secrets.FTP_SERVER }}
@@ -88,7 +88,6 @@ jobs:
             **/.git*
             **/.git*/**
             **/node_modules/**
-            **/vendor/**
             .env.example
             .env.local
             .env.testing
