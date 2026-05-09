@@ -94,6 +94,18 @@ tsbl-invoice-laravel/
 
 ---
 
+## Production Deployment Constraints
+
+**No SSH access to production hosting.** Never instruct user to run commands on prod (e.g. `php artisan migrate`, `composer dump-autoload`, `php artisan config:cache`).
+
+Instead, always provide code-based alternatives:
+- **Migrations** → use `Schema::hasTable()` guards so migrations auto-run on next request via the hosting panel's deploy hook, OR provide a web-accessible artisan route for one-time use
+- **Config/route cache** → ensure `APP_DEBUG=false` and caches are committed if needed, or advise clearing via hosting control panel file manager
+- **Autoload** → `composer.json` changes must always be accompanied by committing the updated `vendor/autoload.php` or advise re-deploying via hosting panel
+- **General prod tasks** → use Laravel web routes, scheduled commands, or hosting panel tools (file manager, DB manager, deploy hooks)
+
+---
+
 ## Coding Rules
 
 - All agent outputs MUST be typed with TypeScript interfaces (if TS used)

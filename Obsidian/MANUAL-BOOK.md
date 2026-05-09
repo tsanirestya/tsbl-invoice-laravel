@@ -33,6 +33,11 @@
 18. [Pengaturan Sistem (Admin)](#18-pengaturan-sistem-admin)
 19. [Lupa Password / Reset Password](#19-lupa-password--reset-password)
 20. [Jika Mengalami Masalah](#20-jika-mengalami-masalah)
+21. [Alur Billing Baru (Redesign)](#21-alur-billing-baru-redesign)
+22. [Manajemen Reservasi & Proforma](#22-manajemen-reservasi--proforma)
+23. [Rekonsiliasi DSI & Invoice Final](#23-rekonsiliasi-dsi--invoice-final)
+24. [Alokasi Pembayaran & Saldo Kredit](#24-alokasi-pembayaran--saldo-kredit)
+
 
 ---
 
@@ -1133,3 +1138,63 @@ Jika mengalami masalah yang tidak tercantum di panduan ini, hubungi:
 
 *Manual Book ini terakhir diperbarui: 2026-05-09*  
 *Sistem: TSBL Invoice Management System v1.0*
+
+---
+
+## 21. ALUR BILLING BARU (REDESIGN)
+
+### ?? Tujuan
+Memahami sistem billing yang lebih akurat dan terintegrasi antara reservasi, kunjungan (DSI), dan invoice final.
+
+Sistem baru ini menggunakan alur:
+**Reservasi** ? **Invoice Proforma** ? **Kunjungan (DSI)** ? **Rekonsiliasi** ? **Invoice Final**
+
+---
+
+## 22. MANAJEMEN RESERVASI & PROFORMA
+
+### Langkah 22.1 — Mencatat Reservasi
+1. Klik menu **Reservations** di sidebar.
+2. Klik **[+ Create Reservation]**.
+3. Isi nama tamu, partner, tanggal check-in, dan estimasi pax/harga.
+4. Klik **[Save]**. Status awal adalah **PENDING**.
+
+### Langkah 22.2 — Konfirmasi & Proforma
+1. Buka detail reservasi, klik **[Confirm]** jika sudah pasti.
+2. Klik **[Issue Proforma]** untuk menagih pembayaran di muka (Prepaid).
+3. Masukkan item yang akan ditagih.
+4. Kirim invoice Proforma ke partner.
+
+---
+
+## 23. REKONSILIASI DSI & INVOICE FINAL
+
+### Langkah 23.1 — Import Transaksi DSI
+Setiap hari, import data dari sistem operasional (DSI) melalui menu **DSI Import**. Sistem akan otomatis mencocokkan transaksi dengan reservasi yang ada.
+
+### Langkah 23.2 — Melakukan Rekonsiliasi
+1. Klik menu **Reconciliations**.
+2. Pilih baris yang berstatus **PENDING_REVIEW**.
+3. Bandingkan data Proforma (rencana) dengan data DSI (kenyataan).
+4. Jika sudah sesuai, klik **[Approve]**.
+
+? **Hasil:** Sistem akan otomatis membuat **Invoice FINAL**. Jika ada pembayaran di Proforma, saldo akan dipindahkan otomatis ke Invoice Final.
+
+---
+
+## 24. ALOKASI PEMBAYARAN & SALDO KREDIT
+
+### Langkah 24.1 — Verifikasi Pembayaran
+1. Klik menu **Billing Payments**.
+2. Klik **[Verify]** pada pembayaran yang masuk (setelah cek bank).
+3. Status pembayaran berubah menjadi **VERIFIED** dan terkunci.
+
+### Langkah 24.2 — Alokasi ke Invoice
+1. Buka detail pembayaran yang sudah Verified.
+2. Klik **[Allocate]**, pilih invoice mana yang ingin dilunasi dengan uang ini.
+3. Satu uang bisa melunasi banyak invoice (Batch Pay).
+
+### Langkah 24.3 — Manajemen Saldo Kredit
+Jika partner membayar lebih (Overpayment):
+1. Saldo sisa akan masuk ke **Credit Balance** partner.
+2. Saat membuat invoice berikutnya, gunakan tombol **[Apply Credit]** untuk memotong tagihan menggunakan saldo tersebut.

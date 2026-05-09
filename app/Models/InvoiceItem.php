@@ -31,8 +31,4 @@ class InvoiceItem extends Model
         return $this->belongsTo(Product::class);
     }
 
-    public function dsiLineItem()
-    {
-        return $this->belongsTo(DsiLineItem::class, 'dsi_line_item_id');
-    }
 }

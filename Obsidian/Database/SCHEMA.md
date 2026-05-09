@@ -1,168 +1,122 @@
-# Database Schema — tsbl_invoice
+# Database Schema — tsbl_invoice (Billing Redesign v2)
 
 → Kembali ke: [[MASTER-PLAN]]
 → Lihat juga: [[LARAVEL-STRUCTURE]] untuk model relationships
 
 **Engine:** MySQL/MariaDB | **Charset:** utf8mb4_unicode_ci
-**Source:** Migrated dari CodeIgniter 4 — semua tables pre-exist dengan data
-**Laravel migrations:** 8 file dengan `Schema::hasTable()` guards (data preserved)
-**CI4 backup:** `ci_migrations_backup` table (rename dari `migrations`)
+**Laravel migrations:** 45+ migrations including Phase A-F redesign guards.
 
 ---
 
-## users ✅
+## users
 | Column | Type | Notes |
 |---|---|---|
-| id | int unsigned PK AI | |
-| full_name | varchar(150) | |
-| email | varchar(150) UNIQUE | login identifier |
-| phone | varchar(30) | nullable |
-| password | varchar(255) | bcrypt |
-| user_status | enum(ADMIN,FINANCE,SALES,VIEWER) | default VIEWER |
-| signature_image | varchar(255) | path ke transparent PNG di storage |
-| position_name | varchar(100) | nullable |
-| is_active | tinyint(1) | default 1 — inactive = cannot login |
-| created_at / updated_at | datetime | |
-
-**Data:** 1 user (admin@tsbl.com, ADMIN)
+| user_status | enum(ADMIN,FINANCE,SALES,VIEWER) | Roles check via `CheckRole` middleware. |
 
 ---
 
-## partners ✅
+## reservations (Redesigned)
 | Column | Type | Notes |
 |---|---|---|
 | id | int unsigned PK AI | |
-| partner_type | enum(HOTEL,TRAVEL,TOURDESK) | |
-| nama_partner | varchar(200) | nama display |
-| category / channel | varchar(100) | nullable |
-| nama_pt | varchar(200) | nama legal entity |
-| pic_tsbl | varchar(150) | PIC internal TSBL |
-| pic_partner | varchar(150) | PIC di sisi partner |
-| pic_partner_phone / email | varchar | nullable |
-| address | text | nullable |
-| bank_name / bank_account_no / bank_account_name | varchar | nullable |
-| npwp | varchar(30) | nullable |
-| payment_type | varchar(50) | nullable |
-| payment_due_days | int | default 14 |
-| limit_credit | decimal(15,2) | default 0 |
-| contract_start / contract_end | date | nullable |
-| doc_akta_pendirian / akta_perubahan / surat_kuasa / ktp / nib / npwp | varchar(255) | file paths di storage |
-| notes | text | nullable |
-| is_active | tinyint(1) | |
-| created_by / updated_by | int unsigned FK users | nullable |
-
-**Data:** 0 partners
-
----
-
-## products ✅
-| Column | Type | Notes |
-|---|---|---|
-| id | int unsigned PK AI | |
-| product_name | varchar(200) | |
-| description | text | nullable |
-| default_price | decimal(15,2) | default 0 |
-| unit | varchar(30) | default 'Pax' |
-| is_active | tinyint(1) | |
-| created_by | int unsigned | nullable |
-
-**Data:** 5 products pre-loaded
-
----
-
-## invoices ✅
-| Column | Type | Notes |
-|---|---|---|
-| id | int unsigned PK AI | |
-| invoice_no | varchar(50) UNIQUE | format: INV-YYYY-NNNN |
+| reservation_no | varchar(50) UNIQUE | Format: RES-YYYYMMDD-XXXX |
 | partner_id | int unsigned FK partners | |
-| guest_name | varchar(200) | nullable |
-| visit_date | date | nullable |
-| booking_pass_no | varchar(100) | nullable |
-| invoice_date | date | required |
-| due_date | date | auto dari invoice_date + payment_due_days |
-| dsi_transaction_no | varchar(100) | nullable |
-| subtotal | decimal(15,2) | sum of invoice_items.amount |
-| deposit | decimal(15,2) | default 0 |
-| grand_total | decimal(15,2) | subtotal - deposit |
-| terbilang | text | auto-generate dari grand_total |
-| payment_status | enum(UNPAID,PARTIAL,PAID,OVERDUE) | default UNPAID |
-| notes | text | nullable |
-| pdf_path | varchar(255) | path permanent PDF — JANGAN digenerate ulang |
-| is_finalized | tinyint(1) | 0=draft, 1=final (PDF di-lock) |
-| created_by / updated_by | int unsigned FK users | |
-
-**Data:** 0 invoices
+| guest_name | varchar(200) | |
+| status | enum(PENDING,CONFIRMED,CANCELLED,NO_SHOW,COMPLETED) | |
+| proforma_amount | decimal(15,2) | Expected amount from booking. |
+| cancel_reason | text | Required if status is CANCELLED. |
+| created_by | int unsigned FK users | |
 
 ---
 
-## invoice_items ✅
+## invoices (Redesigned)
 | Column | Type | Notes |
 |---|---|---|
-| id | int unsigned PK AI | |
-| invoice_id | int unsigned FK invoices | |
-| product_id | int unsigned FK products | nullable — bisa free-text |
-| product_name | varchar(200) | snapshot nama saat invoice dibuat |
-| pax | int | default 1 |
-| price_per_pax | decimal(15,2) | |
-| amount | decimal(15,2) | = pax × price_per_pax |
-| sort_order | int | default 0 |
+| invoice_type | enum(PROFORMA,FINAL,CREDIT_NOTE,DEBIT_NOTE,CANCELLATION) | |
+| source_type | varchar(100) | App\Models\Reservation, etc. |
+| source_id | int unsigned | ID of the source model. |
+| payment_status | enum(UNPAID,PARTIAL,PAID,OVERDUE,VOID) | |
+| is_locked | tinyint(1) | Locked after reconciliation or void approval. |
+| delta_amount | decimal(15,2) | Difference between Proforma and Final. |
+| parent_invoice_id| int unsigned FK invoices | Final → Proforma link. |
+| replaces_invoice_id| int unsigned FK invoices | VOID/Correction link. |
 
 ---
 
-## payments ✅
+## payments (Redesigned)
+| Column | Type | Notes |
+|---|---|---|
+| amount | decimal(15,2) | Total cash/transfer amount received. |
+| amount_unallocated| decimal(15,2) | Remaining amount to be allocated to invoices. |
+| is_locked | tinyint(1) | Locked after verification. |
+| batch_ref | varchar(100) | Optional reference for batch processing. |
+
+---
+
+## payment_allocations (NEW)
 | Column | Type | Notes |
 |---|---|---|
 | id | int unsigned PK AI | |
+| payment_id | int unsigned FK payments | |
 | invoice_id | int unsigned FK invoices | |
+| amount_allocated | decimal(15,2) | Amount applied to this specific invoice. |
+| allocated_by | int unsigned FK users | |
+
+---
+
+## dsi_import_batches (NEW)
+| Column | Type | Notes |
+|---|---|---|
+| id | int unsigned PK AI | |
+| batch_ref | varchar(100) UNIQUE | |
+| file_name | varchar(255) | |
+| file_hash | varchar(64) UNIQUE | Layer 1 duplicate detection. |
+| status | enum(PENDING,PROCESSING,COMPLETED,FAILED) | |
+
+---
+
+## dsi_transactions (NEW)
+| Column | Type | Notes |
+|---|---|---|
+| id | int unsigned PK AI | |
+| batch_id | int unsigned FK dsi_import_batches | |
+| ref_no | varchar(100) | Layer 2 duplicate detection (idempotency key). |
+| reservation_id | int unsigned FK reservations | Matched via DsiMatcherService. |
+| transaction_date | date | |
 | amount | decimal(15,2) | |
-| payment_date | date | |
-| payment_method | varchar(50) | nullable |
-| reference_no | varchar(100) | nullable |
-| proof_file | varchar(255) | path file bukti bayar |
-| notes | text | nullable |
-| created_by | int unsigned FK users | nullable |
-| created_at | datetime | |
+| is_locked | tinyint(1) | Locked after reconciliation. |
 
 ---
 
-## settings ✅
+## reconciliations (NEW)
 | Column | Type | Notes |
 |---|---|---|
 | id | int unsigned PK AI | |
-| key | varchar(100) UNIQUE | |
-| value | text | nullable |
-| label | varchar(150) | human-readable label |
-| updated_at | datetime | |
-
-**Data:** 13 keys pre-loaded:
-`company_name`, `company_address`, `company_phone`, `company_email`, `company_npwp`,
-`invoice_prefix` (=INV), `default_due_days` (=14), `bank_name`, `bank_account_no`,
-`bank_account_name`, `invoice_notes`, `terms_conditions`, `logo_path`
+| reservation_id | int unsigned FK reservations | |
+| proforma_invoice_id| int unsigned FK invoices | |
+| dsi_transaction_id | int unsigned FK dsi_transactions | |
+| status | enum(PENDING_REVIEW,APPROVED,DISPUTED,REJECTED) | |
+| delta_amount | decimal(15,2) | Difference: Proforma vs DSI. |
+| no_show_policy_applied| tinyint(1) | |
+| final_invoice_id | int unsigned FK invoices | Created upon approval. |
 
 ---
 
-## invoice_logs ✅
+## credit_balances (NEW)
 | Column | Type | Notes |
 |---|---|---|
 | id | int unsigned PK AI | |
-| invoice_id | int unsigned FK invoices | |
-| action | varchar(100) | e.g. CREATED, UPDATED, FINALIZED, PAYMENT_ADDED |
-| description | text | nullable |
-| old_value / new_value | text | nullable — JSON atau plain text |
-| created_by | int unsigned FK users | nullable |
-| created_at | datetime | |
+| partner_id | int unsigned FK partners | |
+| balance | decimal(15,2) | Current available credit (overpayments). |
+| last_updated_at | datetime | |
 
 ---
 
-## Tabel Lain (Non-Laravel)
-| Table | Keterangan |
-|---|---|
-| ci_migrations_backup | Backup dari CI4 migrations table (jangan disentuh) |
-| ci_sessions | CI4 sessions (tidak dipakai Laravel) |
-
----
-
-## Migration Status
-Semua 8 migrations sudah `DONE` di Laravel `migrations` table.
-Karena hasTable guards, semua SKIP create (tables sudah ada) — hanya di-track di Laravel.
+## credit_balance_usages (NEW)
+| Column | Type | Notes |
+|---|---|---|
+| id | int unsigned PK AI | |
+| credit_balance_id | int unsigned FK credit_balances | |
+| invoice_id | int unsigned FK invoices | Null if accumulation (CREDIT type). |
+| type | enum(CREDIT,DEBIT) | CREDIT=accumulation, DEBIT=application. |
+| amount | decimal(15,2) | |

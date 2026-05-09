@@ -7,7 +7,7 @@ AddHandler application/x-httpd-php82 .php
     Header always set X-Content-Type-Options "nosniff"
     Header always set X-XSS-Protection "1; mode=block"
     Header always set Referrer-Policy "strict-origin-when-cross-origin"
-    Header always set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' cdn.jsdelivr.net; font-src 'self' cdn.jsdelivr.net data:; img-src 'self' data: blob:; object-src 'none'; base-uri 'self'; form-action 'self';"
+    Header always set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' cdn.jsdelivr.net fonts.googleapis.com; font-src 'self' cdn.jsdelivr.net fonts.gstatic.com data:; img-src 'self' data: blob:; connect-src 'self' cdn.jsdelivr.net; object-src 'none'; base-uri 'self'; form-action 'self';"
     Header always set Permissions-Policy "geolocation=(), microphone=(), camera=()"
 </IfModule>
 

@@ -89,16 +89,6 @@ class Invoice extends Model
         return $this->hasOne(Invoice::class, 'replaces_invoice_id');
     }
 
-    public function reconciliation()
-    {
-        return $this->hasOne(Reconciliation::class, 'proforma_invoice_id');
-    }
-
-    public function allocations()
-    {
-        return $this->hasMany(PaymentAllocation::class);
-    }
-
     public function isOverdue(): bool
     {
         return $this->due_date && $this->due_date->isPast() && $this->payment_status !== 'PAID';

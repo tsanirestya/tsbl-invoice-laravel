@@ -44,6 +44,7 @@
 - [[BUG-004-INVOICE-PDF-SUBTOTAL-ALIGNMENT]] — Subtotal & Grand Total tidak sejajar kolom jumlah di PDF invoice 🔲
 - [[BUG-005-PRODUCTION-SETUP-FK-MIGRATION]] — Production deploy: route cache 404 + FK type mismatch errno 150 ✅
 - [[BUG-006-PRODUCTION-FILE-UPLOADS-404]] — Production: uploads 404 akibat split webroot + PHP version fix ✅
+- [[BUG-007-PROD-500-TROUBLESHOOTING-GUIDE]] — **GUIDE: Prod 500 debug step-by-step + deploy.php template** ✅
 
 ## 🔍 Audit
 - [[AUDIT-PROMPT-TEMPLATE]] — Template prompt audit menyeluruh (security, fraud, finance, ops)

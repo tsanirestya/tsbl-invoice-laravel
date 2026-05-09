@@ -40,8 +40,4 @@ class Payment extends Model
         return $this->belongsTo(CreditPayment::class);
     }
 
-    public function allocations()
-    {
-        return $this->hasMany(PaymentAllocation::class);
-    }
 }
