@@ -38,6 +38,16 @@ class PaymentMemo extends Model
         return (float) $this->memoInvoices()->sum('sisa_tagihan');
     }
 
+    public function totalCurrentBalance(): float
+    {
+        return $this->memoInvoices->sum(fn($mi) => $mi->currentBalance());
+    }
+
+    public function totalPaidToDate(): float
+    {
+        return $this->memoInvoices->sum(fn($mi) => $mi->currentPaid());
+    }
+
     /** Generate next memo_no for current month: MP-YYYYMM-001 */
     public static function generateMemoNo(): string
     {

@@ -53,8 +53,14 @@
                     <dt class="col-5 text-muted">Dibuat oleh</dt>
                     <dd class="col-7">{{ $paymentMemo->creator->full_name ?? '—' }}</dd>
 
-                    <dt class="col-5 text-muted">Total Outstanding</dt>
-                    <dd class="col-7 fw-bold text-primary">Rp {{ number_format($paymentMemo->totalOutstanding(), 0, ',', '.') }}</dd>
+                    <dt class="col-5 text-muted">Total Tagihan (Memo)</dt>
+                    <dd class="col-7 fw-bold">Rp {{ number_format($paymentMemo->totalOutstanding(), 0, ',', '.') }}</dd>
+
+                    <dt class="col-5 text-muted">Total Bayar (S/D Hari Ini)</dt>
+                    <dd class="col-7 text-success fw-semibold">Rp {{ number_format($paymentMemo->totalPaidToDate(), 0, ',', '.') }}</dd>
+
+                    <dt class="col-5 text-muted">Sisa Tagihan Sekarang</dt>
+                    <dd class="col-7 fw-bold text-primary" style="font-size: 1.1rem">Rp {{ number_format($paymentMemo->totalCurrentBalance(), 0, ',', '.') }}</dd>
 
                     @if($paymentMemo->notes)
                     <dt class="col-5 text-muted">Catatan</dt>
@@ -75,9 +81,10 @@
                         <thead>
                             <tr>
                                 <th>No. Invoice</th>
-                                <th>Jatuh Tempo</th>
-                                <th class="text-end">Sisa saat Memo</th>
-                                <th class="text-center">Status Sekarang</th>
+                                <th class="text-end">Tagihan Memo</th>
+                                <th class="text-end">Terbayar</th>
+                                <th class="text-end">Sisa Sekarang</th>
+                                <th class="text-center">Status</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -88,32 +95,38 @@
                                     <a href="{{ route('invoices.show', $inv) }}" class="fw-semibold text-decoration-none">
                                         {{ $inv->invoice_no }}
                                     </a>
+                                    <div class="small text-muted">{{ $inv->due_date?->format('d/m/Y') ?? '—' }}</div>
                                 </td>
-                                <td class="small text-muted">{{ $inv->due_date?->format('d/m/Y') ?? '—' }}</td>
-                                <td class="text-end fw-semibold text-danger">
-                                    Rp {{ number_format($mi->sisa_tagihan, 0, ',', '.') }}
+                                <td class="text-end text-muted">
+                                    {{ number_format($mi->sisa_tagihan, 0, ',', '.') }}
+                                </td>
+                                <td class="text-end text-success">
+                                    {{ number_format($mi->currentPaid(), 0, ',', '.') }}
+                                </td>
+                                <td class="text-end fw-bold {{ $mi->currentBalance() > 0 ? 'text-danger' : 'text-success' }}">
+                                    {{ number_format($mi->currentBalance(), 0, ',', '.') }}
                                 </td>
                                 <td class="text-center">
                                     @php $st = $inv->payment_status; @endphp
                                     @if($st === 'PAID')
-                                        <span class="badge badge-paid"><i class="bi bi-check-circle me-1"></i>PAID</span>
+                                        <span class="badge badge-paid"><i class="bi bi-check-circle"></i></span>
                                     @elseif($st === 'OVERDUE')
-                                        <span class="badge badge-overdue">OVERDUE</span>
+                                        <span class="badge badge-overdue">O</span>
                                     @elseif($st === 'PARTIAL')
-                                        <span class="badge badge-partial">PARTIAL</span>
+                                        <span class="badge badge-partial">P</span>
                                     @else
-                                        <span class="badge badge-unpaid">UNPAID</span>
+                                        <span class="badge badge-unpaid">U</span>
                                     @endif
                                 </td>
                             </tr>
                             @endforeach
                         </tbody>
                         <tfoot>
-                            <tr class="table-light">
-                                <td colspan="2" class="fw-semibold text-end">Total</td>
-                                <td class="text-end fw-bold text-danger">
-                                    Rp {{ number_format($paymentMemo->totalOutstanding(), 0, ',', '.') }}
-                                </td>
+                            <tr class="table-light fw-bold">
+                                <td class="text-end">Total</td>
+                                <td class="text-end text-muted">{{ number_format($paymentMemo->totalOutstanding(), 0, ',', '.') }}</td>
+                                <td class="text-end text-success">{{ number_format($paymentMemo->totalPaidToDate(), 0, ',', '.') }}</td>
+                                <td class="text-end text-danger">{{ number_format($paymentMemo->totalCurrentBalance(), 0, ',', '.') }}</td>
                                 <td></td>
                             </tr>
                         </tfoot>

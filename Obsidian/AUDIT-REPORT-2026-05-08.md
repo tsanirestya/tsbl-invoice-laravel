@@ -1,7 +1,7 @@
 # TSBL Invoice System — Comprehensive Security & Fraud Audit Report
 
 **Audit Date:** 2026-05-08
-**Last Remediation:** 2026-05-09 — 18 findings fixed (F-001 through F-015, F-016, F-017, F-018)
+**Last Remediation:** 2026-05-09 — 20 findings fixed (F-001 through F-015, F-016, F-017, F-018, F-019, F-020)
 **Auditor Roles:** Senior System Auditor · Fraud Detection Specialist · Cyber Security Auditor · Financial Risk Analyst · Internal Control Consultant
 **Codebase:** `d:\XAMPP NEW\htdocs\tsbl-invoice-laravel`
 **Stack:** Laravel 11, PHP 8.2, MySQL/MariaDB, Bootstrap 5.3, DomPDF
@@ -18,7 +18,8 @@
 | MEDIUM | 9 |
 | LOW | 6 |
 | Estimated Financial Exposure | HIGH — deposit manipulation, overpayment, credit bypass, audit trail deletion all possible by any authenticated staff |
-| Overall System Health Score | **47 / 100** *(updated 2026-05-08 after 14 fixes)* |
+| Health Score Awal | 31 / 100 |
+| Health Score Saat Ini | 55 / 100 (20/28 Findings) |
 
 **Bottom line:** System handles real money (invoices, deposits, credit limits, batch payments) but has no meaningful role-based access control beyond a single ADMIN gate. Any VIEWER-role employee can delete payments, override credit limits, manipulate deposits, and void batch payments. There is an unauthenticated remote code execution vector (`/setup-production`). Audit logs can be destroyed by deleting the invoice. **System is NOT safe for production** without at minimum fixing FINDING-001, FINDING-002, FINDING-003, FINDING-004 immediately.
 
@@ -585,15 +586,15 @@ Bootstrap 5.3.3 and Bootstrap Icons loaded from jsDelivr without `integrity` att
 
 | Area | Score / 100 | Notes |
 |------|------------|-------|
-| Security | ~~28~~ **55** | ✅ RCE route deleted, RBAC added, debug off, throttle login, security headers, session encrypted, storage auth |
-| Fraud Prevention | ~~22~~ ~~41~~ **45** | ✅ F-016: deposit adjustment gated FINANCE,ADMIN confirmed |
-| Financial Control | ~~40~~ **51** | ✅ Payment max cap, deposit floor/cap, draft invoice blocked |
-| Operational Control | ~~35~~ **45** | ✅ F-009: admin-mediated password reset — no more single point of failure |
-| Scalability | ~~45~~ ~~55~~ **62** | ✅ F-018: Setting cache — 28+ DB hits → 1 per 5 min; ✅ F-010/F-012: race conditions fixed |
-| Auditability | ~~30~~ ~~38~~ **44** | ✅ F-017: markOverdue moved to cron + logs every status change |
+| Security | 55 | ✅ RCE route deleted, RBAC added, debug off, throttle login, security headers, session encrypted, storage auth |
+| Fraud Prevention | 45 | ✅ F-016: deposit adjustment gated FINANCE,ADMIN confirmed |
+| Financial Control | 51 | ✅ Payment max cap, deposit floor/cap, draft invoice blocked |
+| Operational Control | 45 | ✅ F-009: admin-mediated password reset — no more single point of failure |
+| Scalability | 62 | ✅ F-018: Setting cache — 28+ DB hits → 1 per 5 min; ✅ F-010/F-012: race conditions fixed |
+| Auditability | 44 | ✅ F-017: markOverdue moved to cron + logs every status change |
 | Monitoring | 10 | No alerting, no anomaly detection |
-| Data Integrity | ~~38~~ **42** | ✅ Deposit duplicate bug fixed |
-| **OVERALL** | ~~31~~ ~~42~~ ~~47~~ ~~49~~ **52 / 100** | 18 findings fixed — F-016, F-017, F-018 done (2026-05-09) |
+| Data Integrity | 46 | ✅ Deposit duplicate bug fixed; ✅ F-020: Dynamic balance in Payment Memo |
+| **OVERALL** | 55 / 100 | 20 findings fixed — F-019, F-020 added (2026-05-09) |
 
 ---
 

@@ -27,4 +27,14 @@ class PaymentMemoInvoice extends Model
     {
         return $this->belongsTo(Invoice::class);
     }
+
+    public function currentPaid(): float
+    {
+        return $this->invoice->totalPaid();
+    }
+
+    public function currentBalance(): float
+    {
+        return max(0, (float) $this->invoice->grand_total - $this->currentPaid());
+    }
 }

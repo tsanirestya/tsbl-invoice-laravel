@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "MANUAL-BOOK.md",
+                "file": "TODO-AUDIT-2026-05-08.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "MANUAL-BOOK"
+              "title": "TODO-AUDIT-2026-05-08"
             }
           }
         ]
@@ -185,6 +185,7 @@
   },
   "active": "f75570c9470dc731",
   "lastOpenFiles": [
+    "MANUAL-BOOK.md",
     "images/manual/add_partner_form.png",
     "images/manual/invoice_items_and_total.png",
     "images/manual/reset_password_request.png",
@@ -195,12 +196,10 @@
     "images/manual/memo_tagihan_create.png",
     "images/manual/memo_tagihan_list.png",
     "images/manual/payment_form.png",
-    "images/manual/settings_page.png",
     "images/manual",
     "images",
     "MANUAL-BOOK.html",
     "TODO-AUDIT-2026-05-08.md",
-    "MANUAL-BOOK.md",
     "AUDIT-REPORT-2026-05-08.md",
     "AUDIT-PROMPT-TEMPLATE.md",
     "INDEX.md",

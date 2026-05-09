@@ -4,6 +4,7 @@
 **Dibuat:** 2026-05-08
 **Total Finding:** 28 (4 CRITICAL, 9 HIGH, 9 MEDIUM, 6 LOW)
 **Health Score Awal:** 31 / 100
+**Health Score Saat Ini:** 55 / 100 (20/28 Findings)
 
 ---
 
@@ -44,7 +45,7 @@
 | 17  | FINDING-017 | Pindahkan `markOverdue` dari `DashboardController` ke scheduled artisan command + log perubahan status ke `invoice_logs` | `app/Console/Commands/`, `routes/console.php`                                   | ✅ 2026-05-09 |
 | 18  | FINDING-018 | Cache `Setting::get()` — `Cache::remember('settings_all', 300, ...)` untuk eliminasi 28+ DB hit per request              | `app/Models/Setting.php`                                                        | ✅ 2026-05-09 |
 | 19  | FINDING-019 | Fix null komisi — treat null sebagai 0 dalam agregasi; require explicit komisi saat override approval                    | `app/Http/Controllers/ImportReviewController.php`                               | ✅ 2026-05-09 |
-| 20  | FINDING-020 | Hitung `PaymentMemo.sisa_tagihan` secara dinamis saat view — `max(0, grand_total - payments sum)`                        | `app/Models/PaymentMemo.php` atau view                                          | 🔲           |
+| 20  | FINDING-020 | Hitung `PaymentMemo.sisa_tagihan` secara dinamis saat view — `max(0, grand_total - payments sum)`                        | `app/Models/PaymentMemo.php` atau view                                          | ✅ 2026-05-09 |
 | 21  | FINDING-021 | Gate `CreditPaymentController::destroy` behind `role:ADMIN`; implement two-step void (FINANCE propose → ADMIN approve)   | `app/Http/Controllers/CreditPaymentController.php`                              | 🔲           |
 | 22  | FINDING-023 | `PartnerController::destroy` — cek `$partner->invoices()->exists()` sebelum delete; tambah soft deletes                  | `app/Http/Controllers/PartnerController.php`                                    | 🔲           |
 | 23  | FINDING-024 | Tambah UNIQUE constraint pada `invoices.import_row_id` — cegah double-invoicing                                          | new migration                                                                   | 🔲           |
@@ -69,9 +70,9 @@
 |------|-------|------|-----------|
 | 🔴 IMMEDIATE | 4 | 4 | 0 |
 | 🟠 THIS WEEK | 7 | 7 | 0 |
-| 🟡 THIS MONTH | 13 | 7 | 6 |
+| 🟡 THIS MONTH | 13 | 9 | 4 |
 | ⚪ LONG TERM | 4 | 0 | 4 |
-| **TOTAL** | **28** | **18** | **10** |
+| **TOTAL** | **28** | **20** | **8** |
 
 ---
 
