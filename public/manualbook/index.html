@@ -1,0 +1,1739 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Manual Book — TSBL Invoice Management System</title>
+<style>
+  :root {
+    --blue: #2563eb;
+    --blue-light: #eff6ff;
+    --green: #16a34a;
+    --green-light: #f0fdf4;
+    --yellow: #d97706;
+    --yellow-light: #fffbeb;
+    --red: #dc2626;
+    --red-light: #fef2f2;
+    --gray: #64748b;
+    --gray-light: #f8fafc;
+    --border: #e2e8f0;
+    --text: #1e293b;
+    --sidebar-bg: #0f1729;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    font-size: 15px;
+    color: var(--text);
+    line-height: 1.7;
+    background: #f8fafc;
+  }
+
+  /* ── Cover Page ── */
+  .cover {
+    background: linear-gradient(135deg, #0f1729 0%, #1e3a5f 50%, #0f1729 100%);
+    color: white;
+    padding: 80px 60px;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    page-break-after: always;
+    position: relative;
+    overflow: hidden;
+  }
+  .cover::before {
+    content: '';
+    position: absolute;
+    top: -100px; right: -100px;
+    width: 400px; height: 400px;
+    border-radius: 50%;
+    background: rgba(59,130,246,.08);
+  }
+  .cover::after {
+    content: '';
+    position: absolute;
+    bottom: -80px; left: -60px;
+    width: 300px; height: 300px;
+    border-radius: 50%;
+    background: rgba(139,92,246,.06);
+  }
+  .cover-badge {
+    display: inline-block;
+    background: rgba(59,130,246,.2);
+    border: 1px solid rgba(59,130,246,.4);
+    color: #93c5fd;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 6px 16px;
+    border-radius: 50px;
+    margin-bottom: 32px;
+  }
+  .cover-icon {
+    width: 80px; height: 80px;
+    background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+    border-radius: 20px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 36px;
+    margin-bottom: 28px;
+    box-shadow: 0 20px 60px rgba(59,130,246,.3);
+  }
+  .cover h1 {
+    font-size: 48px;
+    font-weight: 800;
+    line-height: 1.1;
+    margin-bottom: 12px;
+    letter-spacing: -1px;
+  }
+  .cover h1 span { color: #60a5fa; }
+  .cover .subtitle {
+    font-size: 20px;
+    color: rgba(255,255,255,.6);
+    margin-bottom: 48px;
+  }
+  .cover-meta {
+    display: flex;
+    gap: 32px;
+    padding-top: 32px;
+    border-top: 1px solid rgba(255,255,255,.1);
+  }
+  .cover-meta-item label {
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: rgba(255,255,255,.4);
+    margin-bottom: 4px;
+  }
+  .cover-meta-item span {
+    font-size: 15px;
+    font-weight: 600;
+    color: rgba(255,255,255,.85);
+  }
+
+  /* ── Layout ── */
+  .container {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 40px 32px;
+  }
+
+  /* ── TOC ── */
+  .toc {
+    background: white;
+    border-radius: 16px;
+    padding: 40px;
+    margin-bottom: 40px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.08);
+    page-break-after: always;
+  }
+  .toc h2 {
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--text);
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .toc h2::before { content: '📋'; }
+  .toc-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .toc-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    border-radius: 8px;
+    text-decoration: none;
+    color: var(--text);
+    border: 1px solid var(--border);
+    transition: all .15s;
+  }
+  .toc-item:hover { background: var(--blue-light); border-color: #bfdbfe; color: var(--blue); }
+  .toc-num {
+    width: 28px; height: 28px;
+    background: var(--blue-light);
+    color: var(--blue);
+    border-radius: 7px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .toc-text { font-size: 13px; font-weight: 500; }
+
+  /* ── Chapter ── */
+  .chapter {
+    background: white;
+    border-radius: 16px;
+    overflow: hidden;
+    margin-bottom: 32px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.08);
+    page-break-inside: avoid;
+  }
+  .chapter-header {
+    background: linear-gradient(135deg, var(--sidebar-bg) 0%, #1e3a5f 100%);
+    color: white;
+    padding: 28px 32px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .chapter-num {
+    width: 48px; height: 48px;
+    background: rgba(59,130,246,.25);
+    border: 1px solid rgba(59,130,246,.4);
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    font-weight: 800;
+    color: #93c5fd;
+    flex-shrink: 0;
+  }
+  .chapter-title { font-size: 22px; font-weight: 800; line-height: 1.2; }
+  .chapter-goal {
+    font-size: 13px;
+    color: rgba(255,255,255,.6);
+    margin-top: 4px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .chapter-body { padding: 32px; }
+
+  /* ── Steps ── */
+  .step {
+    margin-bottom: 32px;
+    border-left: 3px solid var(--blue);
+    padding-left: 20px;
+  }
+  .step-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .step-num {
+    background: var(--blue);
+    color: white;
+    width: 24px; height: 24px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .step p { margin-bottom: 10px; color: #334155; }
+  .step ol, .step ul {
+    padding-left: 20px;
+    margin-bottom: 10px;
+    color: #334155;
+  }
+  .step li { margin-bottom: 6px; }
+
+  /* ── Callouts ── */
+  .callout {
+    border-radius: 10px;
+    padding: 14px 18px;
+    margin: 14px 0;
+    display: flex;
+    gap: 12px;
+    font-size: 14px;
+  }
+  .callout-icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+  .callout-body { flex: 1; }
+  .callout-body strong { display: block; margin-bottom: 4px; }
+  .callout.success { background: var(--green-light); border-left: 4px solid var(--green); color: #14532d; }
+  .callout.warning { background: var(--yellow-light); border-left: 4px solid #f59e0b; color: #78350f; }
+  .callout.danger  { background: var(--red-light); border-left: 4px solid var(--red); color: #7f1d1d; }
+  .callout.info    { background: var(--blue-light); border-left: 4px solid var(--blue); color: #1e3a8a; }
+
+  /* ── Mockup ── */
+  .mockup {
+    background: #0f172a;
+    color: #e2e8f0;
+    border-radius: 10px;
+    padding: 20px 24px;
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    line-height: 1.6;
+    margin: 14px 0;
+    overflow-x: auto;
+    border: 1px solid #1e293b;
+  }
+  .mockup .highlight { color: #60a5fa; font-weight: bold; }
+  .mockup .btn-mock  { color: #34d399; font-weight: bold; }
+  .mockup .label-mock { color: #fbbf24; }
+  .mockup .click-mock {
+    background: rgba(96,165,250,.15);
+    border: 1px solid rgba(96,165,250,.3);
+    padding: 1px 6px;
+    border-radius: 4px;
+    color: #93c5fd;
+  }
+
+  /* ── Action indicator ── */
+  .action {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--blue-light);
+    color: var(--blue);
+    border: 1px solid #bfdbfe;
+    padding: 4px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    margin: 4px 2px;
+  }
+  .action.red { background: var(--red-light); color: var(--red); border-color: #fecaca; }
+  .action.green { background: var(--green-light); color: var(--green); border-color: #bbf7d0; }
+
+  /* ── Table ── */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    margin: 14px 0;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  th {
+    background: var(--gray-light);
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 700;
+    font-size: 12px;
+    color: var(--gray);
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    border-bottom: 1px solid var(--border);
+  }
+  td {
+    padding: 10px 14px;
+    border-bottom: 1px solid #f1f5f9;
+    vertical-align: middle;
+  }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #fafbff; }
+
+  /* ── Role badge ── */
+  .role { display: inline-block; padding: 2px 8px; border-radius: 5px; font-size: 11px; font-weight: 700; }
+  .role.admin   { background: #fae8ff; color: #86198f; }
+  .role.finance { background: #fef3c7; color: #92400e; }
+  .role.staff   { background: #f0fdf4; color: #166534; }
+
+  /* ── Check mark ── */
+  .yes { color: #16a34a; font-weight: 700; }
+  .no  { color: #dc2626; font-weight: 700; }
+
+  /* ── Divider ── */
+  hr { border: none; border-top: 1px solid var(--border); margin: 28px 0; }
+
+  /* ── Troubleshoot ── */
+  .trouble-item {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin-bottom: 16px;
+    overflow: hidden;
+  }
+  .trouble-problem {
+    background: var(--red-light);
+    padding: 12px 18px;
+    font-weight: 700;
+    color: #991b1b;
+    font-size: 14px;
+    border-bottom: 1px solid #fecaca;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .trouble-cause {
+    padding: 12px 18px;
+    background: #fffbeb;
+    font-size: 13px;
+    color: #78350f;
+    border-bottom: 1px solid #fde68a;
+  }
+  .trouble-solution {
+    padding: 12px 18px;
+    background: var(--green-light);
+    font-size: 13px;
+    color: #14532d;
+  }
+  .trouble-solution ol { padding-left: 18px; margin: 6px 0 0; }
+  .trouble-solution li { margin-bottom: 4px; }
+
+  /* ── Footer ── */
+  .footer {
+    text-align: center;
+    padding: 32px;
+    color: var(--gray);
+    font-size: 13px;
+    border-top: 1px solid var(--border);
+    margin-top: 40px;
+  }
+
+  /* ── Print ── */
+  @media print {
+    body { background: white; font-size: 12px; }
+    .cover { min-height: unset; padding: 60px 40px; }
+    .chapter { page-break-inside: avoid; box-shadow: none; border: 1px solid var(--border); }
+    .container { padding: 20px; max-width: 100%; }
+    .toc { page-break-after: always; }
+  }
+
+  /* ── Mobile ── */
+  @media (max-width: 600px) {
+    .cover { padding: 48px 24px; }
+    .cover h1 { font-size: 32px; }
+    .toc-grid { grid-template-columns: 1fr; }
+    .chapter-body { padding: 20px; }
+    .container { padding: 16px; }
+    .cover-meta { flex-wrap: wrap; gap: 16px; }
+  }
+  /* ── Screenshots ── */
+  .screenshot {
+    margin: 20px 0;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0,0,0,.15);
+    border: 1px solid var(--border);
+    background: white;
+  }
+  .screenshot img {
+    width: 100%;
+    display: block;
+    height: auto;
+  }
+  .screenshot-caption {
+    background: var(--gray-light);
+    padding: 10px 16px;
+    font-size: 12px;
+    color: var(--gray);
+    border-top: 1px solid var(--border);
+    font-weight: 500;
+  }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════
+     COVER
+══════════════════════════════════════════════ -->
+<div class="cover">
+  <div class="cover-badge">Panduan Pengguna Resmi</div>
+  <div class="cover-icon">🧾</div>
+  <h1>TSBL Invoice<br><span>Management System</span></h1>
+  <p class="subtitle">Panduan Lengkap untuk Semua Pengguna</p>
+  <div class="cover-meta">
+    <div class="cover-meta-item">
+      <label>Versi</label>
+      <span>1.1 (Actual Screenshot)</span>
+    </div>
+    <div class="cover-meta-item">
+      <label>Tanggal</label>
+      <span>09 Mei 2026</span>
+    </div>
+    <div class="cover-meta-item">
+      <label>Bahasa</label>
+      <span>Indonesia</span>
+    </div>
+    <div class="cover-meta-item">
+      <label>Untuk</label>
+      <span>Staff · Finance · Admin</span>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     TABLE OF CONTENTS
+══════════════════════════════════════════════ -->
+<div class="container">
+<div class="toc">
+  <h2>Daftar Isi</h2>
+  <div class="toc-grid">
+    <a href="#bab1" class="toc-item"><div class="toc-num">1</div><div class="toc-text">Cara Login ke Sistem</div></a>
+    <a href="#bab2" class="toc-item"><div class="toc-num">2</div><div class="toc-text">Mengenal Tampilan Dashboard</div></a>
+    <a href="#bab3" class="toc-item"><div class="toc-num">3</div><div class="toc-text">Membuat Invoice Baru</div></a>
+    <a href="#bab4" class="toc-item"><div class="toc-num">4</div><div class="toc-text">Melihat & Mengelola Invoice</div></a>
+    <a href="#bab5" class="toc-item"><div class="toc-num">5</div><div class="toc-text">Antrian Invoice</div></a>
+    <a href="#bab6" class="toc-item"><div class="toc-num">6</div><div class="toc-text">Invoice Deposit</div></a>
+    <a href="#bab7" class="toc-item"><div class="toc-num">7</div><div class="toc-text">Mengelola Partner</div></a>
+    <a href="#bab8" class="toc-item"><div class="toc-num">8</div><div class="toc-text">Deposit Partner (Top-up)</div></a>
+    <a href="#bab9" class="toc-item"><div class="toc-num">9</div><div class="toc-text">Import Transaksi</div></a>
+    <a href="#bab10" class="toc-item"><div class="toc-num">10</div><div class="toc-text">Review Hasil Import</div></a>
+    <a href="#bab11" class="toc-item"><div class="toc-num">11</div><div class="toc-text">Mencatat Pembayaran Invoice</div></a>
+    <a href="#bab12" class="toc-item"><div class="toc-num">12</div><div class="toc-text">Memo Tagihan</div></a>
+    <a href="#bab13" class="toc-item"><div class="toc-num">13</div><div class="toc-text">Pembayaran Kredit</div></a>
+    <a href="#bab14" class="toc-item"><div class="toc-num">14</div><div class="toc-text">Laporan & Export Data</div></a>
+    <a href="#bab15" class="toc-item"><div class="toc-num">15</div><div class="toc-text">Mengelola Produk & Alias</div></a>
+    <a href="#bab16" class="toc-item"><div class="toc-num">16</div><div class="toc-text">Manajemen Pengguna (Admin)</div></a>
+    <a href="#bab17" class="toc-item"><div class="toc-num">17</div><div class="toc-text">Credit Classes (Admin)</div></a>
+    <a href="#bab18" class="toc-item"><div class="toc-num">18</div><div class="toc-text">Pengaturan Sistem (Admin)</div></a>
+    <a href="#bab19" class="toc-item"><div class="toc-num">19</div><div class="toc-text">Lupa / Reset Password</div></a>
+    <a href="#bab20" class="toc-item"><div class="toc-num">20</div><div class="toc-text">Troubleshooting & Masalah Umum</div></a>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     BAB 1 — LOGIN
+══════════════════════════════════════════════ -->
+<div class="chapter" id="bab1">
+  <div class="chapter-header">
+    <div class="chapter-num">1</div>
+    <div>
+      <div class="chapter-title">Cara Login ke Sistem</div>
+      <div class="chapter-goal">🎯 Tujuan: Masuk ke sistem agar bisa menggunakan semua fitur</div>
+    </div>
+  </div>
+  <div class="chapter-body">
+
+    <div class="step">
+      <div class="step-title"><div class="step-num">1</div> Buka Sistem di Browser</div>
+      <p>Buka browser (Chrome, Firefox, atau Edge) di komputer atau HP kamu.</p>
+      <p>Ketik alamat berikut di <strong>bar atas browser</strong> (tempat biasanya alamat website diketik), lalu tekan <strong>Enter</strong>:</p>
+      <div class="mockup"><span class="highlight">https://invoice.transentertainment.id</span></div>
+      <div class="callout info">
+        <div class="callout-icon">💡</div>
+        <div class="callout-body">Sistem akan otomatis membawa kamu ke halaman Login.</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-title"><div class="step-num">2</div> Tampilan Halaman Login</div>
+      <p>Halaman login akan tampil seperti ini:</p>
+      <div class="screenshot">
+        <img src="images/manual/login_page.png" alt="Login Page">
+        <div class="screenshot-caption">Gambar 1.1: Halaman Login Sistem</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-title"><div class="step-num">3</div> Isi Form dan Klik Masuk</div>
+      <ol>
+        <li>Klik kolom <strong>Email atau Username</strong> → ketik email atau username kamu</li>
+        <li>Klik kolom <strong>Password</strong> → ketik password kamu</li>
+        <li>Klik tombol <span class="action">▶ MASUK</span> yang ada di <strong>bagian tengah-bawah</strong> form</li>
+      </ol>
+      <div class="callout warning">
+        <div class="callout-icon">⚠️</div>
+        <div class="callout-body">
+          <strong>Perhatian:</strong>
+          Password bersifat sensitif terhadap huruf besar/kecil. Pastikan tombol <strong>Caps Lock</strong> tidak aktif saat mengetik password.
+          Jika salah 5 kali berturut-turut, login dikunci selama 1 menit.
+        </div>
+      </div>
+      <div class="callout success">
+        <div class="callout-icon">✅</div>
+        <div class="callout-body"><strong>Hasil jika berhasil:</strong> Kamu akan langsung masuk ke halaman Dashboard.</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-title"><div class="step-num">4</div> Cek Nama Kamu Sudah Muncul</div>
+      <p>Setelah masuk, lihat <strong>pojok kanan atas</strong> layar. Nama kamu dan jabatan (role) harus terlihat di sana:</p>
+      <div class="mockup">
+Pojok kanan atas:  [ <span class="btn-mock">B</span>  Budi Santoso ]
+                                    Finance</div>
+      <div class="callout success">
+        <div class="callout-icon">✅</div>
+        <div class="callout-body">Jika nama kamu sudah muncul, berarti kamu sudah berhasil login!</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     BAB 2 — DASHBOARD
+══════════════════════════════════════════════ -->
+<div class="chapter" id="bab2">
+  <div class="chapter-header">
+    <div class="chapter-num">2</div>
+    <div>
+      <div class="chapter-title">Mengenal Tampilan Dashboard</div>
+      <div class="chapter-goal">🎯 Tujuan: Memahami semua informasi yang tampil di halaman utama</div>
+    </div>
+  </div>
+  <div class="chapter-body">
+
+    <div class="step">
+      <div class="step-title"><div class="step-num">1</div> Struktur Tampilan Utama</div>
+      <p>Dashboard adalah pusat informasi utama yang memberikan gambaran cepat status keuangan dan operasional.</p>
+      <div class="screenshot">
+        <img src="images/manual/dashboard.png" alt="Dashboard">
+        <div class="screenshot-caption">Gambar 2.1: Tampilan Dashboard Utama</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-title"><div class="step-num">2</div> Kartu KPI — 6 Angka Penting</div>
+      <p>Di bagian atas dashboard ada <strong>6 kartu berwarna</strong>:</p>
+      <table>
+        <tr><th>Kartu</th><th>Warna</th><th>Artinya</th></tr>
+        <tr><td><strong>Total Invoice</strong></td><td>🔵 Biru</td><td>Jumlah semua invoice di sistem</td></tr>
+        <tr><td><strong>Belum Bayar</strong></td><td>⚫ Abu</td><td>Invoice yang belum dibayar sama sekali</td></tr>
+        <tr><td><strong>Partial</strong></td><td>🟡 Kuning</td><td>Invoice yang baru dibayar sebagian</td></tr>
+        <tr><td><strong>Lunas</strong></td><td>🟢 Hijau</td><td>Invoice yang sudah lunas penuh</td></tr>
+        <tr><td><strong>Jatuh Tempo</strong></td><td>🔴 Merah</td><td>Invoice yang sudah melewati batas bayar</td></tr>
+        <tr><td><strong>Partner</strong></td><td>🩵 Cyan</td><td>Jumlah partner terdaftar</td></tr>
+      </table>
+    </div>
+
+    <div class="step">
+      <div class="step-title"><div class="step-num">3</div> Banner Keuangan (3 Kotak)</div>
+      <p>Di bawah kartu KPI, ada <strong>3 kotak rangkuman keuangan</strong>:</p>
+      <ul>
+        <li>🟢 <strong>Pendapatan (Lunas)</strong> — Total uang yang sudah diterima</li>
+        <li>🟡 <strong>Outstanding Piutang</strong> — Total tagihan yang belum dibayar</li>
+        <li>🔵 <strong>Sisa Deposit</strong> — Total saldo deposit semua partner</li>
+      </ul>
+    </div>
+
+    <div class="step">
+      <div class="step-title"><div class="step-num">4</div> Peringatan Otomatis</div>
+      <div class="callout warning">
+        <div class="callout-icon">⚠️</div>
+        <div class="callout-body">
+          <strong>Kotak kuning</strong> muncul otomatis jika ada partner dengan saldo deposit rendah (di bawah Rp 5.000.000).
+          Klik nama partner di dalam peringatan untuk langsung top-up.
+        </div>
+      </div>
+      <div class="callout danger">
+        <div class="callout-icon">⚠️</div>
+        <div class="callout-body">
+          <strong>Kotak merah</strong> muncul jika ada hasil import dengan banyak data bermasalah (anomaly rate tinggi).
+          Klik "Review →" untuk langsung menanganinya.
+        </div>
+      </div>
+      <p>Untuk menutup peringatan, klik tanda <strong>× (silang)</strong> di pojok kanan atas kotak peringatan.</p>
+    </div>
+
+    <div class="step">
+      <div class="step-title"><div class="step-num">5</div> Menggunakan Sidebar di HP (Mobile)</div>
+      <p>Jika membuka sistem di HP atau layar kecil, sidebar akan tersembunyi.</p>
+      <p>Untuk membuka menu:</p>
+      <ol>
+        <li>Ketuk ikon <strong>☰ (tiga garis horizontal)</strong> di <strong>pojok kiri atas</strong> layar</li>
+        <li>Sidebar akan muncul dari sisi kiri</li>
+        <li>Pilih menu yang diinginkan</li>
+        <li>Sidebar akan otomatis tertutup setelah kamu memilih menu</li>
+      </ol>
+      <div class="callout info">
+        <div class="callout-icon">💡</div>
+        <div class="callout-body">Di HP, ada juga <strong>navigasi bawah</strong> dengan 5 tombol cepat: Dashboard, Invoice, + (Buat Invoice), Partner, dan Menu.</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     BAB 3 — BUAT INVOICE
+══════════════════════════════════════════════ -->
+<div class="chapter" id="bab3">
+  <div class="chapter-header">
+    <div class="chapter-num">3</div>
+    <div>
+      <div class="chapter-title">Membuat Invoice Baru</div>
+      <div class="chapter-goal">🎯 Tujuan: Membuat tagihan baru untuk dikirimkan ke partner</div>
+    </div>
+  </div>
+  <div class="chapter-body">
+
+    <div class="step">
+      <div class="step-title"><div class="step-num">1</div> Masuk ke Halaman Buat Invoice</div>
+      <p>Ada <strong>2 cara</strong> untuk membuka form buat invoice baru:</p>
+      <p><strong>Cara A — dari Dashboard:</strong><br>
+      ➜ Klik tombol <span class="action">+ Buat Invoice</span> di <strong>pojok kanan atas</strong> halaman Dashboard (tombol berwarna biru)</p>
+      <p><strong>Cara B — dari menu Invoice:</strong><br>
+      ➜ Klik menu <strong>Invoice</strong> di sidebar kiri<br>
+      ➜ Klik tombol <span class="action">+ Invoice Baru</span> di pojok kanan atas</p>
+    </div>
+
+    <div class="step">
+      <div class="step-title"><div class="step-num">2</div> Isi Data Utama Invoice</div>
+      <div class="screenshot">
+        <img src="images/manual/create_invoice.png" alt="Form Buat Invoice">
+        <div class="screenshot-caption">Gambar 3.1: Form Pembuatan Invoice Baru</div>
+      </div>
+      <ol>
+        <li><strong>Nomor Invoice</strong> — Sudah otomatis terisi, <em>jangan diubah</em></li>
+        <li><strong>Partner</strong> — Klik kolom → ketik nama partner → pilih dari dropdown yang muncul</li>
+        <li><strong>Tanggal Invoice</strong> — Klik kolom → pilih tanggal di kalender</li>
+        <li><strong>Jatuh Tempo</strong> — Klik kolom → pilih tanggal batas pembayaran</li>
+        <li><strong>No. Transaksi</strong> — Opsional, isi jika ada nomor referensi</li>
+      </ol>
+      <div class="callout warning">
+        <div class="callout-icon">⚠️</div>
+        <div class="callout-body">Kolom bertanda <strong>*</strong> wajib diisi. Tidak bisa disimpan jika kosong.</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-title"><div class="step-num">3</div> Tambah Item / Produk ke Invoice</div>
+      <div class="screenshot">
+        <img src="images/manual/invoice_items_and_total.png" alt="Item Invoice">
+        <div class="screenshot-caption">Gambar 3.2: Menambahkan Baris Produk ke Invoice</div>
+      </div>
+      <ol>
+        <li>Klik tombol <span class="action">+ Tambah Item</span> — baris baru akan muncul di tabel</li>
+        <li>Di kolom <strong>Nama Produk</strong> — ketik nama produk, lalu pilih dari dropdown</li>
+        <li>Di kolom <strong>Qty</strong> — ketik jumlah unit</li>
+        <li>Di kolom <strong>Harga Satuan</strong> — ketik nominal (cukup angka, titik ribuan otomatis)</li>
+        <li>Kolom <strong>Total</strong> dihitung otomatis</li>
+        <li>Ulangi untuk setiap item yang ingin ditambahkan</li>
+      </ol>
+      <div class="callout info">
+        <div class="callout-icon">💡</div>
+        <div class="callout-body">Untuk menghapus baris item, klik ikon <strong>🗑️ (tempat sampah)</strong> di ujung kanan baris tersebut.</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-title"><div class="step-num">4</div> Cek Total Sebelum Simpan</div>
+      <p>Di bagian <strong>bawah kanan</strong> form, pastikan angka total (termasuk pajak jika ada) sudah benar sesuai pesanan.</p>
+    </div>
+
+    <div class="step">
+      <div class="step-title"><div class="step-num">5</div> Simpan Invoice</div>
+      <ol>
+        <li>Scroll ke <strong>bagian bawah</strong> halaman</li>
+        <li>Klik tombol <span class="action">Simpan Invoice</span> (tombol biru besar)</li>
+      </ol>
+      <div class="callout success">
+        <div class="callout-icon">✅</div>
+        <div class="callout-body">Invoice tersimpan dengan status <strong>DRAFT</strong>. Kamu akan diarahkan ke halaman detail invoice.</div>
+      </div>
+      <div class="callout warning">
+        <div class="callout-icon">⚠️</div>
+        <div class="callout-body">Invoice DRAFT <strong>belum resmi</strong>. Lanjut ke langkah 6 untuk finalisasi agar invoice bisa digunakan.</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-title"><div class="step-num">6</div> Finalisasi Invoice (Wajib untuk Finance/Admin)</div>
+      <p>Di halaman detail invoice setelah disimpan:</p>
+      <ol>
+        <li>Cari tombol <span class="action">Finalisasi Invoice</span></li>
+        <li>Klik tombol tersebut</li>
+        <li>Muncul popup konfirmasi → klik <span class="action green">Ya, Finalisasi</span></li>
+      </ol>
+      <div class="callout success">
+        <div class="callout-icon">✅</div>
+        <div class="callout-body">Status invoice berubah jadi <strong>UNPAID (Belum Bayar)</strong> dan nomor invoice terkunci permanen.</div>
+      </div>
+      <div class="callout danger">
+        <div class="callout-icon">⚠️</div>
+        <div class="callout-body">Setelah finalisasi, <strong>data invoice tidak bisa diubah lagi</strong>. Pastikan semua sudah benar sebelum finalisasi.</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-title"><div class="step-num">7</div> Download PDF Invoice</div>
+      <ol>
+        <li>Di halaman detail invoice, cari tombol <span class="action">📄 Download PDF</span></li>
+        <li>Klik tombol tersebut</li>
+        <li>File PDF otomatis terunduh ke komputer/HP kamu</li>
+      </ol>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     BAB 4 — KELOLA INVOICE
+══════════════════════════════════════════════ -->
+<div class="chapter" id="bab4">
+  <div class="chapter-header">
+    <div class="chapter-num">4</div>
+    <div>
+      <div class="chapter-title">Melihat & Mengelola Invoice</div>
+      <div class="chapter-goal">🎯 Tujuan: Mencari, melihat, mengedit, dan menduplikasi invoice</div>
+    </div>
+  </div>
+  <div class="chapter-body">
+
+    <div class="step">
+      <div class="step-title"><div class="step-num">1</div> Buka Daftar Invoice</div>
+      <p>➜ Klik menu <strong>Invoice</strong> di <strong>sidebar kiri</strong></p>
+      <div class="screenshot">
+        <img src="images/manual/invoices_list.png" alt="Daftar Invoice">
+        <div class="screenshot-caption">Gambar 4.1: Daftar Semua Invoice</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-title"><div class="step-num">2</div> Filter & Cari Invoice</div>
+      <p>Gunakan tombol filter di bagian atas tabel untuk mempersempit hasil:</p>
+      <ul>
+        <li><strong>Filter Status</strong> — Pilih: Semua / Draft / Belum Bayar / Partial / Lunas / Overdue</li>
+        <li><strong>Filter Partner</strong> — Ketik nama partner</li>
+        <li><strong>Filter Tanggal</strong> — Pilih rentang tanggal dari-sampai</li>
+      </ul>
+    </div>
+
+    <div class="step">
+      <div class="step-title"><div class="step-num">3</div> Buka Detail Invoice</div>
+      <p>➜ Klik tombol <span class="action">Lihat</span> atau klik langsung pada <strong>nomor invoice</strong></p>
+      <p>Di halaman detail kamu bisa:</p>
+      <ul>
+        <li>Melihat semua item invoice</li>
+        <li>Melihat riwayat pembayaran yang sudah masuk</li>
+        <li>Download PDF invoice</li>
+        <li>Menduplikasi invoice (buat salinan)</li>
+        <li>Mencatat pembayaran baru (Finance/Admin)</li>
+      </ul>
+    </div>
+
+    <div class="step">
+      <div class="step-title"><div class="step-num">4</div> Duplikasi Invoice</div>
+      <p>Berguna untuk membuat invoice baru yang isinya mirip dengan invoice sebelumnya, menghemat waktu pengisian ulang.</p>
+      <ol>
+        <li>Buka detail invoice yang ingin diduplikasi</li>
+        <li>Klik tombol <span class="action">Duplikasi</span></li>
+        <li>Invoice baru terbuat dengan status <strong>DRAFT</strong></li>
+        <li>Edit bagian yang berbeda (tanggal, jumlah, dll.)</li>
+        <li>Simpan dan finalisasi</li>
+      </ol>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     BAB 5 — ANTRIAN INVOICE
+══════════════════════════════════════════════ -->
+<div class="chapter" id="bab5">
+  <div class="chapter-header">
+    <div class="chapter-num">5</div>
+    <div>
+      <div class="chapter-title">Antrian Invoice</div>
+      <div class="chapter-goal">🎯 Tujuan: Memproses transaksi yang sudah diimport tapi belum dibuatkan invoice</div>
+    </div>
+  </div>
+  <div class="chapter-body">
+
+    <div class="step">
+      <div class="step-title"><div class="step-num">1</div> Buka Halaman Antrian</div>
+      <p>➜ Klik menu <strong>Antrian Invoice</strong> di <strong>sidebar kiri</strong></p>
+      <div class="callout warning">
+        <div class="callout-icon">⚠️</div>
+        <div class="callout-body">Jika ada angka merah (badge) di samping menu ini, artinya ada transaksi yang sedang menunggu untuk dibuatkan invoice.</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-title"><div class="step-num">2</div> Buat Invoice dari Antrian</div>
+      <div class="screenshot">
+        <img src="images/manual/invoice_queue.png" alt="Antrian Invoice">
+        <div class="screenshot-caption">Gambar 5.1: Daftar Antrian Transaksi</div>
+      </div>
+      <ol>
+        <li>Temukan transaksi yang ingin dibuatkan invoice</li>
+        <li>Klik tombol <span class="action">Buat Invoice</span> di ujung kanan baris transaksi</li>
+        <li>Form buat invoice terbuka dengan data transaksi sudah <strong>terisi otomatis</strong></li>
+        <li>Cek dan sesuaikan jika ada data yang perlu diubah</li>
+        <li>Klik <span class="action">Simpan Invoice</span></li>
+      </ol>
+      <div class="callout success">
+        <div class="callout-icon">✅</div>
+        <div class="callout-body">Transaksi menghilang dari antrian dan invoice baru tersimpan di daftar Invoice.</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     BAB 6 — INVOICE DEPOSIT
+══════════════════════════════════════════════ -->
+<div class="chapter" id="bab6">
+  <div class="chapter-header">
+    <div class="chapter-num">6</div>
+    <div>
+      <div class="chapter-title">Invoice Deposit</div>
+      <div class="chapter-goal">🎯 Tujuan: Membuat tagihan kepada partner untuk mengisi saldo deposit mereka</div>
+    </div>
+  </div>
+  <div class="chapter-body">
+
+    <div class="step">
+      <div class="step-title"><div class="step-num">1</div> Buka Halaman Invoice Deposit</div>
+      <p>➜ Klik menu <strong>Invoice Deposit</strong> di <strong>sidebar kiri</strong></p>
+      <div class="screenshot">
+        <img src="images/manual/invoice_deposit.png" alt="Invoice Deposit">
+        <div class="screenshot-caption">Gambar 6.1: Halaman Daftar Invoice Deposit</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-title"><div class="step-num">2</div> Buat Invoice Deposit Baru</div>
+      <ol>
+        <li>Klik tombol <span class="action">+ Invoice Deposit</span> di pojok kanan atas</li>
+        <li>Pilih <strong>Partner</strong> yang akan ditagih depositnya</li>
+        <li>Isi <strong>Jumlah</strong> nominal deposit yang diminta</li>
+        <li>Isi <strong>Tanggal</strong> dan <strong>Jatuh Tempo</strong></li>
+        <li>Klik <span class="action">Simpan</span></li>
+      </ol>
+    </div>
+
+    <div class="step">
+      <div class="step-title"><div class="step-num">3</div> Finalisasi dan Tandai Lunas</div>
+      <ol>
+        <li>Setelah invoice deposit tersimpan, klik <span class="action">Finalisasi</span> untuk mengunci nomor invoice</li>
+        <li>Setelah partner membayar, klik <span class="action green">Tandai Lunas</span></li>
+      </ol>
+      <div class="callout success">
+        <div class="callout-icon">✅</div>
+        <div class="callout-body">Saldo deposit partner otomatis bertambah sesuai nominal yang dibayarkan.</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     BAB 7 — PARTNER
+══════════════════════════════════════════════ -->
+<div class="chapter" id="bab7">
+  <div class="chapter-header">
+    <div class="chapter-num">7</div>
+    <div>
+      <div class="chapter-title">Mengelola Partner</div>
+      <div class="chapter-goal">🎯 Tujuan: Menambah, melihat, dan mengedit data partner/klien</div>
+    </div>
+  </div>
+  <div class="chapter-body">
+
+    <div class="step">
+      <div class="step-title"><div class="step-num">1</div> Buka Halaman Partner</div>
+      <p>➜ Klik menu <strong>Partner</strong> di <strong>sidebar kiri</strong></p>
+      <div class="screenshot">
+        <img src="images/manual/partners_list.png" alt="Daftar Partner">
+        <div class="screenshot-caption">Gambar 7.1: Daftar Rekanan / Partner</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-title"><div class="step-num">2</div> Tambah Partner Baru</div>
+      <div class="screenshot">
+        <img src="images/manual/add_partner_form.png" alt="Tambah Partner">
+        <div class="screenshot-caption">Gambar 7.2: Form Pendaftaran Partner Baru</div>
+      </div>
+      <ol>
+        <li>Klik tombol <span class="action">+ Partner Baru</span> di pojok kanan atas</li>
+        <li>Isi form data partner secara lengkap</li>
+      </ol>
+      <div class="callout success">
+        <div class="callout-icon">✅</div>
+        <div class="callout-body">Partner baru terdaftar dan siap dipilih saat membuat invoice.</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-title"><div class="step-num">3</div> Lihat Detail Partner</div>
+      <p>Klik nama partner di daftar untuk melihat:</p>
+      <ul>
+        <li>Informasi lengkap partner</li>
+        <li>Semua invoice milik partner tersebut</li>
+        <li>Saldo deposit dan riwayat top-up</li>
+        <li>Status dan riwayat kredit</li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     BAB 8 — DEPOSIT TOP-UP
+══════════════════════════════════════════════ -->
+<div class="chapter" id="bab8">
+  <div class="chapter-header">
+    <div class="chapter-num">8</div>
+    <div>
+      <div class="chapter-title">Deposit Partner (Top-up)</div>
+      <div class="chapter-goal">🎯 Tujuan: Menambah saldo deposit partner setelah mereka membayar</div>
+    </div>
+  </div>
+  <div class="chapter-body">
+
+    <div class="step">
+      <div class="step-title"><div class="step-num">1</div> Buka Form Top-up</div>
+      <p><strong>Cara A — dari Dashboard:</strong><br>
+      ➜ Di widget "Saldo Deposit Partner", klik tombol <span class="action">+ Top-up</span> di sebelah nama partner</p>
+      <p><strong>Cara B — dari Detail Partner:</strong><br>
+      ➜ Buka halaman detail partner → klik <span class="action">Top-up Deposit</span></p>
+    </div>
+
+    <div class="step">
+      <div class="step-title"><div class="step-num">2</div> Isi Form Top-up</div>
+      <div class="screenshot">
+        <img src="images/manual/partner_detail.png" alt="Top-up Deposit">
+        <div class="screenshot-caption">Gambar 8.1: Form Top-up di Halaman Detail Partner</div>
+      </div>
+      <ol>
+        <li>Isi <strong>Nominal Top-up</strong> — jumlah deposit yang masuk dari partner</li>
+        <li>Isi <strong>Keterangan</strong> — misal: "Transfer BCA 05/05/2026 ref.12345"</li>
+        <li>Pastikan <strong>Tanggal</strong> sudah benar</li>
+        <li>Klik <span class="action">Simpan Top-up</span></li>
+      </ol>
+      <div class="callout success">
+        <div class="callout-icon">✅</div>
+        <div class="callout-body">Saldo deposit partner langsung bertambah sesuai nominal yang diisi.</div>
+      </div>
+      <div class="callout info">
+        <div class="callout-icon">💡</div>
+        <div class="callout-body">Fitur ini hanya tersedia untuk role <strong>FINANCE</strong> dan <strong>ADMIN</strong>.</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     BAB 9 — IMPORT TRANSAKSI
+══════════════════════════════════════════════ -->
+<div class="chapter" id="bab9">
+  <div class="chapter-header">
+    <div class="chapter-num">9</div>
+    <div>
+      <div class="chapter-title">Import Transaksi dari File Excel/CSV</div>
+      <div class="chapter-goal">🎯 Tujuan: Memasukkan data transaksi dari file ke sistem secara massal</div>
+    </div>
+  </div>
+  <div class="chapter-body">
+
+    <div class="step">
+      <div class="step-title"><div class="step-num">1</div> Siapkan File</div>
+      <p>Sebelum upload, pastikan file kamu sudah benar:</p>
+      <ul>
+        <li>Format file: <strong>.xlsx</strong> atau <strong>.csv</strong></li>
+        <li>Kolom yang dibutuhkan: Nomor Transaksi, Tanggal, Nama Partner, Nama Produk/Tiket, Qty, Harga</li>
+        <li>Ukuran file maksimal: <strong>10 MB</strong></li>
+      </ul>
+      <div class="callout info">
+        <div class="callout-icon">💡</div>
+        <div class="callout-body">Minta <strong>template file</strong> ke Admin sistem jika belum punya. Menggunakan template memastikan format sudah benar.</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-title"><div class="step-num">2</div> Buka Halaman Import</div>
+      <p>➜ Klik menu <strong>Import Transaksi</strong> di sidebar kiri<br>
+      ➜ Klik tombol <span class="action">+ Upload Baru</span> di pojok kanan atas</p>
+    </div>
+
+    <div class="step">
+      <div class="step-title"><div class="step-num">3</div> Upload File</div>
+      <div class="screenshot">
+        <img src="images/manual/import_page.png" alt="Import Page">
+        <div class="screenshot-caption">Gambar 9.1: Form Upload Import Transaksi</div>
+      </div>
+      <ol>
+        <li>Klik <span class="action">PILIH FILE</span> → cari dan pilih file dari komputer kamu</li>
+        <li><em>Atau</em> seret file langsung ke kotak upload (drag &amp; drop)</li>
+        <li>Nama file yang dipilih akan muncul</li>
+        <li>Klik <span class="action">Upload &amp; Proses</span></li>
+      </ol>
+      <div class="callout warning">
+        <div class="callout-icon">⚠️</div>
+        <div class="callout-body"><strong>Jangan tutup browser</strong> atau refresh halaman saat proses upload berlangsung. Tunggu hingga proses selesai.</div>
+      </div>
+      <div class="callout success">
+        <div class="callout-icon">✅</div>
+        <div class="callout-body">Setelah upload selesai, kamu otomatis diarahkan ke halaman <strong>Review Import</strong>.</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     BAB 10 — REVIEW IMPORT
+══════════════════════════════════════════════ -->
+<div class="chapter" id="bab10">
+  <div class="chapter-header">
+    <div class="chapter-num">10</div>
+    <div>
+      <div class="chapter-title">Review Hasil Import (Anomaly Review)</div>
+      <div class="chapter-goal">🎯 Tujuan: Memeriksa dan menangani data yang bermasalah dari hasil import</div>
+    </div>
+  </div>
+  <div class="chapter-body">
+
+    <div class="step">
+      <div class="step-title"><div class="step-num">1</div> Pahami Status Tiap Baris Data</div>
+      <table>
+        <tr><th>Status</th><th>Warna</th><th>Artinya</th><th>Tindakan</th></tr>
+        <tr><td><strong>Valid</strong></td><td>🟢 Hijau</td><td>Data normal, siap diproses</td><td>Approve</td></tr>
+        <tr><td><strong>Anomaly</strong></td><td>🔴 Merah</td><td>Data bermasalah, perlu dicek</td><td>Override / Reject / Fix</td></tr>
+        <tr><td><strong>Rejected</strong></td><td>⚫ Abu</td><td>Data ditolak</td><td>—</td></tr>
+      </table>
+    </div>
+
+    <div class="step">
+      <div class="step-title"><div class="step-num">2</div> Tangani Baris Anomaly</div>
+      <p>Untuk setiap baris berstatus <strong>Anomaly</strong>:</p>
+      <ol>
+        <li>Klik baris tersebut untuk melihat detail masalahnya</li>
+        <li>Pilih salah satu aksi:</li>
+      </ol>
+      <table>
+        <tr><th>Tombol</th><th>Kapan Digunakan</th></tr>
+        <tr><td><span class="action">Override</span></td><td>Data sebenarnya benar, tetapi sistem menganggap anomaly — paksakan diterima</td></tr>
+        <tr><td><span class="action red">Reject</span></td><td>Data memang salah dan tidak perlu diproses</td></tr>
+        <tr><td><span class="action">Reassign Produk</span></td><td>Nama produk tidak dikenali — ganti ke produk yang benar</td></tr>
+        <tr><td><span class="action">Sesuaikan Harga</span></td><td>Harga tidak sesuai — ubah ke harga yang benar</td></tr>
+      </table>
+    </div>
+
+    <div class="step">
+      <div class="step-title"><div class="step-num">3</div> Approve Baris yang Valid</div>
+      <ol>
+        <li>Centang baris-baris yang ingin di-approve (atau centang <strong>semua</strong> di header tabel)</li>
+        <li>Klik tombol <span class="action green">Approve</span></li>
+      </ol>
+    </div>
+
+    <div class="step">
+      <div class="step-title"><div class="step-num">4</div> Finalisasi Import</div>
+      <ol>
+        <li>Setelah semua baris ditangani, klik tombol <span class="action green">Finalisasi Import</span></li>
+        <li>Konfirmasi di popup yang muncul</li>
+      </ol>
+      <div class="callout success">
+        <div class="callout-icon">✅</div>
+        <div class="callout-body">Data yang di-approve masuk ke <strong>Antrian Invoice</strong> dan siap dibuatkan invoice.</div>
+      </div>
+      <div class="callout info">
+        <div class="callout-icon">💡</div>
+        <div class="callout-body">Klik tombol <strong>[Export Anomaly]</strong> untuk mendownload laporan anomaly ke Excel — berguna untuk dokumentasi dan pelaporan.</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     BAB 11 — PEMBAYARAN
+══════════════════════════════════════════════ -->
+<div class="chapter" id="bab11">
+  <div class="chapter-header">
+    <div class="chapter-num">11</div>
+    <div>
+      <div class="chapter-title">Mencatat Pembayaran Invoice</div>
+      <div class="chapter-goal">🎯 Tujuan: Merekam pembayaran yang diterima dari partner</div>
+    </div>
+  </div>
+  <div class="chapter-body">
+
+    <div class="step">
+      <div class="step-title"><div class="step-num">1</div> Buka Invoice yang Ingin Dicatat Pembayarannya</div>
+      <p>➜ Klik menu <strong>Invoice</strong> di sidebar kiri<br>
+      ➜ Cari invoice yang pembayarannya ingin dicatat<br>
+      ➜ Klik <span class="action">Lihat</span> untuk membuka detail invoice</p>
+    </div>
+
+    <div class="step">
+      <div class="step-title"><div class="step-num">2</div> Isi Form Pembayaran</div>
+      <p>Di bagian bawah halaman detail invoice, temukan seksi <strong>Riwayat Pembayaran</strong>:</p>
+      <div class="screenshot">
+        <img src="images/manual/payment_form.png" alt="Catat Pembayaran">
+        <div class="screenshot-caption">Gambar 11.1: Form Pencatatan Pembayaran Baru</div>
+      </div>
+      <ol>
+        <li>Isi <strong>Jumlah Pembayaran</strong> yang diterima</li>
+        <li>Isi <strong>Tanggal Bayar</strong> — kapan uang masuk</li>
+        <li>Pilih <strong>Metode</strong> pembayaran</li>
+        <li>Klik <span class="action green">Simpan Pembayaran</span></li>
+      </ol>
+      <div class="callout success">
+        <div class="callout-icon">✅</div>
+        <div class="callout-body">
+          Status invoice otomatis berubah:<br>
+          • Bayar sebagian → <strong>PARTIAL</strong><br>
+          • Bayar lunas → <strong>LUNAS</strong>
+        </div>
+      </div>
+      <div class="callout info">
+        <div class="callout-icon">💡</div>
+        <div class="callout-body">Fitur ini hanya tersedia untuk role <strong>FINANCE</strong> dan <strong>ADMIN</strong>.</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-title"><div class="step-num">3</div> Lihat Semua Pembayaran</div>
+      <p>➜ Klik menu <strong>Pembayaran</strong> di sidebar kiri (bagian Keuangan)</p>
+      <p>Di sini kamu bisa melihat semua riwayat pembayaran dari semua partner dalam satu tampilan.</p>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     BAB 12 — MEMO TAGIHAN
+══════════════════════════════════════════════ -->
+<div class="chapter" id="bab12">
+  <div class="chapter-header">
+    <div class="chapter-num">12</div>
+    <div>
+      <div class="chapter-title">Memo Tagihan</div>
+      <div class="chapter-goal">🎯 Tujuan: Membuat surat/memo resmi untuk menagih pembayaran outstanding</div>
+    </div>
+  </div>
+  <div class="chapter-body">
+
+    <div class="step">
+      <div class="step-title"><div class="step-num">1</div> Buka Halaman Memo Tagihan</div>
+      <p>➜ Klik menu <strong>Memo Tagihan</strong> di sidebar kiri (bagian Keuangan)</p>
+    </div>
+
+    <div class="step">
+      <div class="step-title"><div class="step-num">2</div> Buat Memo Tagihan Baru</div>
+      <div class="screenshot">
+        <img src="images/manual/memo_tagihan_create.png" alt="Buat Memo">
+        <div class="screenshot-caption">Gambar 12.1: Form Pembuatan Memo Tagihan</div>
+      </div>
+      <ol>
+        <li>Klik tombol <span class="action">+ Buat Memo</span></li>
+        <li>Pilih <strong>Partner</strong> yang akan ditagih</li>
+        <li>Sistem otomatis menampilkan daftar invoice yang belum dibayar partner tersebut</li>
+        <li><strong>Centang invoice</strong> yang ingin dimasukkan ke memo ini</li>
+        <li>Isi <strong>Catatan/Keterangan</strong> jika perlu</li>
+        <li>Klik <span class="action">Buat Memo</span></li>
+      </ol>
+    </div>
+
+    <div class="step">
+      <div class="step-title"><div class="step-num">3</div> Download Memo PDF</div>
+      <p>Di halaman detail memo:<br>
+      ➜ Klik tombol <span class="action">📄 Download PDF</span></p>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     BAB 13 — CREDIT PAYMENT
+══════════════════════════════════════════════ -->
+<div class="chapter" id="bab13">
+  <div class="chapter-header">
+    <div class="chapter-num">13</div>
+    <div>
+      <div class="chapter-title">Pembayaran Kredit</div>
+      <div class="chapter-goal">🎯 Tujuan: Mencatat pembayaran kredit dari partner untuk beberapa invoice sekaligus</div>
+    </div>
+  </div>
+  <div class="chapter-body">
+
+    <div class="step">
+      <div class="step-title"><div class="step-num">1</div> Buka Halaman Pembayaran Credit</div>
+      <p>➜ Klik menu <strong>Pembayaran Credit</strong> di sidebar kiri (bagian Keuangan)</p>
+    </div>
+
+    <div class="step">
+      <div class="step-title"><div class="step-num">2</div> Buat Batch Pembayaran</div>
+      <div class="screenshot">
+        <img src="images/manual/credit_payment_create.png" alt="Credit Payment">
+        <div class="screenshot-caption">Gambar 13.1: Form Pembayaran Kredit Massal</div>
+      </div>
+      <ol>
+        <li>Klik tombol <span class="action">+ Buat Credit Payment</span></li>
+        <li>Pilih <strong>Partner</strong></li>
+        <li>Sistem menampilkan semua invoice outstanding partner tersebut</li>
+        <li><strong>Centang invoice</strong> yang ingin dilunasi sekaligus</li>
+        <li>Isi <strong>Tanggal Bayar</strong> dan <strong>Keterangan</strong></li>
+        <li>Klik <span class="action">Simpan</span></li>
+      </ol>
+      <div class="callout success">
+        <div class="callout-icon">✅</div>
+        <div class="callout-body">Semua invoice yang dicentang akan terupdate statusnya secara bersamaan.</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     BAB 14 — LAPORAN
+══════════════════════════════════════════════ -->
+<div class="chapter" id="bab14">
+  <div class="chapter-header">
+    <div class="chapter-num">14</div>
+    <div>
+      <div class="chapter-title">Laporan & Export Data</div>
+      <div class="chapter-goal">🎯 Tujuan: Melihat dan mendownload laporan keuangan dan transaksi</div>
+    </div>
+  </div>
+  <div class="chapter-body">
+
+    <div class="step">
+      <div class="step-title"><div class="step-num">1</div> Buka Halaman Laporan</div>
+      <p>➜ Klik menu <strong>Laporan</strong> di sidebar kiri (bagian Keuangan)</p>
+    </div>
+
+    <div class="step">
+      <div class="step-title"><div class="step-num">2</div> Filter Laporan</div>
+      <div class="screenshot">
+        <img src="images/manual/reports_page.png" alt="Laporan">
+        <div class="screenshot-caption">Gambar 14.1: Halaman Laporan & Filter</div>
+      </div>
+      <ol>
+        <li>Pilih <strong>rentang tanggal</strong> (dari tanggal berapa sampai tanggal berapa)</li>
+        <li>Pilih <strong>partner</strong> tertentu atau biarkan "Semua Partner"</li>
+        <li>Pilih <strong>status</strong> invoice yang ingin ditampilkan</li>
+        <li>Klik <span class="action">Tampilkan</span></li>
+      </ol>
+    </div>
+
+    <div class="step">
+      <div class="step-title"><div class="step-num">3</div> Export Laporan</div>
+      <table>
+        <tr><th>Tombol</th><th>Hasil</th></tr>
+        <tr><td><span class="action">Export CSV</span></td><td>Laporan invoice format Excel/CSV (bisa diedit)</td></tr>
+        <tr><td><span class="action">Export PDF</span></td><td>Laporan invoice format PDF (siap cetak)</td></tr>
+        <tr><td><span class="action">Export Credit CSV</span></td><td>Laporan kredit format Excel/CSV</td></tr>
+        <tr><td><span class="action">Export Credit PDF</span></td><td>Laporan kredit format PDF</td></tr>
+      </table>
+      <p>Klik tombol yang sesuai → file otomatis terunduh ke komputer/HP kamu.</p>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     BAB 15 — PRODUK
+══════════════════════════════════════════════ -->
+<div class="chapter" id="bab15">
+  <div class="chapter-header">
+    <div class="chapter-num">15</div>
+    <div>
+      <div class="chapter-title">Mengelola Produk & Alias</div>
+      <div class="chapter-goal">🎯 Tujuan: Menambah dan mengelola daftar produk/layanan yang dijual</div>
+    </div>
+  </div>
+  <div class="chapter-body">
+
+    <div class="step">
+      <div class="step-title"><div class="step-num">1</div> Buka Halaman Produk</div>
+      <p>➜ Klik menu <strong>Produk</strong> di sidebar kiri (bagian Pengaturan)</p>
+      <div class="screenshot">
+        <img src="images/manual/product_list.png" alt="Daftar Produk">
+        <div class="screenshot-caption">Gambar 15.1: Daftar Produk & Layanan</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-title"><div class="step-num">2</div> Tambah Produk Baru</div>
+      <ol>
+        <li>Klik <span class="action">+ Produk Baru</span></li>
+        <li>Isi: <strong>Nama Produk</strong>, <strong>Harga Default</strong>, <strong>Satuan</strong>, dan Keterangan (opsional)</li>
+        <li>Klik <span class="action">Simpan</span></li>
+      </ol>
+    </div>
+
+    <div class="step">
+      <div class="step-title"><div class="step-num">3</div> Tambah Alias Produk</div>
+      <p>Alias berguna agar sistem bisa mengenali nama produk yang berbeda-beda saat import file.</p>
+      <div class="callout info">
+        <div class="callout-icon">💡</div>
+        <div class="callout-body">
+          <strong>Contoh:</strong> Produk "Paket Wisata Pantai" mungkin muncul sebagai "WISATA-PANTAI" atau "PANTAI TRIP" di file Excel import.
+          Tambahkan semua nama alternatif sebagai alias.
+        </div>
+      </div>
+      <ol>
+        <li>Di daftar produk, klik tombol <span class="action">Alias</span> di sebelah nama produk</li>
+        <li>Klik <span class="action">+ Tambah Alias</span></li>
+        <li>Ketik nama alias (nama alternatif produk di file import)</li>
+        <li>Klik <span class="action">Simpan</span></li>
+      </ol>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     BAB 16 — PENGGUNA (ADMIN)
+══════════════════════════════════════════════ -->
+<div class="chapter" id="bab16">
+  <div class="chapter-header">
+    <div class="chapter-num">16</div>
+    <div>
+      <div class="chapter-title">Manajemen Pengguna</div>
+      <div class="chapter-goal">🎯 Tujuan: Menambah dan mengelola akun pengguna sistem — khusus Admin</div>
+    </div>
+  </div>
+  <div class="chapter-body">
+
+    <div class="callout danger">
+      <div class="callout-icon">⚠️</div>
+      <div class="callout-body"><strong>Bagian ini hanya bisa diakses oleh Admin.</strong> Jika menu tidak muncul, berarti akunmu bukan Admin.</div>
+    </div>
+
+    <div class="step">
+      <div class="step-title"><div class="step-num">1</div> Buka Halaman Pengguna</div>
+      <p>➜ Klik menu <strong>Pengguna</strong> di sidebar kiri (bagian Pengaturan)</p>
+      <div class="screenshot">
+        <img src="images/manual/users_list.png" alt="Daftar Pengguna">
+        <div class="screenshot-caption">Gambar 16.1: Daftar Pengguna Sistem</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-title"><div class="step-num">2</div> Tambah Pengguna Baru</div>
+      <ol>
+        <li>Klik tombol <span class="action">+ Pengguna Baru</span></li>
+        <li>Isi form:</li>
+      </ol>
+      <table>
+        <tr><th>Kolom</th><th>Keterangan</th></tr>
+        <tr><td><strong>Nama Lengkap</strong></td><td>Nama pengguna yang tampil di sistem</td></tr>
+        <tr><td><strong>Email</strong></td><td>Email untuk login</td></tr>
+        <tr><td><strong>Username</strong></td><td>Username alternatif untuk login</td></tr>
+        <tr><td><strong>Password</strong></td><td>Password awal (pengguna wajib ganti saat login pertama)</td></tr>
+        <tr><td><strong>Role</strong></td><td>Pilih: ADMIN / FINANCE / STAFF</td></tr>
+      </table>
+      <ol start="3">
+        <li>Klik <span class="action">Simpan Pengguna</span></li>
+      </ol>
+    </div>
+
+    <div class="step">
+      <div class="step-title"><div class="step-num">3</div> Pengertian Role</div>
+      <table>
+        <tr><th>Role</th><th>Akses</th></tr>
+        <tr><td><span class="role admin">ADMIN</span></td><td>Akses penuh ke semua fitur termasuk pengaturan pengguna</td></tr>
+        <tr><td><span class="role finance">FINANCE</span></td><td>Bisa finalisasi invoice, catat pembayaran, top-up deposit</td></tr>
+        <tr><td><span class="role staff">STAFF</span></td><td>Bisa buat invoice dan import, tidak bisa proses keuangan</td></tr>
+      </table>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     BAB 17 — CREDIT CLASSES (ADMIN)
+══════════════════════════════════════════════ -->
+<div class="chapter" id="bab17">
+  <div class="chapter-header">
+    <div class="chapter-num">17</div>
+    <div>
+      <div class="chapter-title">Credit Classes</div>
+      <div class="chapter-goal">🎯 Tujuan: Mengelola kelas kredit untuk partner — khusus Admin</div>
+    </div>
+  </div>
+  <div class="chapter-body">
+    <div class="callout danger">
+      <div class="callout-icon">⚠️</div>
+      <div class="callout-body"><strong>Bagian ini hanya bisa diakses oleh Admin.</strong></div>
+    </div>
+    <div class="step">
+      <div class="step-title"><div class="step-num">1</div> Buka dan Tambah Credit Class</div>
+      <p>➜ Klik menu <strong>Credit Classes</strong> di sidebar kiri<br>
+      ➜ Klik <span class="action">+ Tambah Credit Class</span></p>
+      <div class="screenshot">
+        <img src="images/manual/credit_classes.png" alt="Credit Classes">
+        <div class="screenshot-caption">Gambar 17.1: Daftar Credit Classes</div>
+      </div>
+      <ol>
+        <li>Isi <strong>Nama Class</strong> — misal: "Premium", "Standard", "Basic"</li>
+        <li>Isi <strong>Limit Kredit Default</strong> untuk class ini</li>
+        <li>Pilih <strong>Warna Badge</strong> untuk identifikasi visual di dashboard</li>
+        <li>Klik <span class="action">Simpan</span></li>
+      </ol>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     BAB 18 — PENGATURAN (ADMIN)
+══════════════════════════════════════════════ -->
+<div class="chapter" id="bab18">
+  <div class="chapter-header">
+    <div class="chapter-num">18</div>
+    <div>
+      <div class="chapter-title">Pengaturan Sistem</div>
+      <div class="chapter-goal">🎯 Tujuan: Mengubah konfigurasi tampilan dan informasi perusahaan — khusus Admin</div>
+    </div>
+  </div>
+  <div class="chapter-body">
+    <div class="callout danger">
+      <div class="callout-icon">⚠️</div>
+      <div class="callout-body"><strong>Bagian ini hanya bisa diakses oleh Admin.</strong></div>
+    </div>
+    <div class="step">
+      <div class="step-title"><div class="step-num">1</div> Buka Halaman Pengaturan</div>
+      <p>➜ Klik menu <strong>Pengaturan</strong> di sidebar kiri (bagian Pengaturan)</p>
+      <div class="screenshot">
+        <img src="images/manual/settings_page.png" alt="Pengaturan">
+        <div class="screenshot-caption">Gambar 18.1: Halaman Pengaturan Sistem</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-title"><div class="step-num">2</div> Ubah Pengaturan</div>
+      <p>Kamu bisa mengubah:</p>
+      <ul>
+        <li><strong>Logo Navbar</strong> — Upload logo yang tampil di sidebar atas</li>
+        <li><strong>Favicon</strong> — Ikon kecil yang tampil di tab browser</li>
+        <li><strong>Nama Perusahaan</strong> — Tampil di dokumen PDF invoice</li>
+      </ul>
+      <p>Setelah mengubah, klik <span class="action">Simpan Pengaturan</span>.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     BAB 19 — RESET PASSWORD
+══════════════════════════════════════════════ -->
+<div class="chapter" id="bab19">
+  <div class="chapter-header">
+    <div class="chapter-num">19</div>
+    <div>
+      <div class="chapter-title">Lupa Password / Reset Password</div>
+      <div class="chapter-goal">🎯 Tujuan: Mendapatkan kembali akses jika lupa password</div>
+    </div>
+  </div>
+  <div class="chapter-body">
+
+    <div class="step">
+      <div class="step-title"><div class="step-num">1</div> Ajukan Permintaan Reset (untuk User)</div>
+      <div class="screenshot">
+        <img src="images/manual/reset_password_request.png" alt="Lupa Password">
+        <div class="screenshot-caption">Gambar 19.1: Halaman Permintaan Reset Password</div>
+      </div>
+      <ol>
+        <li>Ketik username atau email kamu</li>
+        <li>Isi keterangan singkat (opsional)</li>
+        <li>Klik <span class="action">Kirim Permintaan</span></li>
+      </ol>
+      <div class="callout warning">
+        <div class="callout-icon">⚠️</div>
+        <div class="callout-body">
+          <strong>Sistem ini tidak mengirim email otomatis.</strong> Admin akan menerima notifikasi dan memproses permintaanmu secara manual.
+          Hubungi Admin untuk konfirmasi.
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-title"><div class="step-num">2</div> Proses oleh Admin</div>
+      <p>Admin yang menerima permintaan:</p>
+      <ol>
+        <li>Lihat menu <strong>Reset Password</strong> di sidebar — ada badge angka jika ada permintaan masuk</li>
+        <li>Klik menu <strong>Reset Password</strong></li>
+        <li>Lihat daftar permintaan yang masuk</li>
+        <li>Klik <span class="action">Resolve</span> di sebelah nama pengguna</li>
+        <li>Masukkan <strong>password baru</strong> untuk pengguna tersebut</li>
+        <li>Klik <span class="action">Simpan</span></li>
+        <li>Beritahu pengguna password barunya</li>
+      </ol>
+    </div>
+
+    <div class="step">
+      <div class="step-title"><div class="step-num">3</div> Ganti Password Setelah Login (Wajib)</div>
+      <p>Setelah login dengan password dari Admin, sistem akan <strong>otomatis memintamu ganti password</strong>:</p>
+      <ol>
+        <li>Isi <strong>Password Lama</strong> — password yang diberikan Admin</li>
+        <li>Isi <strong>Password Baru</strong> — buat password baru yang mudah kamu ingat</li>
+        <li>Isi <strong>Konfirmasi Password Baru</strong> — ketik ulang password baru</li>
+        <li>Klik <span class="action">Simpan Password Baru</span></li>
+      </ol>
+      <div class="callout success">
+        <div class="callout-icon">✅</div>
+        <div class="callout-body">Password berhasil diubah. Mulai sekarang gunakan password baru saat login.</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     BAB 20 — TROUBLESHOOTING
+══════════════════════════════════════════════ -->
+<div class="chapter" id="bab20">
+  <div class="chapter-header">
+    <div class="chapter-num">20</div>
+    <div>
+      <div class="chapter-title">Troubleshooting — Jika Mengalami Masalah</div>
+      <div class="chapter-goal">🎯 Tujuan: Mengatasi masalah umum yang mungkin terjadi</div>
+    </div>
+  </div>
+  <div class="chapter-body">
+
+    <div class="trouble-item">
+      <div class="trouble-problem">❌ Tidak bisa login — muncul "Username/Password salah"</div>
+      <div class="trouble-cause">🔍 Penyebab: Email, username, atau password yang diketik salah atau ada huruf yang tertukar besar/kecil.</div>
+      <div class="trouble-solution">
+        ✅ Solusi:
+        <ol>
+          <li>Pastikan tombol <strong>Caps Lock</strong> di keyboard tidak aktif (lampu Caps Lock mati)</li>
+          <li>Coba ketik ulang username dan password dengan hati-hati</li>
+          <li>Jika masih gagal, gunakan fitur <strong>Lupa Password</strong> (lihat Bab 19)</li>
+        </ol>
+      </div>
+    </div>
+
+    <div class="trouble-item">
+      <div class="trouble-problem">❌ Login diblokir sementara</div>
+      <div class="trouble-cause">🔍 Penyebab: Gagal login 5 kali berturut-turut — sistem otomatis mengunci selama 1 menit.</div>
+      <div class="trouble-solution">
+        ✅ Solusi: Tunggu 1 menit, lalu coba login lagi. Gunakan fitur Lupa Password jika memang tidak ingat password.
+      </div>
+    </div>
+
+    <div class="trouble-item">
+      <div class="trouble-problem">❌ Tombol "Finalisasi Invoice" tidak muncul</div>
+      <div class="trouble-cause">🔍 Penyebab: Akunmu tidak memiliki role FINANCE atau ADMIN.</div>
+      <div class="trouble-solution">
+        ✅ Solusi: Minta Admin untuk menaikkan role akunmu ke FINANCE. Atau minta Finance/Admin untuk memfinalisasi invoice tersebut.
+      </div>
+    </div>
+
+    <div class="trouble-item">
+      <div class="trouble-problem">❌ File import gagal diproses / muncul error</div>
+      <div class="trouble-cause">🔍 Penyebab: Format file tidak sesuai, ada kolom kosong, atau nama partner/produk tidak dikenali sistem.</div>
+      <div class="trouble-solution">
+        ✅ Solusi:
+        <ol>
+          <li>Pastikan menggunakan <strong>template file yang benar</strong> dari Admin</li>
+          <li>Pastikan nama partner di file <strong>persis sama</strong> dengan yang terdaftar di sistem</li>
+          <li>Cek kolom harga — harus berisi angka saja, tanpa huruf atau simbol (Rp, $, dll.)</li>
+          <li>Pastikan tidak ada baris atau kolom yang kosong di tengah data</li>
+        </ol>
+      </div>
+    </div>
+
+    <div class="trouble-item">
+      <div class="trouble-problem">❌ Anomaly rate sangat tinggi setelah import</div>
+      <div class="trouble-cause">🔍 Penyebab: Banyak nama produk atau partner di file yang tidak cocok dengan data master di sistem.</div>
+      <div class="trouble-solution">
+        ✅ Solusi:
+        <ol>
+          <li>Buka halaman <strong>Review Import</strong> → klik tiap baris anomaly untuk lihat detailnya</li>
+          <li>Gunakan <strong>Reassign Produk</strong> untuk mencocokkan produk yang tidak dikenali</li>
+          <li>Setelah selesai, tambahkan <strong>Alias Produk</strong> agar nama tersebut dikenali di import berikutnya (Bab 15)</li>
+        </ol>
+      </div>
+    </div>
+
+    <div class="trouble-item">
+      <div class="trouble-problem">❌ Saldo deposit partner tidak bertambah setelah top-up</div>
+      <div class="trouble-cause">🔍 Penyebab: Top-up mungkin belum tersimpan dengan benar atau terjadi error saat menyimpan.</div>
+      <div class="trouble-solution">
+        ✅ Solusi:
+        <ol>
+          <li>Buka halaman detail partner → cek tab/seksi <strong>Deposit</strong></li>
+          <li>Cek apakah ada riwayat top-up terbaru di sana</li>
+          <li>Jika tidak ada, lakukan top-up ulang dan pastikan klik <strong>Simpan Top-up</strong> hingga muncul notifikasi berhasil</li>
+        </ol>
+      </div>
+    </div>
+
+    <div class="trouble-item">
+      <div class="trouble-problem">❌ PDF tidak bisa di-download</div>
+      <div class="trouble-cause">🔍 Penyebab: Browser memblokir download otomatis atau terjadi error di sistem.</div>
+      <div class="trouble-solution">
+        ✅ Solusi:
+        <ol>
+          <li>Cek apakah ada notifikasi blokir pop-up di pojok atas browser → klik <strong>Izinkan</strong></li>
+          <li>Coba di browser lain (Chrome, Firefox, atau Edge)</li>
+          <li>Coba tekan <strong>Ctrl+Shift+J</strong> (Chrome) untuk cek error di console, laporkan ke IT</li>
+        </ol>
+      </div>
+    </div>
+
+    <div class="trouble-item">
+      <div class="trouble-problem">❌ Halaman error / layar putih kosong</div>
+      <div class="trouble-cause">🔍 Penyebab: Masalah koneksi jaringan atau server XAMPP tidak berjalan.</div>
+      <div class="trouble-solution">
+        ✅ Solusi:
+        <ol>
+          <li>Tekan <strong>F5</strong> atau <strong>Ctrl+R</strong> untuk refresh halaman</li>
+          <li>Cek koneksi internet/jaringan lokal kamu</li>
+          <li>Pastikan XAMPP sudah berjalan — buka XAMPP Control Panel, Apache dan MySQL harus berstatus <strong>Running (hijau)</strong></li>
+          <li>Jika masih error, hubungi IT Support</li>
+        </ol>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     TABEL HAK AKSES
+══════════════════════════════════════════════ -->
+<div class="chapter">
+  <div class="chapter-header">
+    <div class="chapter-num">📋</div>
+    <div>
+      <div class="chapter-title">Ringkasan Hak Akses per Role</div>
+      <div class="chapter-goal">Referensi cepat siapa bisa melakukan apa</div>
+    </div>
+  </div>
+  <div class="chapter-body">
+    <table>
+      <tr>
+        <th>Fitur</th>
+        <th><span class="role staff">STAFF</span></th>
+        <th><span class="role finance">FINANCE</span></th>
+        <th><span class="role admin">ADMIN</span></th>
+      </tr>
+      <tr><td>Lihat Dashboard</td><td class="yes">✅</td><td class="yes">✅</td><td class="yes">✅</td></tr>
+      <tr><td>Buat & Edit Invoice (Draft)</td><td class="yes">✅</td><td class="yes">✅</td><td class="yes">✅</td></tr>
+      <tr><td>Finalisasi Invoice</td><td class="no">❌</td><td class="yes">✅</td><td class="yes">✅</td></tr>
+      <tr><td>Catat Pembayaran Invoice</td><td class="no">❌</td><td class="yes">✅</td><td class="yes">✅</td></tr>
+      <tr><td>Top-up Deposit Partner</td><td class="no">❌</td><td class="yes">✅</td><td class="yes">✅</td></tr>
+      <tr><td>Import Transaksi (Upload)</td><td class="yes">✅</td><td class="yes">✅</td><td class="yes">✅</td></tr>
+      <tr><td>Approve Hasil Import</td><td class="no">❌</td><td class="yes">✅</td><td class="yes">✅</td></tr>
+      <tr><td>Buat Memo Tagihan</td><td class="yes">✅</td><td class="yes">✅</td><td class="yes">✅</td></tr>
+      <tr><td>Buat Payment Memo</td><td class="yes">✅</td><td class="yes">✅</td><td class="yes">✅</td></tr>
+      <tr><td>Pembayaran Kredit (Batch)</td><td class="yes">✅</td><td class="yes">✅</td><td class="yes">✅</td></tr>
+      <tr><td>Lihat & Export Laporan</td><td class="yes">✅</td><td class="yes">✅</td><td class="yes">✅</td></tr>
+      <tr><td>Kelola Produk & Alias</td><td class="yes">✅</td><td class="yes">✅</td><td class="yes">✅</td></tr>
+      <tr><td>Kelola Pengguna</td><td class="no">❌</td><td class="no">❌</td><td class="yes">✅</td></tr>
+      <tr><td>Kelola Credit Classes</td><td class="no">❌</td><td class="no">❌</td><td class="yes">✅</td></tr>
+      <tr><td>Pengaturan Sistem</td><td class="no">❌</td><td class="no">❌</td><td class="yes">✅</td></tr>
+      <tr><td>Reset Password User Lain</td><td class="no">❌</td><td class="no">❌</td><td class="yes">✅</td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- Footer -->
+<div class="footer">
+  <p>📘 <strong>TSBL Invoice Management System</strong> — Manual Book v1.0</p>
+  <p>Diterbitkan: 09 Mei 2026 &nbsp;|&nbsp; Bahasa: Indonesia &nbsp;|&nbsp; Untuk: Staff · Finance · Admin</p>
+  <p style="margin-top:8px;font-size:12px;color:#94a3b8;">Jika ada pertanyaan yang tidak terjawab di panduan ini, hubungi Admin Sistem atau IT Support.</p>
+</div>
+
+</div><!-- /container -->
+
+<script>
+// Smooth scroll for TOC links
+document.querySelectorAll('a[href^="#"]').forEach(a => {
+  a.addEventListener('click', function(e) {
+    const target = document.querySelector(this.getAttribute('href'));
+    if (target) {
+      e.preventDefault();
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  });
+});
+</script>
+</body>
+</html>
