@@ -641,7 +641,7 @@ class InvoiceController extends Controller
             'deposit'                   => 'nullable|numeric|min:0',
             'notes'                     => 'nullable|string',
             'credit_override_reason'    => 'nullable|string|max:500',
-            'import_row_id'             => 'nullable|integer|exists:transaction_import_rows,id',
+            'import_row_id'             => 'nullable|integer|exists:transaction_import_rows,id|unique:invoices,import_row_id',
         ]);
     }
 

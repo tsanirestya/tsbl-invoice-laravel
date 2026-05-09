@@ -1,7 +1,7 @@
 # TSBL Invoice System — Comprehensive Security & Fraud Audit Report
 
 **Audit Date:** 2026-05-08
-**Last Remediation:** 2026-05-09 — 20 findings fixed (F-001 through F-015, F-016, F-017, F-018, F-019, F-020)
+**Last Remediation:** 2026-05-09 — 23 findings fixed (F-001 through F-021, F-023, F-024, F-026)
 **Auditor Roles:** Senior System Auditor · Fraud Detection Specialist · Cyber Security Auditor · Financial Risk Analyst · Internal Control Consultant
 **Codebase:** `d:\XAMPP NEW\htdocs\tsbl-invoice-laravel`
 **Stack:** Laravel 11, PHP 8.2, MySQL/MariaDB, Bootstrap 5.3, DomPDF
@@ -19,7 +19,7 @@
 | LOW | 6 |
 | Estimated Financial Exposure | HIGH — deposit manipulation, overpayment, credit bypass, audit trail deletion all possible by any authenticated staff |
 | Health Score Awal | 31 / 100 |
-| Health Score Saat Ini | 55 / 100 (20/28 Findings) |
+| Health Score Saat Ini | 58 / 100 (23/28 Findings) |
 
 **Bottom line:** System handles real money (invoices, deposits, credit limits, batch payments) but has no meaningful role-based access control beyond a single ADMIN gate. Any VIEWER-role employee can delete payments, override credit limits, manipulate deposits, and void batch payments. There is an unauthenticated remote code execution vector (`/setup-production`). Audit logs can be destroyed by deleting the invoice. **System is NOT safe for production** without at minimum fixing FINDING-001, FINDING-002, FINDING-003, FINDING-004 immediately.
 
@@ -52,9 +52,9 @@
 | FINDING-021 | MEDIUM   | Fraud / Internal Control  | Single-user void of batch credit payments, no dual control                  | One finance staff reverses confirmed payments unilaterally  |
 | FINDING-022 | MEDIUM   | Data Integrity            | Invoice sequence breaks on prefix change mid-year                           | Wrong sequence; potential collision                         |
 | FINDING-023 | LOW      | Data Integrity            | Partner hard-delete with no invoice cascade check                           | Orphaned invoices, financial history lost                   |
-| FINDING-024 | LOW      | Data Integrity / Fraud    | No guard against double-invoicing same import row                           | Duplicate invoices from single import row                   |
+| FINDING-024 | LOW      | Data Integrity / Fraud    | ✅ FIXED: Add UNIQUE constraint on import_row_id            | Duplicate invoices prevented                                |
 | FINDING-025 | LOW      | Security                  | Minimum password length 6 characters                                        | Weak passwords accepted                                     |
-| FINDING-026 | LOW      | Operational               | No cron for `invoices:mark-overdue` command                                 | OVERDUE only updates on dashboard load                      |
+| FINDING-026 | LOW      | Operational               | ✅ FIXED: Scheduled cron job for mark-overdue               | Automated status updates without manual trigger             |
 | FINDING-027 | LOW      | Security                  | Bootstrap CDN loaded without SRI hashes                                     | CDN compromise injects malicious JS                         |
 | FINDING-028 | LOW      | Security                  | Storage proxy MIME detection can be spoofed                                 | Executable files served with wrong MIME                     |
 
@@ -594,7 +594,7 @@ Bootstrap 5.3.3 and Bootstrap Icons loaded from jsDelivr without `integrity` att
 | Auditability | 44 | ✅ F-017: markOverdue moved to cron + logs every status change |
 | Monitoring | 10 | No alerting, no anomaly detection |
 | Data Integrity | 46 | ✅ Deposit duplicate bug fixed; ✅ F-020: Dynamic balance in Payment Memo |
-| **OVERALL** | 55 / 100 | 20 findings fixed — F-019, F-020 added (2026-05-09) |
+| **OVERALL** | 58 / 100 | 23 findings fixed — F-021, F-023, F-024, F-026 added (2026-05-09) |
 
 ---
 
