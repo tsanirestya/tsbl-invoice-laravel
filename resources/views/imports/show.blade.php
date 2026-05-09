@@ -695,9 +695,17 @@
                          style="font-size:.77rem;"></div>
 
                     <label class="form-label fw-semibold small">Alasan Override <span class="text-danger">*</span></label>
-                    <textarea name="override_reason" id="overrideGroupReason" class="form-control" rows="3"
+                    <textarea name="override_reason" id="overrideGroupReason" class="form-control mb-3" rows="3"
                               placeholder="Jelaskan mengapa semua baris dengan nama tiket ini disetujui..."
                               required style="font-size:.84rem;"></textarea>
+
+                    <label class="form-label fw-semibold small">Nominal Komisi (per Baris) <span class="text-danger">*</span></label>
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text">Rp</span>
+                        <input type="text" inputmode="numeric" name="komisi_amount" id="overrideGroupKomisi"
+                               class="form-control currency-input" required value="0">
+                    </div>
+                    <div class="form-text mt-1" style="font-size:.7rem;">Wajib diisi secara eksplisit (isi 0 jika tidak ada komisi).</div>
                 </div>
                 <div class="modal-footer py-2">
                     <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Batal</button>
@@ -752,9 +760,17 @@
                     </div>
 
                     <label class="form-label fw-semibold small">Alasan Adjustment <span class="text-danger">*</span></label>
-                    <textarea name="override_reason" id="adjustReason" class="form-control" rows="2"
+                    <textarea name="override_reason" id="adjustReason" class="form-control mb-3" rows="2"
                               placeholder="Jelaskan alasan penyesuaian harga..."
                               required style="font-size:.84rem;"></textarea>
+
+                    <label class="form-label fw-semibold small">Custom Komisi (Opsional)</label>
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text">Rp</span>
+                        <input type="text" inputmode="numeric" name="komisi_amount" id="adjustKomisi"
+                               class="form-control currency-input" placeholder="Biarkan kosong untuk hitung otomatis">
+                    </div>
+                    <div class="form-text mt-1" style="font-size:.7rem;">Kosongkan jika ingin sistem menghitung otomatis berdasarkan Publish/Nett Rate yang baru.</div>
                 </div>
                 <div class="modal-footer py-2">
                     <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Batal</button>
@@ -828,9 +844,17 @@
                     </div>
 
                     <label class="form-label fw-semibold small">Alasan Penggantian <span class="text-danger">*</span></label>
-                    <textarea name="override_reason" id="reassignReason" class="form-control" rows="2"
+                    <textarea name="override_reason" id="reassignReason" class="form-control mb-3" rows="2"
                               placeholder="Jelaskan alasan penggantian produk..."
                               required style="font-size:.84rem;"></textarea>
+
+                    <label class="form-label fw-semibold small">Custom Komisi (Opsional)</label>
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text">Rp</span>
+                        <input type="text" inputmode="numeric" name="komisi_amount" id="reassignKomisi"
+                               class="form-control currency-input" placeholder="Biarkan kosong untuk hitung otomatis">
+                    </div>
+                    <div class="form-text mt-1" style="font-size:.7rem;">Kosongkan jika ingin sistem menghitung otomatis berdasarkan komisi produk yang baru.</div>
                 </div>
                 <div class="modal-footer py-2">
                     <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Batal</button>

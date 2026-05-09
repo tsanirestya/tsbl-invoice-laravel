@@ -318,7 +318,7 @@ class ImportPipelineService
     private function calcPricing(array $row, ?Product $product): array
     {
         if (!$product) {
-            return ['komisi_amount' => null];
+            return ['komisi_amount' => 0];
         }
 
         $unitPrice   = (float) ($row['unit_price'] ?? 0);
@@ -335,8 +335,8 @@ class ImportPipelineService
             return ['komisi_amount' => 0];
         }
 
-        // Price mismatch — komisi pending approval
-        return ['komisi_amount' => null];
+        // Price mismatch — komisi pending approval (set to 0 by default, can be overridden)
+        return ['komisi_amount' => 0];
     }
 
     // --- Step 4: Anomaly Detection ---

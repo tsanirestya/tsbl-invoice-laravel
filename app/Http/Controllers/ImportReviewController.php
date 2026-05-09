@@ -49,6 +49,7 @@ class ImportReviewController extends Controller
         $request->validate([
             'row_id'          => ['required', 'integer'],
             'override_reason' => ['required', 'string', 'max:500'],
+            'komisi_amount'   => ['nullable', 'numeric', 'min:0'],
         ]);
 
         $row = TransactionImportRow::where('id', $request->row_id)
@@ -60,6 +61,7 @@ class ImportReviewController extends Controller
             'approved_by'     => auth()->id(),
             'approved_at'     => now(),
             'override_reason' => $request->override_reason,
+            'komisi_amount'   => $request->filled('komisi_amount') ? $request->komisi_amount : ($row->komisi_amount ?? 0),
         ]);
 
         return back()->with('success', 'Override disimpan.');
@@ -73,6 +75,7 @@ class ImportReviewController extends Controller
         $request->validate([
             'ticket_name'     => ['required', 'string'],
             'override_reason' => ['required', 'string', 'max:500'],
+            'komisi_amount'   => ['required', 'numeric', 'min:0'],
         ]);
 
         $count = TransactionImportRow::where('import_id', $import->id)
@@ -84,6 +87,7 @@ class ImportReviewController extends Controller
                 'approved_by'     => auth()->id(),
                 'approved_at'     => now(),
                 'override_reason' => $request->override_reason,
+                'komisi_amount'   => $request->komisi_amount,
             ]);
 
         $this->recalcImportCounts($import);
@@ -143,6 +147,7 @@ class ImportReviewController extends Controller
             'publish_rate'    => ['required', 'numeric', 'min:0'],
             'nett_price'      => ['required', 'numeric', 'min:0'],
             'override_reason' => ['required', 'string', 'max:500'],
+            'komisi_amount'   => ['nullable', 'numeric', 'min:0'],
         ]);
 
         $rows = TransactionImportRow::where('import_id', $import->id)
@@ -152,18 +157,22 @@ class ImportReviewController extends Controller
             ->get();
 
         foreach ($rows as $row) {
-            $unitPrice   = (float) $row->unit_price;
-            $publishRate = (float) $request->publish_rate;
-            $nettPrice   = (float) $request->nett_price;
-            $komisiRate  = (float) $row->komisi_rate;
-            $qty         = (int) $row->qty;
-
-            if (abs($unitPrice - $publishRate) < 0.01) {
-                $komisi = $komisiRate * $qty;
-            } elseif (abs($unitPrice - $nettPrice) < 0.01) {
-                $komisi = 0;
+            if ($request->filled('komisi_amount')) {
+                $komisi = $request->komisi_amount;
             } else {
-                $komisi = null;
+                $unitPrice   = (float) $row->unit_price;
+                $publishRate = (float) $request->publish_rate;
+                $nettPrice   = (float) $request->nett_price;
+                $komisiRate  = (float) $row->komisi_rate;
+                $qty         = (int) $row->qty;
+
+                if (abs($unitPrice - $publishRate) < 0.01) {
+                    $komisi = $komisiRate * $qty;
+                } elseif (abs($unitPrice - $nettPrice) < 0.01) {
+                    $komisi = 0;
+                } else {
+                    $komisi = 0; // Default to 0 instead of null
+                }
             }
 
             $row->update([
@@ -191,6 +200,7 @@ class ImportReviewController extends Controller
             'ticket_name'     => ['required', 'string'],
             'product_id'      => ['required', 'integer', 'exists:products,id'],
             'override_reason' => ['required', 'string', 'max:500'],
+            'komisi_amount'   => ['nullable', 'numeric', 'min:0'],
         ]);
 
         $product = \App\Models\Product::findOrFail($request->product_id);
@@ -202,18 +212,22 @@ class ImportReviewController extends Controller
             ->get();
 
         foreach ($rows as $row) {
-            $unitPrice   = (float) $row->unit_price;
-            $publishRate = (float) $product->publish_rate;
-            $nettPrice   = (float) $product->nett_price;
-            $komisiRate  = (float) $product->komisi;
-            $qty         = (int) $row->qty;
-
-            if (abs($unitPrice - $publishRate) < 0.01) {
-                $komisi = $komisiRate * $qty;
-            } elseif (abs($unitPrice - $nettPrice) < 0.01) {
-                $komisi = 0;
+            if ($request->filled('komisi_amount')) {
+                $komisi = $request->komisi_amount;
             } else {
-                $komisi = null;
+                $unitPrice   = (float) $row->unit_price;
+                $publishRate = (float) $product->publish_rate;
+                $nettPrice   = (float) $product->nett_price;
+                $komisiRate  = (float) $product->komisi;
+                $qty         = (int) $row->qty;
+
+                if (abs($unitPrice - $publishRate) < 0.01) {
+                    $komisi = $komisiRate * $qty;
+                } elseif (abs($unitPrice - $nettPrice) < 0.01) {
+                    $komisi = 0;
+                } else {
+                    $komisi = 0; // Default to 0 instead of null
+                }
             }
 
             $row->update([

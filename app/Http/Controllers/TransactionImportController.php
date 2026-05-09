@@ -69,7 +69,7 @@ class TransactionImportController extends Controller
         $anomalyRows = $import->rows->where('status', 'anomaly');
         $rejections  = $import->rejections;
 
-        $totalKomisi = $validRows->sum('komisi_amount');
+        $totalKomisi = $validRows->sum('komisi_amount') + $anomalyRows->where('is_approved', true)->sum('komisi_amount');
 
         // Summary badge: anomaly type → total anomaly records
         $anomalyTypes = $anomalyRows->flatMap->anomalies->groupBy('anomaly_type');

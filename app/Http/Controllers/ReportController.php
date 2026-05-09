@@ -243,7 +243,12 @@ class ReportController extends Controller
 
     private function buildImportSummary(): array
     {
-        $rows = TransactionImportRow::where('status', 'valid')
+        $rows = TransactionImportRow::where(function($q) {
+                $q->where('status', 'valid')
+                  ->orWhere(function($sq) {
+                      $sq->where('status', 'anomaly')->where('is_approved', true);
+                  });
+            })
             ->whereNotNull('matched_product_id')
             ->with('product:id,product_name')
             ->get();
