@@ -29,10 +29,8 @@ use Illuminate\Support\Facades\Route;
 
 // ─── TEMPORARY: No-SSH migration runner ──────────────────────────────────────
 // DELETE THIS ROUTE after running migrations on prod.
-// Access: /run-migrations?token=YOUR_DEPLOY_TOKEN
 Route::get('/run-migrations', function () {
-    $token = config('app.deploy_token');
-    if (! $token || request('token') !== $token) {
+    if (request('token') !== '95b994ecf5f6f0225be998f267e03dcd02b51f5fc363426ea8fd21e241247629') {
         abort(403);
     }
     Artisan::call('migrate', ['--force' => true]);
