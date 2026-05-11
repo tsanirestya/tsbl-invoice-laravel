@@ -35,12 +35,20 @@ class PendingInvoiceController extends Controller
             $query->whereDate('date', '<=', $request->date_to);
         }
 
-        // Group by transaction_no — setiap transaksi = 1 baris di antrian
+        // Ambil semua baris approved yang belum dibuatkan invoice
         $allRows = $query->get();
+
+        // Cari tahu no_transaksi mana saja yang punya baris anomaly BELUM di-approve (di seluruh database)
+        $unhandledTransactionNos = TransactionImportRow::whereIn('transaction_no', $allRows->pluck('transaction_no')->unique())
+            ->where('status', 'anomaly')
+            ->where('is_approved', false)
+            ->distinct()
+            ->pluck('transaction_no')
+            ->toArray();
 
         $grouped = $allRows
             ->groupBy('transaction_no')
-            ->map(function ($rows) {
+            ->map(function ($rows) use ($unhandledTransactionNos) {
                 $first = $rows->first();
                 return (object) [
                     'transaction_no'  => $first->transaction_no,
@@ -50,6 +58,7 @@ class PendingInvoiceController extends Controller
                     'total_amount'    => $rows->sum('total_amount'),
                     'total_komisi'    => $rows->sum('komisi_amount'),
                     'ticket_names'    => $rows->pluck('ticket_name')->filter()->unique()->implode(', '),
+                    'has_unhandled'   => in_array($first->transaction_no, $unhandledTransactionNos),
                 ];
             })
             ->values();

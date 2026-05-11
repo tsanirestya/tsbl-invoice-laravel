@@ -10,7 +10,7 @@
     <h5 class="mb-0 fw-semibold">Buat Invoice Baru</h5>
 </div>
 
-<form method="POST" action="{{ route('invoices.store') }}" novalidate>
+<form id="invoice-form" method="POST" action="{{ route('invoices.store') }}" novalidate>
     @csrf
     @include('invoices._form')
 

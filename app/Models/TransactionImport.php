@@ -26,6 +26,12 @@ class TransactionImport extends Model
     {
         parent::boot();
         static::creating(fn($m) => $m->uuid ??= (string) Str::uuid());
+
+        // F-027: Cascade delete related rows and rejections when an import is deleted
+        static::deleting(function ($import) {
+            $import->rows()->delete();
+            $import->rejections()->delete();
+        });
     }
 
     public function uploader()

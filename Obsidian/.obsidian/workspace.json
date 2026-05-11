@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "TODO/TODO-BILLING-REDESIGN.md",
+                "file": "TODO/TODO-UX-OPTIMIZATIONS.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "TODO-BILLING-REDESIGN"
+              "title": "TODO-UX-OPTIMIZATIONS"
             }
           }
         ]
@@ -185,6 +185,12 @@
   },
   "active": "f75570c9470dc731",
   "lastOpenFiles": [
+    "TODO/TODO-BILLING-REDESIGN.md",
+    "TODO/TODO-UX-OPTIMIZATIONS.md",
+    "Issues/ISSUE-002-DYNAMIC-DROPDOWN-FILTERING.md",
+    "Issues/ISSUE-001-PARTIAL-ANOMALY-HANDLING.md",
+    "Issues",
+    "Features/PARTIAL-ANOMALY-HANDLING.md",
     "Untitled.base",
     "Untitled.canvas",
     "Development-Phases/PHASE-4-SUMMARY.md",
@@ -201,7 +207,6 @@
     "Bugs/BUG-006-PRODUCTION-FILE-UPLOADS-404.md",
     "Architecture/BILLING-FLOW.md",
     "Planning/PHASE-H-DOCS.md",
-    "TODO/TODO-BILLING-REDESIGN.md",
     "TODO-AUDIT-2026-05-08.md",
     "MANUAL-BOOK.md",
     "images/manual/add_partner_form.png",
@@ -228,13 +233,9 @@
     "Logs/LOG-2026-05-05.md",
     "Architecture/LARAVEL-STRUCTURE.md",
     "TODO-PHASE-4-FINANCE.md",
-    "TODO/TODO-PHASE-8-CREDIT-FACILITY.md",
-    "Bugs/BUG-005-PRODUCTION-SETUP-FK-MIGRATION.md",
-    "Planning/FEATURE-CREDIT-FACILITY.md",
     "TODO/TODO-PHASE-6-PARTNER-DEPOSIT.md.tmp.13364.1778033879884",
     "Planning/FEATURE-PARTNER-DEPOSIT.md.tmp.13364.1778033828793",
     "Planning/FEATURE-PARTNER-DEPOSIT.md.tmp.13364.1778033772128",
-    "INDEX.md.tmp.13364.1778033461215",
-    "INDEX.md.tmp.32056.1777997945270"
+    "INDEX.md.tmp.13364.1778033461215"
   ]
 }

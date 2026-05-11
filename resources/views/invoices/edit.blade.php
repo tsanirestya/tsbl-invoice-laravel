@@ -10,7 +10,7 @@
     <h5 class="mb-0 fw-semibold">Edit — {{ $invoice->invoice_no }}</h5>
 </div>
 
-<form method="POST" action="{{ route('invoices.update', $invoice) }}" novalidate>
+<form id="invoice-form" method="POST" action="{{ route('invoices.update', $invoice) }}" novalidate>
     @csrf @method('PUT')
     @include('invoices._form')
 

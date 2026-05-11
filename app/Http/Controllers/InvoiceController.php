@@ -78,16 +78,19 @@ class InvoiceController extends Controller
         $importRow  = null; // backward compat
 
         if ($request->filled('transaction_no')) {
-            $importRows = TransactionImportRow::with(['product', 'import'])
+            $importRows = TransactionImportRow::with(['product', 'import', 'anomalies'])
                 ->where('transaction_no', $request->transaction_no)
                 ->whereIn('status', ['valid', 'anomaly'])
-                ->where('is_approved', true)
+                ->whereDoesntHave('invoice') // Exclude rows already linked to an invoice
                 ->get();
         } elseif ($request->filled('import_row_id')) {
             // Mode lama: single row
-            $importRow  = TransactionImportRow::with(['product', 'import'])->find($request->import_row_id);
-            if ($importRow) {
+            $importRow  = TransactionImportRow::with(['product', 'import', 'anomalies'])->find($request->import_row_id);
+            // Only use if not already linked to another invoice
+            if ($importRow && !$importRow->invoice()->exists()) {
                 $importRows = collect([$importRow]);
+            } elseif ($importRow && $importRow->invoice()->exists()) {
+                $importRow = null; // Already has invoice, treat as manual
             }
         }
 

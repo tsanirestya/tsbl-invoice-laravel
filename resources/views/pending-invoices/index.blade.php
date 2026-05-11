@@ -269,6 +269,11 @@
                     <td class="ps-3 text-muted small d-none d-sm-table-cell">{{ $transactions->firstItem() + $i }}</td>
                     <td>
                         <span class="trx-chip">{{ $trx->transaction_no ?? '—' }}</span>
+                        @if(isset($trx->has_unhandled) && $trx->has_unhandled)
+                            <i class="bi bi-exclamation-triangle-fill text-warning ms-1" 
+                               title="Transaksi ini memiliki item Anomali yang belum ditangani. Invoice mungkin tidak lengkap."
+                               data-bs-toggle="tooltip"></i>
+                        @endif
                     </td>
                     <td class="small d-none d-md-table-cell" style="max-width:200px">
                         <span class="d-block text-truncate" title="{{ $trx->ticket_names }}">

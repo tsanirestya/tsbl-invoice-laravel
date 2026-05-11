@@ -493,6 +493,7 @@ function toggleSidebar() {
     setTimeout(tick, 30000);
 })();
 </script>
+@stack('modals')
 @stack('scripts')
 </body>
 </html>

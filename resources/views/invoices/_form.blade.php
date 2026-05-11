@@ -188,8 +188,7 @@
     .item-row .ts-wrapper.form-select { padding: 0; }
     .item-row .ts-control { font-size: .8rem; min-height: 31px; padding: .25rem .5rem; }
     .item-row .ts-dropdown { font-size: .8rem; }
-    .ts-dropdown .ts-option-dsi { display: flex; align-items: center; gap: .4rem; padding: .3rem .5rem; }
-    .ts-dropdown .ts-option-dsi .badge { font-size: .7rem; }
+    .ts-dropdown { min-width: 300px !important; }
 
     /* Mobile: card layout — break table context with !important */
     @media (max-width: 575px) {
@@ -284,10 +283,30 @@
 
         .item-row .btn-remove-row { opacity: 1 !important; }
     }
+    /* Tom Select validation styling */
+    .ts-wrapper.is-invalid .ts-control {
+        border-color: #dc3545 !important;
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' width='12' height='12' fill='none' stroke='%23dc3545'%3e%3ccircle cx='6' cy='6' r='4.5'/%3e%3cpath stroke-linejoin='round' d='M5.8 3.6h.4L6 6.5z'/%3e%3ccircle cx='6' cy='8.2' r='.6' fill='%23dc3545' stroke='none'/%3e%3c/svg%3e");
+        background-repeat: no-repeat;
+        background-position: right calc(0.375em + 0.1875rem) center;
+        background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
+    }
 </style>
 @endpush
 
 @php $importRow ??= null; $importRows ??= collect(); @endphp
+
+{{-- Show hidden-field errors that would otherwise be invisible --}}
+@error('import_row_id')
+<div class="alert alert-warning d-flex align-items-center gap-2 mb-3" role="alert">
+    <i class="bi bi-exclamation-triangle-fill flex-shrink-0"></i>
+    <div>
+        <strong>Tidak dapat membuat invoice dari data ini.</strong>
+        Baris transaksi ini sudah terhubung ke invoice lain.
+        Silakan buat invoice secara manual atau pilih transaksi yang belum dibuatkan invoice.
+    </div>
+</div>
+@enderror
 
 {{-- ═══════════════════════════════════════════════════════════════
      Import Source Panel — Premium Card
@@ -362,9 +381,50 @@
         </div>
         <div class="isc-items-body">
             @foreach($importRows as $idx => $r)
-            <div class="isc-item-row">
-                <span class="isc-item-num">{{ $idx + 1 }}</span>
-                <span class="isc-item-name">{{ $r->ticket_name ?? '—' }}</span>
+            @php 
+                $isUnhandled = !$r->is_approved; 
+                $anomalyTypeStr = $r->anomalies->pluck('anomaly_type')->unique()->implode(', ');
+                $pendingCount = $r->import ? $r->import->rows()
+                    ->where('ticket_name', $r->ticket_name)
+                    ->where('status', 'anomaly')
+                    ->where('is_approved', false)
+                    ->count() : 1;
+            @endphp
+            <div class="isc-item-row {{ $isUnhandled ? 'bg-warning bg-opacity-10' : '' }}">
+                <span class="isc-item-num {{ $isUnhandled ? 'bg-warning text-dark' : '' }}">{{ $idx + 1 }}</span>
+                <span class="isc-item-name">
+                    {{ $r->ticket_name ?? '—' }}
+                    @if($isUnhandled && $r->import)
+                        <div class="d-inline-flex gap-1 ms-1">
+                            <button type="button" 
+                                    class="btn btn-xs btn-outline-success py-0 px-1" 
+                                    style="font-size: .65rem;"
+                                    data-bs-toggle="modal" data-bs-target="#overrideGroupModal"
+                                    data-ticket-name="{{ $r->ticket_name }}"
+                                    data-import-id="{{ $r->import_id }}"
+                                    data-pending-count="{{ $pendingCount }}"
+                                    data-anomaly-type="{{ $anomalyTypeStr }}"
+                                    title="Override (Setujui Manual)">
+                                <i class="bi bi-pencil-check"></i> Override
+                            </button>
+                            <button type="button" 
+                                    class="btn btn-xs btn-outline-primary py-0 px-1" 
+                                    style="font-size: .65rem;"
+                                    data-bs-toggle="modal" data-bs-target="#adjustPricingModal"
+                                    data-ticket-name="{{ $r->ticket_name }}"
+                                    data-import-id="{{ $r->import_id }}"
+                                    data-pending-count="{{ $pendingCount }}"
+                                    data-publish-rate="{{ $r->publish_rate }}"
+                                    data-nett-price="{{ $r->nett_price }}"
+                                    data-unit-price="{{ $r->unit_price }}"
+                                    title="Adjust Harga">
+                                <i class="bi bi-sliders"></i> Harga
+                            </button>
+                        </div>
+                    @elseif($isUnhandled)
+                        <i class="bi bi-exclamation-triangle-fill text-muted ms-1" title="Data sumber (Batch Import) sudah dihapus."></i>
+                    @endif
+                </span>
                 <span class="isc-item-meta">
                     <span class="badge bg-secondary bg-opacity-10 text-secondary border">{{ $r->qty }} pax</span>
                     <span class="text-muted">@</span>
@@ -462,6 +522,7 @@
                 @foreach($partners as $p)
                     <option value="{{ $p->id }}"
                             data-due="{{ $p->payment_due_days }}"
+                            data-type="{{ $p->partner_type }}"
                             @selected(old('partner_id', $invoice?->partner_id ?? '') == $p->id)>
                         {{ $p->nama_partner }} ({{ $p->partner_type }})
                     </option>
@@ -569,6 +630,17 @@
 
 {{-- Hidden deposit field always submitted --}}
 <input type="hidden" name="deposit" id="deposit" value="{{ old('deposit', $invoice?->deposit ?? 0) }}">
+
+{{-- Category Mismatch Warning --}}
+<div id="category-mismatch-warning" class="alert alert-warning border-warning shadow-sm py-2 px-3 mb-3" style="display:none">
+    <div class="d-flex align-items-center gap-2">
+        <i class="bi bi-exclamation-triangle-fill fs-5"></i>
+        <div>
+            <div class="fw-bold small">Peringatan Kategori</div>
+            <div class="small">Kategori partner (<span id="warn-partner-type">—</span>) tidak sesuai dengan satu atau lebih kategori produk yang dipilih (<span id="warn-product-cats">—</span>).</div>
+        </div>
+    </div>
+</div>
 
 {{-- Line Items --}}
 <div class="card border-0 shadow-sm mb-3">
@@ -757,6 +829,98 @@
     </div>
 </div>
 
+@push('modals')
+{{-- ══ Anomaly Handling Modals ══ --}}
+<div class="modal fade" id="overrideGroupModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-scrollable modal-fullscreen-sm-down">
+        <div class="modal-content">
+            <form method="POST" id="overrideGroupForm">
+                @csrf
+                <div class="modal-header bg-success-subtle py-3">
+                    <h6 class="modal-title mb-0"><i class="bi bi-pencil-check me-2"></i>Override Anomali</h6>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" name="ticket_name" id="overrideGroupTicketName">
+                    
+                    <div class="p-2 rounded mb-3" style="background:#f0fdf4;border:1px solid #bbf7d0;font-size:.82rem;color:#166534;">
+                        <i class="bi bi-info-circle me-1"></i>
+                        Override akan diterapkan ke <strong id="overrideGroupCount"></strong>
+                    </div>
+
+                    <div class="font-monospace fw-semibold bg-light border rounded p-2 mb-3 small" id="overrideGroupTicketDisplay" style="word-break:break-all;font-size:.8rem;"></div>
+                    
+                    <div class="text-muted small mb-3" id="overrideGroupAnomalyType" style="font-size:.77rem;"></div>
+
+                    <label class="form-label fw-semibold small">Alasan Override <span class="text-danger">*</span></label>
+                    <textarea name="override_reason" id="overrideGroupReason" class="form-control mb-3" rows="3" placeholder="Alasan disetujui..." required style="font-size:.84rem;"></textarea>
+
+                    <label class="form-label fw-semibold small">Nominal Komisi (per Baris) <span class="text-danger">*</span></label>
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text">Rp</span>
+                        <input type="text" inputmode="numeric" name="komisi_amount" id="overrideGroupKomisi" class="form-control currency-input" required value="0">
+                    </div>
+                    <div class="form-text mt-1" style="font-size:.7rem;">Wajib diisi secara eksplisit (isi 0 jika tidak ada komisi).</div>
+                </div>
+                <div class="modal-footer py-2">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-success btn-sm">Override</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="adjustPricingModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-scrollable modal-fullscreen-sm-down">
+        <div class="modal-content">
+            <form method="POST" id="adjustPricingForm">
+                @csrf
+                <div class="modal-header bg-primary-subtle py-3">
+                    <h6 class="modal-title mb-0"><i class="bi bi-sliders me-2"></i>Adjust Harga</h6>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" name="ticket_name" id="adjustTicketName">
+                    
+                    <div class="font-monospace fw-semibold bg-light border rounded p-2 mb-3 small" id="adjustTicketDisplay" style="word-break:break-all;font-size:.8rem;"></div>
+
+                    <div class="p-2 rounded mb-3" style="background:#eff6ff;border:1px solid #bfdbfe;font-size:.81rem;color:#1e40af;">
+                        <i class="bi bi-info-circle me-1"></i>
+                        Diterapkan ke <strong id="adjustPendingCount"></strong> baris pending.
+                        Unit price aktual: <strong id="adjustUnitPrice" class="font-monospace"></strong>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-6">
+                            <label class="form-label fw-semibold small">Publish Rate <span class="text-danger">*</span></label>
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text">Rp</span>
+                                <input type="text" inputmode="numeric" name="publish_rate" id="adjustPublishRate" class="form-control currency-input" required>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-semibold small">Nett Price <span class="text-danger">*</span></label>
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text">Rp</span>
+                                <input type="text" inputmode="numeric" name="nett_price" id="adjustNettPrice" class="form-control currency-input" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <label class="form-label fw-semibold small">Alasan Adjustment <span class="text-danger">*</span></label>
+                    <textarea name="override_reason" id="adjustReason" class="form-control mb-3" rows="2" placeholder="Alasan penyesuaian..." required style="font-size:.84rem;"></textarea>
+                </div>
+                <div class="modal-footer py-2">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary btn-sm">Simpan Harga</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+@endpush
+
 @push('scripts')
 @php
 $productsJs = $products->map(function($p) {
@@ -764,6 +928,7 @@ $productsJs = $products->map(function($p) {
         'id'           => $p->id,
         'dsi_code'     => $p->dsi_code,
         'name'         => $p->product_name,
+        'category'     => $p->category,
         'price'        => (float) $p->nett_price,
         'publish_rate' => (float) $p->publish_rate,
         'komisi'       => (float) $p->komisi,
@@ -780,13 +945,13 @@ const products = @json($productsJs);
 $importPrefillItems = null;
 if (!old('items')) {
     if ($importRows->isNotEmpty()) {
-        $importPrefillItems = $importRows->map(fn($r) => [
+        $importPrefillItems = $importRows->where('is_approved', true)->map(fn($r) => [
             'product_id'   => $r->matched_product_id,
             'product_name' => $r->ticket_name,
             'pax'          => (int) $r->qty,
             'price'        => (float) $r->unit_price,
         ])->values()->all();
-    } elseif ($importRow) {
+    } elseif ($importRow && $importRow->is_approved) {
         $importPrefillItems = [[
             'product_id'   => $importRow->matched_product_id,
             'product_name' => $importRow->ticket_name,
@@ -799,6 +964,7 @@ if (!old('items')) {
 const importPrefillItems = @json($importPrefillItems);
 {{-- backward compat --}}
 const importPrefill = importPrefillItems ? importPrefillItems[0] : null;
+const fromImport = {{ ($importRows->isNotEmpty() || $importRow) ? 'true' : 'false' }};
 let rowIdx = {{ count($existingItems) }};
 const defaultDue = {{ $defaultDue ?? 14 }};
 const depositBalanceBaseUrl = '{{ url('/api/partners') }}';
@@ -826,6 +992,9 @@ function makeNamePicker(sel) {
         }
     });
     if (row) row._tsName = ts;
+    if (sel.classList.contains('is-invalid')) {
+        ts.wrapper.classList.add('is-invalid');
+    }
     return ts;
 }
 
@@ -838,20 +1007,12 @@ function makePicker(sel) {
         searchField: ['text', 'product_name'],
         render: {
             option: function(data, escape) {
-                const name = escape(data.product_name || '');
                 const code = escape(data.text || '');
-                return `<div class="ts-option-dsi">
-                    <span class="badge bg-secondary font-monospace">${code}</span>
-                    <span class="text-muted">${name}</span>
-                </div>`;
+                return `<div class="py-1 px-2 font-monospace small">${code}</div>`;
             },
             item: function(data, escape) {
-                const name = escape(data.product_name || '');
                 const code = escape(data.text || '');
-                return `<div class="d-flex align-items-center gap-1">
-                    <span class="badge bg-secondary font-monospace">${code}</span>
-                    <small class="text-muted">${name}</small>
-                </div>`;
+                return `<div class="font-monospace small">${code}</div>`;
             },
             no_results: function(data, escape) {
                 return `<div class="no-results px-2 py-1">Tidak ditemukan: "${escape(data.input)}"</div>`;
@@ -862,6 +1023,9 @@ function makePicker(sel) {
         }
     });
     if (row) row._tsDsi = ts;
+    if (sel.classList.contains('is-invalid')) {
+        ts.wrapper.classList.add('is-invalid');
+    }
     return ts;
 }
 
@@ -883,17 +1047,21 @@ function pickProduct(row, value) {
             }
             row.querySelector('.item-price').value = fmtCurrency(prod.price);
             recalcRow(row.querySelector('.item-pax'));
+            checkCategoryMismatch();
             return;
         }
     }
     const tsName = row._tsName;
     if (tsName) tsName.setValue('', true);
     refreshFinance();
+    checkCategoryMismatch();
 }
 
 // When product name selected → sync DSI picker + price
 function pickProductByName(row, value) {
-    const prod = products.find(p => p.name === value);
+    // STRICT: Match both Name and Category
+    const prod = products.find(p => p.name === value && (!currentProductCategory || p.category === currentProductCategory));
+
     const idInput = row.querySelector('.item-product-id');
     if (idInput) idInput.value = prod ? prod.id : '';
     row.dataset.productId = prod ? prod.id : '';
@@ -909,13 +1077,143 @@ function pickProductByName(row, value) {
         if (tsDsi) tsDsi.setValue('', true);
         refreshFinance();
     }
+    checkCategoryMismatch();
+}
+
+// ── Product Filtering ──────────────────────────────────────────────────────
+let currentPartnerId = null;
+let currentProductCategory = null;
+
+function filterProductsByPartner(partnerId) {
+    currentPartnerId = partnerId;
+    const sel = document.getElementById('partner_id');
+    const opt = Array.from(sel.options).find(o => o.value == partnerId);
+    
+    if (opt && opt.dataset.type) {
+        const type = opt.dataset.type;
+        const map = {
+            'HOTEL': 'HTL',
+            'TRAVEL': 'TVL',
+            'TOURDESK': 'TRD'
+        };
+        currentProductCategory = map[type] || null;
+    } else {
+        currentProductCategory = null;
+    }
+    
+    // Update all existing rows
+    document.querySelectorAll('.item-row').forEach(row => {
+        updateRowPickers(row);
+    });
+    
+    checkCategoryMismatch();
+}
+
+function updateRowPickers(row) {
+    const tsName = row._tsName;
+    const tsDsi = row._tsDsi;
+    
+    if (!tsName || !tsDsi) return;
+
+    const currentNameValue = tsName.getValue();
+    const currentDsiValue  = tsDsi.getValue();
+
+    // RULE 1: Manual invoice + no partner = empty dropdown
+    // RULE 2: DSI invoice + no partner = all products (filtered by transaction context if needed, but here we show all)
+    // RULE 3: Partner selected = filter by category (HTL/TVL/TRD)
+    
+    let filtered = products;
+    if (!fromImport && !currentPartnerId) {
+        filtered = [];
+    } else if (currentProductCategory) {
+        filtered = products.filter(p => p.category === currentProductCategory || p.category === 'OPE');
+    }
+
+    // Update Name Picker
+    tsName.clearOptions();
+    filtered.forEach(p => {
+        tsName.addOption({ value: p.name, text: p.name });
+    });
+
+    // Update DSI Picker
+    tsDsi.clearOptions();
+    filtered.forEach(p => {
+        tsDsi.addOption({ 
+            value: String(p.id), 
+            text: p.dsi_code, 
+            product_name: p.name 
+        });
+    });
+
+    // LOGIC: Reset if mismatch (except for DSI Imports which show warning instead)
+    const isMismatch = (currentNameValue && !filtered.find(p => p.name === currentNameValue)) ||
+                       (currentDsiValue && !filtered.find(p => String(p.id) === currentDsiValue));
+
+    if (!fromImport && isMismatch) {
+        tsName.setValue('', true);
+        tsDsi.setValue('', true);
+        const idInput = row.querySelector('.item-product-id');
+        if (idInput) idInput.value = '';
+        row.dataset.productId = '';
+        row.querySelector('.item-price').value = '0';
+        recalcRow(row.querySelector('.item-pax'));
+    } else {
+        // If fromImport, we allow keeping the mismatch but must ensure it's in options so it displays
+        if (fromImport && isMismatch) {
+            if (currentNameValue && !filtered.find(p => p.name === currentNameValue)) {
+                tsName.addOption({ value: currentNameValue, text: currentNameValue });
+            }
+            if (currentDsiValue && !filtered.find(p => String(p.id) === currentDsiValue)) {
+                const p = products.find(prod => String(prod.id) === currentDsiValue);
+                if (p) tsDsi.addOption({ value: String(p.id), text: p.dsi_code, product_name: p.name });
+            }
+        }
+        tsName.setValue(currentNameValue, true);
+        tsDsi.setValue(currentDsiValue, true);
+    }
+}
+
+function checkCategoryMismatch() {
+    const warnBox = document.getElementById('category-mismatch-warning');
+    if (!warnBox) return;
+
+    if (!currentProductCategory) {
+        warnBox.style.display = 'none';
+        return;
+    }
+
+    let hasMismatch = false;
+    let foundCats = new Set();
+
+    document.querySelectorAll('.item-row').forEach(row => {
+        const productId = row.dataset.productId;
+        if (!productId) return;
+        
+        const prod = products.find(p => p.id == productId);
+        if (prod && prod.category && prod.category !== 'OPE') {
+            foundCats.add(prod.category);
+            if (prod.category !== currentProductCategory) {
+                hasMismatch = true;
+            }
+        }
+    });
+
+    if (hasMismatch) {
+        const sel = document.getElementById('partner_id');
+        const opt = Array.from(sel.options).find(o => o.value == currentPartnerId);
+        document.getElementById('warn-partner-type').textContent = opt ? opt.dataset.type : '—';
+        document.getElementById('warn-product-cats').textContent = Array.from(foundCats).join(', ');
+        warnBox.style.display = 'block';
+    } else {
+        warnBox.style.display = 'none';
+    }
 }
 
 // ── Tom Select: partner picker ─────────────────────────────────────────────
 function makePartnerPicker() {
     const sel = document.getElementById('partner_id');
     if (!sel) return;
-    new TomSelect(sel, {
+    const ts = new TomSelect(sel, {
         placeholder: '— Ketik nama partner —',
         searchField: ['text'],
         onChange: function(value) {
@@ -923,12 +1221,17 @@ function makePartnerPicker() {
             if (value) {
                 loadDepositInfo(value);
                 loadCreditInfo(value);
+                filterProductsByPartner(value);
             } else {
                 clearDepositPanel();
                 clearCreditPanel();
+                filterProductsByPartner(null);
             }
         }
     });
+    if (sel.classList.contains('is-invalid')) {
+        ts.wrapper.classList.add('is-invalid');
+    }
 }
 
 function applyDueDate(partnerId) {
@@ -1184,7 +1487,10 @@ function updateCreditFromSubtotal() {
 
 function setOverLimit(isOver) {
     const wrap = document.getElementById('credit-override-wrap');
-    if (wrap) wrap.style.display = isOver ? '' : 'none';
+    if (wrap) {
+        wrap.style.display = isOver ? 'block' : 'none';
+        wrap.dataset.overlimit = isOver ? '1' : '0';
+    }
 }
 
 // ── Invoice date change → recalc due date ─────────────────────────────────
@@ -1196,18 +1502,38 @@ document.getElementById('invoice_date')?.addEventListener('change', function() {
 // ── Row management ─────────────────────────────────────────────────────────
 function addRow(name = '', productId = '', pax = 1, price = 0, lockPicker = false) {
     const i = rowIdx++;
-    const opts = products.map(p =>
+    
+    // Use filtered products if category is set
+    const filtered = products.filter(p => !currentProductCategory || p.category === currentProductCategory);
+    
+    const opts = filtered.map(p =>
         `<option value="${p.id}"
             data-price="${p.price}"
             data-name="${p.name}"
             data-product-name="${p.name}"
             ${p.id == productId ? 'selected' : ''}>${p.dsi_code}</option>`
     ).join('');
-    const nameOpts = products.map(p =>
+    
+    const nameOpts = filtered.map(p =>
         `<option value="${p.name}" ${p.name === name ? 'selected' : ''}>${p.name}</option>`
     ).join('');
+    
+    // Ensure existing values are included even if they don't match the category (to prevent data loss on load/edit)
+    let extraNameOpt = '';
+    if (name && !filtered.find(p => p.name === name)) {
+        extraNameOpt = `<option value="${name}" selected>${name}</option>`;
+    }
+    
+    let extraDsiOpt = '';
+    if (productId && !filtered.find(p => p.id == productId)) {
+        const p = products.find(prod => prod.id == productId);
+        if (p) {
+            extraDsiOpt = `<option value="${p.id}" data-price="${p.price}" data-name="${p.name}" data-product-name="${p.name}" selected>${p.dsi_code}</option>`;
+        }
+    }
+
     const isCustomName = name && !products.find(p => p.name === name);
-    const customOpt    = isCustomName ? `<option value="${name}" selected>${name}</option>` : '';
+    const customOpt    = (isCustomName && !extraNameOpt) ? `<option value="${name}" selected>${name}</option>` : '';
 
     const amount = pax * price;
     const tbody  = document.getElementById('items-body');
@@ -1217,13 +1543,13 @@ function addRow(name = '', productId = '', pax = 1, price = 0, lockPicker = fals
     tr.innerHTML = `
         <td class="ps-3" data-label="Produk">
             <select name="items[${i}][product_name]" class="form-select form-select-sm product-name-picker" required>
-                <option value=""></option>${nameOpts}${customOpt}
+                <option value=""></option>${nameOpts}${extraNameOpt}${customOpt}
             </select>
         </td>
         <td data-label="DSI">
             <input type="hidden" name="items[${i}][product_id]" class="item-product-id" value="${productId}">
             <select class="form-select form-select-sm product-picker">
-                <option value=""></option>${opts}
+                <option value=""></option>${opts}${extraDsiOpt}
             </select>
         </td>
         <td class="text-center" data-label="Pax">
@@ -1253,6 +1579,17 @@ function addRow(name = '', productId = '', pax = 1, price = 0, lockPicker = fals
         if (productId) ts.setValue(String(productId));
         ts.disable();
         tsName.disable();
+
+        // BUGFIX: Disabled fields are NOT submitted. Add hidden input to ensure name is sent.
+        const hiddenName = document.createElement('input');
+        hiddenName.type = 'hidden';
+        hiddenName.name = `items[${i}][product_name]`;
+        hiddenName.value = name;
+        tr.appendChild(hiddenName);
+    }
+
+    if (tr.querySelector('.product-name-picker')?.classList.contains('is-invalid')) {
+        tr._tsName?.wrapper.classList.add('is-invalid');
     }
 
     recalc();
@@ -1388,8 +1725,14 @@ function terbilang(n) {
     return spell(n);
 }
 
-// ── Init ───────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', function() {
+    // Sync data-overlimit flag from initial DOM state (Laravel may have shown wrap via server-side $errors)
+    const overrideWrap = document.getElementById('credit-override-wrap');
+    if (overrideWrap) {
+        const initiallyVisible = overrideWrap.style.display !== 'none' && overrideWrap.style.display !== '';
+        overrideWrap.dataset.overlimit = initiallyVisible ? '1' : '0';
+    }
+
     makePartnerPicker();
 
     const rows = document.querySelectorAll('#items-body .item-row');
@@ -1414,14 +1757,16 @@ document.addEventListener('DOMContentLoaded', function() {
     // Load deposit + credit info if partner already selected (edit mode)
     const partnerSel = document.getElementById('partner_id');
     if (partnerSel?.value) {
+        filterProductsByPartner(partnerSel.value);
         loadDepositInfo(partnerSel.value);
         loadCreditInfo(partnerSel.value);
     }
 
-    // Submit guard: require override reason if over limit
-    document.querySelector('form')?.addEventListener('submit', function(e) {
+    // Submit guard: require override reason ONLY if credit limit is actually exceeded
+    document.getElementById('invoice-form')?.addEventListener('submit', function(e) {
         const wrap = document.getElementById('credit-override-wrap');
-        if (wrap && wrap.style.display !== 'none') {
+        // Use data-overlimit flag (set by setOverLimit) — do NOT rely on style.display
+        if (wrap && wrap.dataset.overlimit === '1') {
             const reason = document.getElementById('credit-override-reason')?.value?.trim();
             if (!reason) {
                 e.preventDefault();
@@ -1432,6 +1777,41 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     });
+
+    // --- Anomaly Handling Modals Logic ---
+    const overrideModal = document.getElementById('overrideGroupModal');
+    if (overrideModal) {
+        overrideModal.addEventListener('show.bs.modal', function(e) {
+            const btn = e.relatedTarget;
+            const name = btn.dataset.ticketName;
+            const impId = btn.dataset.importId;
+            document.getElementById('overrideGroupTicketName').value = name;
+            document.getElementById('overrideGroupTicketDisplay').textContent = name;
+            document.getElementById('overrideGroupCount').textContent = btn.dataset.pendingCount + ' baris pending';
+            document.getElementById('overrideGroupAnomalyType').textContent = 'Tipe anomaly: ' + btn.dataset.anomalyType;
+            document.getElementById('overrideGroupReason').value = '';
+            document.getElementById('overrideGroupForm').action = `{{ url('/imports') }}/${impId}/override-group`;
+        });
+    }
+
+    const adjustModal = document.getElementById('adjustPricingModal');
+    if (adjustModal) {
+        adjustModal.addEventListener('show.bs.modal', function(e) {
+            const btn = e.relatedTarget;
+            const name = btn.dataset.ticketName;
+            const impId = btn.dataset.importId;
+            document.getElementById('adjustTicketName').value = name;
+            document.getElementById('adjustTicketDisplay').textContent = name;
+            document.getElementById('adjustPendingCount').textContent  = btn.dataset.pendingCount + ' baris';
+            document.getElementById('adjustUnitPrice').textContent     = 'Rp ' + Number(btn.dataset.unitPrice).toLocaleString('id-ID');
+            document.getElementById('adjustPublishRate').value = fmtCurrency(btn.dataset.publishRate || 0);
+            document.getElementById('adjustNettPrice').value = fmtCurrency(btn.dataset.nettPrice || 0);
+            document.getElementById('adjustReason').value = '';
+            document.getElementById('adjustPricingForm').action = `{{ url('/imports') }}/${impId}/adjust-pricing`;
+        });
+    }
+
+    initCurrencyInputs(document);
 });
 </script>
 @endpush
