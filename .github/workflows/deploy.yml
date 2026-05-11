@@ -7,7 +7,7 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 120
 
     steps:
       - name: Checkout code
@@ -76,7 +76,7 @@ jobs:
           EOF
           sed -i 's/^[[:space:]]*//' _webroot/index.php
 
-      - name: Deploy app → /tsbl-invoice-laravel/ (incremental, with vendor)
+      - name: Deploy App Core (Fast)
         uses: SamKirkland/FTP-Deploy-Action@v4.3.4
         with:
           server: ${{ secrets.FTP_SERVER }}
@@ -84,10 +84,12 @@ jobs:
           password: ${{ secrets.FTP_PASSWORD }}
           local-dir: ./
           server-dir: /tsbl-invoice-laravel/
+          state-name: .ftp-deploy-sync-state-app.json
           exclude: |
             **/.git*
             **/.git*/**
             **/node_modules/**
+            vendor/**
             .env.example
             .env.local
             .env.testing
@@ -104,7 +106,18 @@ jobs:
             **/database/schema_export.sql
             **/database/seeds_export.sql
 
-      - name: Deploy webroot → /invoice.transentertainment.id/
+      - name: Deploy Vendor (Heavy & Slow)
+        timeout-minutes: 90
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: ./vendor/
+          server-dir: /tsbl-invoice-laravel/vendor/
+          state-name: .ftp-deploy-sync-state-vendor.json
+
+      - name: Deploy Webroot (Fast)
         uses: SamKirkland/FTP-Deploy-Action@v4.3.4
         with:
           server: ${{ secrets.FTP_SERVER }}
@@ -112,3 +125,4 @@ jobs:
           password: ${{ secrets.FTP_PASSWORD }}
           local-dir: ./_webroot/
           server-dir: /invoice.transentertainment.id/
+          state-name: .ftp-deploy-sync-state-webroot.json
