@@ -39,8 +39,6 @@ echo (php_sapi_name() === 'cli' ? "" : "<pre>");
 echo "Starting Database Reset...\n";
 
 try {
-    DB::beginTransaction();
-    
     // Disable foreign key constraints
     Schema::disableForeignKeyConstraints();
 
@@ -56,12 +54,10 @@ try {
     // Enable foreign key constraints
     Schema::enableForeignKeyConstraints();
     
-    DB::commit();
     echo "\nSUCCESS: Transactional data has been cleared.\n";
     echo "Preserved: users, products, partners, settings.\n";
 
 } catch (\Exception $e) {
-    DB::rollBack();
     Schema::enableForeignKeyConstraints();
     echo "\nERROR: " . $e->getMessage() . "\n";
 }
