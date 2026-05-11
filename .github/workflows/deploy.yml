@@ -81,7 +81,7 @@ jobs:
           # Prepare dist folders for clean FTP upload
           mkdir -p dist_app dist_web
           mv app.zip dist_app/
-          mv web.zip deploy_bridge.php dist_web/
+          mv web.zip deploy_bridge.php file_check.php dist_web/
 
       - name: Upload App Package
         uses: SamKirkland/FTP-Deploy-Action@v4.3.4
