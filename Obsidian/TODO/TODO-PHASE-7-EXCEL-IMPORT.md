@@ -313,6 +313,37 @@ Reason: Drag-drop upload UI + color-coded review table + bulk checklist
 
 ---
 
+## Additional — Products Category Column
+
+**Date:** 2026-05-11
+**GitHub:** tsanirestya/tsbl-invoice-laravel#17
+
+### Spec
+- Kolom baru `category` di tabel `products`
+- Nilai = 3 karakter kiri dari `dsi_code`
+- Jika `dsi_code = '0'` → `category = '0'`
+- Jika `dsi_code = NULL` → `category = NULL` (isi manual)
+- **Existing products**: backfill otomatis via migration (`LEFT(dsi_code, 3)`)
+- **Import pipeline**: auto-update category saat row valid + product matched
+- **Edit form**: field manual agar admin bisa override
+
+### Tasks
+- [x] Migration `add_category_to_products_table` + backfill query — **DONE 2026-05-11**
+- [x] `Product.$fillable` + tambah `category` — **DONE 2026-05-11**
+- [x] `ImportPipelineService`: set category pada valid row match — **DONE 2026-05-11**
+- [x] `products/_form.blade.php`: input `category` (manual override) — **DONE 2026-05-11**
+- [x] `ProductController`: validasi + store/update `category`, filter by category — **DONE 2026-05-11**
+- [x] `products/index.blade.php`: tampilkan DSI Code, Category, Publish Rate, Komisi, Nett Price, % Komisi, Payment Mode — **DONE 2026-05-11**
+
+### Notes
+- % Komisi = `komisi / publish_rate × 100`
+- Category badge color-coded: HTL biru, TRD kuning, TVL hijau
+- Search diperluas: product_name + dsi_code
+- Filter dropdown Kategori auto-populate dari data existing
+- Existing data di-backfill otomatis via migration `LEFT(dsi_code, 3)`
+
+---
+
 ## Notes
 
 - JANGAN auto-correct anomaly — semua non-exact match WAJIB user confirmation

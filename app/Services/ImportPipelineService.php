@@ -109,6 +109,13 @@ class ImportPipelineService
                     $anomalyCount++;
                 } else {
                     $validCount++;
+
+                    // Auto-fill product category from dsi_code on successful import row
+                    if ($product && $product->dsi_code !== null && $product->category === null) {
+                        $product->update([
+                            'category' => $product->dsi_code === '0' ? '0' : substr($product->dsi_code, 0, 3),
+                        ]);
+                    }
                 }
             }
         });

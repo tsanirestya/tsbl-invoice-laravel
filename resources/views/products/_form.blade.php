@@ -6,6 +6,16 @@
         @error('product_name') <div class="invalid-feedback">{{ $message }}</div> @enderror
     </div>
 
+    <div class="col-md-4">
+        <label class="form-label fw-semibold">Category</label>
+        <input type="text" name="category" maxlength="10"
+               class="form-control @error('category') is-invalid @enderror"
+               value="{{ old('category', $product->category ?? '') }}"
+               placeholder="e.g. HTL, TRD, TVL">
+        <div class="form-text text-muted">Auto-filled dari 3 karakter kiri DSI Code saat import berhasil.</div>
+        @error('category') <div class="invalid-feedback">{{ $message }}</div> @enderror
+    </div>
+
     <div class="col-12">
         <label class="form-label fw-semibold">Deskripsi</label>
         <textarea name="description" class="form-control" rows="3">{{ old('description', $product->description ?? '') }}</textarea>

@@ -35,6 +35,32 @@
     .product-card-item:hover { background: #fafbff; }
     .product-name { font-weight: 700; font-size: .88rem; color: #1e293b; }
     .product-meta { font-size: .76rem; color: #64748b; margin-top: 2px; }
+
+    .th-std {
+        background: #f8fafc;
+        font-size: .63rem;
+        font-weight: 700;
+        letter-spacing: .5px;
+        text-transform: uppercase;
+        color: #64748b;
+        padding: .6rem .75rem;
+        white-space: nowrap;
+    }
+    .td-std { padding: .6rem .75rem; font-size: .82rem; border-bottom: 1px solid #f8fafc; }
+    .td-num { text-align: right; white-space: nowrap; }
+
+    .badge-cat {
+        display: inline-block;
+        padding: .18em .55em;
+        border-radius: 5px;
+        font-size: .68rem;
+        font-weight: 700;
+        letter-spacing: .4px;
+    }
+    .cat-htl { background: #eff6ff; color: #1d4ed8; }
+    .cat-trd { background: #fef3c7; color: #92400e; }
+    .cat-tvl { background: #f0fdf4; color: #166534; }
+    .cat-other { background: #f1f5f9; color: #475569; }
 </style>
 @endpush
 
@@ -54,9 +80,17 @@
 {{-- ── Filter ── --}}
 <form method="GET" class="filter-pill">
     <div class="row g-2 align-items-center">
-        <div class="col-12 col-sm-6 col-md-5">
+        <div class="col-12 col-sm-5 col-md-4">
             <input type="text" name="search" class="form-control form-control-sm"
-                   placeholder="Cari nama produk..." value="{{ request('search') }}">
+                   placeholder="Cari nama produk / DSI code..." value="{{ request('search') }}">
+        </div>
+        <div class="col-6 col-sm-3 col-md-2">
+            <select name="category" class="form-select form-select-sm">
+                <option value="">Semua Kategori</option>
+                @foreach($categories as $cat)
+                <option value="{{ $cat }}" @selected(request('category') === $cat)>{{ $cat }}</option>
+                @endforeach
+            </select>
         </div>
         <div class="col-6 col-sm-3 col-md-2">
             <select name="active" class="form-select form-select-sm">
@@ -69,7 +103,7 @@
             <button class="btn btn-sm btn-primary" type="submit" style="border-radius:8px;padding:.35rem .8rem;">
                 <i class="bi bi-search"></i>
             </button>
-            @if(request()->hasAny(['search','active']))
+            @if(request()->hasAny(['search','active','category']))
             <a href="{{ route('products.index') }}" class="btn btn-sm btn-outline-secondary" style="border-radius:8px;padding:.35rem .8rem;">
                 <i class="bi bi-x-lg"></i>
             </a>
@@ -82,43 +116,83 @@
 <div class="card card-clean overflow-hidden">
 
     {{-- Desktop table --}}
-    <div class="d-none d-md-block">
+    <div class="d-none d-md-block" style="overflow-x:auto;">
         <table class="table table-hover mb-0 align-middle">
             <thead>
                 <tr>
-                    <th style="background:#f8fafc;font-size:.65rem;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:#64748b;padding:.65rem 1rem;width:40px">#</th>
-                    <th style="background:#f8fafc;font-size:.65rem;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:#64748b;padding:.65rem 1rem;">Nama Produk</th>
-                    <th style="background:#f8fafc;font-size:.65rem;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:#64748b;padding:.65rem 1rem;" class="d-none d-lg-table-cell">Deskripsi</th>
-                    <th style="background:#f8fafc;font-size:.65rem;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:#64748b;padding:.65rem 1rem;">Satuan</th>
-                    <th style="background:#f8fafc;font-size:.65rem;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:#64748b;padding:.65rem 1rem;text-align:right;">Harga Default</th>
-                    <th style="background:#f8fafc;font-size:.65rem;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:#64748b;padding:.65rem 1rem;">Status</th>
-                    <th style="background:#f8fafc;padding:.65rem 1rem;"></th>
+                    <th class="th-std" style="width:36px;">#</th>
+                    <th class="th-std">Nama Produk</th>
+                    <th class="th-std d-none d-lg-table-cell">DSI Code</th>
+                    <th class="th-std">Kategori</th>
+                    <th class="th-std td-num">Publish Rate</th>
+                    <th class="th-std td-num d-none d-xl-table-cell">Komisi</th>
+                    <th class="th-std td-num">Nett Price</th>
+                    <th class="th-std td-num">% Komisi</th>
+                    <th class="th-std d-none d-xl-table-cell">Payment Mode</th>
+                    <th class="th-std"></th>
                 </tr>
             </thead>
             <tbody>
                 @forelse($products as $i => $product)
+                @php
+                    $pct = ($product->publish_rate > 0)
+                        ? round($product->komisi / $product->publish_rate * 100, 1)
+                        : null;
+
+                    $catClass = match(strtoupper($product->category ?? '')) {
+                        'HTL'   => 'cat-htl',
+                        'TRD'   => 'cat-trd',
+                        'TVL'   => 'cat-tvl',
+                        default => 'cat-other',
+                    };
+                @endphp
                 <tr>
-                    <td style="padding:.65rem 1rem;font-size:.83rem;border-bottom:1px solid #f8fafc;color:#94a3b8;">{{ $products->firstItem() + $i }}</td>
-                    <td style="padding:.65rem 1rem;font-size:.83rem;border-bottom:1px solid #f8fafc;font-weight:600;">
+                    <td class="td-std" style="color:#94a3b8;">{{ $products->firstItem() + $i }}</td>
+
+                    <td class="td-std" style="font-weight:600;max-width:220px;">
                         {{ $product->product_name }}
-                    </td>
-                    <td style="padding:.65rem 1rem;font-size:.82rem;border-bottom:1px solid #f8fafc;color:#94a3b8;max-width:240px;" class="d-none d-lg-table-cell">
-                        {{ Str::limit($product->description, 60) ?: '—' }}
-                    </td>
-                    <td style="padding:.65rem 1rem;font-size:.83rem;border-bottom:1px solid #f8fafc;color:#64748b;">
-                        {{ $product->unit }}
-                    </td>
-                    <td style="padding:.65rem 1rem;font-size:.83rem;border-bottom:1px solid #f8fafc;font-weight:600;text-align:right;">
-                        Rp {{ number_format($product->default_price, 0, ',', '.') }}
-                    </td>
-                    <td style="padding:.65rem 1rem;border-bottom:1px solid #f8fafc;">
-                        @if($product->is_active)
-                            <span class="badge" style="background:#dcfce7;color:#166534;font-size:.68rem;">Aktif</span>
-                        @else
-                            <span class="badge" style="background:#f1f5f9;color:#475569;font-size:.68rem;">Nonaktif</span>
+                        @if(!$product->is_active)
+                            <span class="badge ms-1" style="background:#f1f5f9;color:#475569;font-size:.62rem;">Nonaktif</span>
                         @endif
                     </td>
-                    <td style="padding:.65rem 1rem;border-bottom:1px solid #f8fafc;">
+
+                    <td class="td-std d-none d-lg-table-cell" style="color:#64748b;font-size:.78rem;font-family:monospace;">
+                        {{ $product->dsi_code ?: '—' }}
+                    </td>
+
+                    <td class="td-std">
+                        @if($product->category)
+                            <span class="badge-cat {{ $catClass }}">{{ $product->category }}</span>
+                        @else
+                            <span style="color:#cbd5e1;font-size:.78rem;">—</span>
+                        @endif
+                    </td>
+
+                    <td class="td-std td-num" style="font-weight:600;">
+                        {{ $product->publish_rate > 0 ? 'Rp '.number_format($product->publish_rate, 0, ',', '.') : '—' }}
+                    </td>
+
+                    <td class="td-std td-num d-none d-xl-table-cell" style="color:#64748b;">
+                        {{ $product->komisi > 0 ? 'Rp '.number_format($product->komisi, 0, ',', '.') : '—' }}
+                    </td>
+
+                    <td class="td-std td-num" style="color:#64748b;">
+                        {{ $product->nett_price > 0 ? 'Rp '.number_format($product->nett_price, 0, ',', '.') : '—' }}
+                    </td>
+
+                    <td class="td-std td-num">
+                        @if($pct !== null)
+                            <span style="color:#0f766e;font-weight:600;">{{ $pct }}%</span>
+                        @else
+                            <span style="color:#cbd5e1;">—</span>
+                        @endif
+                    </td>
+
+                    <td class="td-std d-none d-xl-table-cell" style="color:#64748b;font-size:.8rem;">
+                        {{ $product->payment_mode ?: '—' }}
+                    </td>
+
+                    <td class="td-std">
                         <div class="d-flex gap-1 justify-content-end product-actions">
                             <a href="{{ route('products.edit', $product) }}" class="btn-act edit" title="Edit">
                                 <i class="bi bi-pencil"></i>
@@ -135,7 +209,7 @@
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="7" class="text-center py-5 text-muted">
+                    <td colspan="10" class="text-center py-5 text-muted">
                         <i class="bi bi-box-seam fs-2 d-block mb-2 opacity-40"></i>
                         Tidak ada produk ditemukan.
                     </td>
@@ -148,22 +222,39 @@
     {{-- Mobile card list --}}
     <div class="d-md-none">
         @forelse($products as $product)
+        @php
+            $pct = ($product->publish_rate > 0)
+                ? round($product->komisi / $product->publish_rate * 100, 1)
+                : null;
+            $catClass = match(strtoupper($product->category ?? '')) {
+                'HTL'   => 'cat-htl',
+                'TRD'   => 'cat-trd',
+                'TVL'   => 'cat-tvl',
+                default => 'cat-other',
+            };
+        @endphp
         <div class="product-card-item">
             <div class="d-flex align-items-start justify-content-between gap-2">
-                <div class="min-w-0">
-                    <div class="product-name">{{ $product->product_name }}</div>
-                    <div class="product-meta d-flex align-items-center gap-2 mt-1 flex-wrap">
-                        <span><i class="bi bi-box me-1"></i>{{ $product->unit }}</span>
-                        <span class="fw-semibold text-dark">Rp {{ number_format($product->default_price, 0, ',', '.') }}</span>
+                <div class="min-w-0 flex-grow-1">
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                        <div class="product-name">{{ $product->product_name }}</div>
+                        @if($product->category)
+                            <span class="badge-cat {{ $catClass }}">{{ $product->category }}</span>
+                        @endif
                     </div>
-                    @if($product->description)
-                    <div class="product-meta mt-1 text-truncate" style="max-width:200px;">{{ $product->description }}</div>
+                    @if($product->dsi_code)
+                    <div class="product-meta mt-1" style="font-family:monospace;">{{ $product->dsi_code }}</div>
                     @endif
+                    <div class="product-meta d-flex align-items-center gap-3 mt-1 flex-wrap">
+                        <span>Publish: <strong class="text-dark">{{ $product->publish_rate > 0 ? 'Rp '.number_format($product->publish_rate, 0, ',', '.') : '—' }}</strong></span>
+                        <span>Nett: <strong class="text-dark">{{ $product->nett_price > 0 ? 'Rp '.number_format($product->nett_price, 0, ',', '.') : '—' }}</strong></span>
+                        @if($pct !== null)
+                        <span style="color:#0f766e;font-weight:600;">{{ $pct }}%</span>
+                        @endif
+                    </div>
                 </div>
                 <div class="d-flex flex-column align-items-end gap-2 flex-shrink-0">
-                    @if($product->is_active)
-                        <span class="badge" style="background:#dcfce7;color:#166534;font-size:.65rem;">Aktif</span>
-                    @else
+                    @if(!$product->is_active)
                         <span class="badge" style="background:#f1f5f9;color:#475569;font-size:.65rem;">Nonaktif</span>
                     @endif
                     <div class="d-flex gap-1 product-actions">

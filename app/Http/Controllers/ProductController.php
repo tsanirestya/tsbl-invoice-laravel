@@ -12,16 +12,24 @@ class ProductController extends Controller
         $query = Product::query();
 
         if ($request->filled('search')) {
-            $query->where('product_name', 'like', '%' . $request->search . '%');
+            $query->where(function ($q) use ($request) {
+                $q->where('product_name', 'like', '%' . $request->search . '%')
+                  ->orWhere('dsi_code', 'like', '%' . $request->search . '%');
+            });
         }
 
         if ($request->filled('active')) {
             $query->where('is_active', $request->active);
         }
 
-        $products = $query->orderBy('product_name')->paginate(15)->withQueryString();
+        if ($request->filled('category')) {
+            $query->where('category', $request->category);
+        }
 
-        return view('products.index', compact('products'));
+        $products   = $query->orderBy('product_name')->paginate(15)->withQueryString();
+        $categories = Product::whereNotNull('category')->distinct()->orderBy('category')->pluck('category');
+
+        return view('products.index', compact('products', 'categories'));
     }
 
     public function create()
@@ -33,6 +41,7 @@ class ProductController extends Controller
     {
         $validated = $request->validate([
             'product_name'  => 'required|string|max:200',
+            'category'      => 'nullable|string|max:10',
             'description'   => 'nullable|string',
             'default_price' => 'required|numeric|min:0',
             'unit'          => 'required|string|max:30',
@@ -56,6 +65,7 @@ class ProductController extends Controller
     {
         $validated = $request->validate([
             'product_name'  => 'required|string|max:200',
+            'category'      => 'nullable|string|max:10',
             'description'   => 'nullable|string',
             'default_price' => 'required|numeric|min:0',
             'unit'          => 'required|string|max:30',
