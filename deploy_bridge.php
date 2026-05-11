@@ -16,10 +16,10 @@ if ($token !== $expectedToken) {
 
 $target = $_GET['target'] ?? ''; // 'app' or 'web'
 $zipFile = ($target === 'app') ? __DIR__ . '/../tsbl-invoice-laravel/app.zip' : __DIR__ . '/web.zip';
-$extractTo = ($target === 'app') ? __DIR__ . '/../tsbl-invoice-laravel/' : __DIR__ . '/';
+$extractTo = ($target === 'app') ? __DIR__ . '/../tsbl-invoice-laravel/' : __DIR__ . '/public/';
 
-if ($target === 'app' && !file_exists(__DIR__ . '/../tsbl-invoice-laravel/')) {
-    mkdir(__DIR__ . '/../tsbl-invoice-laravel/', 0755, true);
+if ($target === 'web' && !file_exists(__DIR__ . '/public/')) {
+    mkdir(__DIR__ . '/public/', 0755, true);
 }
 
 if (!file_exists($zipFile)) {
