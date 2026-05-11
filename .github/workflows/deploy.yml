@@ -76,53 +76,51 @@ jobs:
           EOF
           sed -i 's/^[[:space:]]*//' _webroot/index.php
 
-      - name: Deploy App Core (Fast)
+      - name: Create Deployment Packages (Zip)
+        run: |
+          # Create App Zip (exclude git, node_modules, and other zips)
+          zip -r app.zip . -x ".git/*" "node_modules/*" "_webroot/*" "tests/*" "Obsidian/*" ".github/*" "storage/logs/*" "*.zip" "deploy_bridge.php"
+          
+          # Create Web Zip
+          cd _webroot && zip -r ../web.zip . && cd ..
+          
+          # Prepare dist folders for clean FTP upload
+          mkdir -p dist_app dist_web
+          mv app.zip dist_app/
+          mv web.zip deploy_bridge.php dist_web/
+
+      - name: Upload App Package
         uses: SamKirkland/FTP-Deploy-Action@v4.3.4
         with:
           server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
-          local-dir: ./
+          local-dir: ./dist_app/
           server-dir: /tsbl-invoice-laravel/
-          state-name: .ftp-deploy-sync-state-app.json
-          exclude: |
-            **/.git*
-            **/.git*/**
-            **/node_modules/**
-            vendor/**
-            .env.example
-            .env.local
-            .env.testing
-            **/tests/**
-            **/Obsidian/**
-            **/.github/**
-            _webroot/**
-            "data awal/**"
-            **/storage/framework/cache/**
-            **/storage/framework/sessions/**
-            **/storage/framework/views/**
-            **/storage/logs/**
-            **/bootstrap/cache/**
-            **/database/schema_export.sql
-            **/database/seeds_export.sql
+          state-name: .ftp-deploy-sync-state-zip-app.json
 
-      - name: Deploy Vendor (Heavy & Slow)
-        timeout-minutes: 90
+      - name: Upload Web Package & Bridge
         uses: SamKirkland/FTP-Deploy-Action@v4.3.4
         with:
           server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
-          local-dir: ./vendor/
-          server-dir: /tsbl-invoice-laravel/vendor/
-          state-name: .ftp-deploy-sync-state-vendor.json
-
-      - name: Deploy Webroot (Fast)
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
-        with:
-          server: ${{ secrets.FTP_SERVER }}
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          local-dir: ./_webroot/
+          local-dir: ./dist_web/
           server-dir: /invoice.transentertainment.id/
-          state-name: .ftp-deploy-sync-state-webroot.json
+          state-name: .ftp-deploy-sync-state-zip-web.json
+
+      - name: Trigger Remote Unzip
+        run: |
+          # Generate token matching deploy_bridge.php logic
+          TOKEN="tsbl_deploy_$(date +'%Y%m%d')"
+          echo "Extracting App..."
+          curl -f -s "https://invoice.transentertainment.id/deploy_bridge.php?token=$TOKEN&target=app"
+          echo "Extracting Web..."
+          curl -f -s "https://invoice.transentertainment.id/deploy_bridge.php?token=$TOKEN&target=web"
+          
+      - name: Final Cleanup
+        run: |
+          TOKEN="tsbl_deploy_$(date +'%Y%m%d')"
+          # The bridge deletes zip files automatically, but we should remove the bridge itself
+          # (Optional: for now we keep it for debugging if needed, or add a cleanup step)
+          echo "Deployment Finished Successfully."
