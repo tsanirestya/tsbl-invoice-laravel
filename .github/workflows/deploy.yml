@@ -52,12 +52,6 @@ jobs:
           echo "APP_KEY=base64:ke0SmVRIq+5MCdD40vvCGFTwMDSvTrGC9m3tBEAeYm4=" >> .env
           sed -i 's/^[[:space:]]*//' .env
 
-      - name: Cache config & routes
-        run: |
-          php artisan config:cache
-          php artisan route:cache
-          php artisan view:cache
-
       - name: Prepare webroot
         run: |
           mkdir -p _webroot
@@ -79,9 +73,10 @@ jobs:
       - name: Create Deployment Packages (Zip)
         run: |
           # Create App Zip (exclude git, node_modules, and other zips)
-          zip -r app.zip . -x ".git/*" "node_modules/*" "_webroot/*" "tests/*" "Obsidian/*" ".github/*" "storage/logs/*" "*.zip" "deploy_bridge.php"
+          zip -r app.zip . -x ".git/*" "node_modules/*" "_webroot/*" "tests/*" "Obsidian/*" ".github/*" "storage/logs/*" "*.zip" "deploy_bridge.php" "deploy_debug.php"
           
-          # Create Web Zip
+          # Create Web Zip (Include index.php and the debug bridge)
+          cp deploy_debug.php _webroot/
           cd _webroot && zip -r ../web.zip . && cd ..
           
           # Prepare dist folders for clean FTP upload
