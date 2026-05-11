@@ -73,10 +73,9 @@ jobs:
       - name: Create Deployment Packages (Zip)
         run: |
           # Create App Zip (exclude git, node_modules, and other zips)
-          zip -r app.zip . -x ".git/*" "node_modules/*" "_webroot/*" "tests/*" "Obsidian/*" ".github/*" "storage/logs/*" "*.zip" "deploy_bridge.php" "deploy_debug.php"
+          zip -r app.zip . -x ".git/*" "node_modules/*" "_webroot/*" "tests/*" "Obsidian/*" ".github/*" "storage/logs/*" "*.zip" "deploy_bridge.php"
           
-          # Create Web Zip (Include index.php and the debug bridge)
-          cp deploy_debug.php _webroot/
+          # Create Web Zip (Include index.php and the bridge)
           cd _webroot && zip -r ../web.zip . && cd ..
           
           # Prepare dist folders for clean FTP upload
