@@ -30,3 +30,21 @@ if (file_exists($appDir)) {
 }
 echo "</pre>";
 
+$layoutFile = $appDir . '/resources/views/layouts/app.blade.php';
+echo "<h3>App Layout Status:</h3>";
+if (file_exists($layoutFile)) {
+    echo "File: $layoutFile<br>";
+    echo "Size: " . filesize($layoutFile) . " bytes<br>";
+    echo "Last Modified: " . date("Y-m-d H:i:s", filemtime($layoutFile)) . " UTC<br>";
+    // Peek at lines 300-320
+    echo "<h4>Menu Snippet (Lines 300-320):</h4><pre>";
+    $lines = file($layoutFile);
+    for ($i = 299; $i < 320 && $i < count($lines); $i++) {
+        echo ($i+1) . ": " . htmlspecialchars($lines[$i]);
+    }
+    echo "</pre>";
+} else {
+    echo "Layout file NOT FOUND at $layoutFile";
+}
+
+
