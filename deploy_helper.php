@@ -45,17 +45,26 @@ if (!file_exists($zipFile)) {
 }
 
 $zip = new ZipArchive;
-if ($zip->open($zipFile) === TRUE) {
+$openResult = $zip->open($zipFile);
+if ($openResult === TRUE) {
+    file_put_contents(__DIR__ . '/deploy_log.txt', date('[Y-m-d H:i:s]') . " Successfully opened $zipFile for $target.\n", FILE_APPEND);
+    
+    // Attempt extraction
     if ($zip->extractTo($extractTo)) {
         $zip->close();
         unlink($zipFile);
+        file_put_contents(__DIR__ . '/deploy_log.txt', date('[Y-m-d H:i:s]') . " SUCCESS: $target extracted to $extractTo.\n", FILE_APPEND);
         echo "SUCCESS: $target extracted successfully.";
     } else {
+        $error = error_get_last();
+        file_put_contents(__DIR__ . '/deploy_log.txt', date('[Y-m-d H:i:s]') . " ERROR: Failed to extract $target to $extractTo. Error: " . ($error['message'] ?? 'Unknown PHP error') . "\n", FILE_APPEND);
         header('HTTP/1.0 500 Internal Server Error');
         echo "ERROR: Failed to extract zip file to $extractTo. Check permissions.";
     }
 } else {
+    file_put_contents(__DIR__ . '/deploy_log.txt', date('[Y-m-d H:i:s]') . " ERROR: Failed to open zip file $target at $zipFile. Code: $openResult\n", FILE_APPEND);
     header('HTTP/1.0 500 Internal Server Error');
-    echo "ERROR: Failed to open zip file $target at $zipFile.";
+    echo "ERROR: Failed to open zip file $target at $zipFile. Code: $openResult";
 }
+
 
