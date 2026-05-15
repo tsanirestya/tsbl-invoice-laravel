@@ -30,18 +30,17 @@ if (class_exists('ZipArchive')) {
         echo "<b style='color:red'>ERROR: Could not open zip via ZipArchive. Code: $res</b><br>";
     }
 } else {
-    echo "ZipArchive not found. Trying shell unzip...<br>";
-    $command = "unzip -o " . escapeshellarg($zipFile) . " -d " . escapeshellarg($extractTo) . " 2>&1";
-    $output = shell_exec($command);
-    if ($output === null) {
-        echo "<b style='color:red'>ERROR: shell_exec is disabled or failed.</b><br>";
-    } else {
-        echo "Shell output: <pre>$output</pre>";
-        if (strpos($output, 'inflating') !== false || strpos($output, 'extracting') !== false) {
-            echo "<b style='color:green'>SUCCESS: Extraction likely complete via shell unzip.</b><br>";
+    echo "ZipArchive and shell_exec not available. Trying SimpleZipExtractor (Pure PHP)...<br>";
+    require_once 'simple_unzip.php';
+    try {
+        if (SimpleZipExtractor::extract($zipFile, $extractTo)) {
+            echo "<b style='color:green'>SUCCESS: Extraction complete via SimpleZipExtractor.</b><br>";
         } else {
-            echo "<b style='color:red'>ERROR: shell unzip might have failed.</b><br>";
+            echo "<b style='color:red'>ERROR: SimpleZipExtractor failed.</b><br>";
         }
+    } catch (Exception $e) {
+        echo "<b style='color:red'>ERROR: " . $e->getMessage() . "</b><br>";
     }
 }
+
 
