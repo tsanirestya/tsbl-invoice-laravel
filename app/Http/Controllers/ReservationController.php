@@ -301,13 +301,14 @@ class ReservationController extends Controller
         }
 
         $validated = $request->validate([
-            'guest_name'             => 'required|string|max:255',
-            'guest_country'          => 'nullable|string|max:100',
-            'visit_date'             => 'required|date',
-            'payment_method'         => 'nullable|in:TRANSFER_GROSS,TRANSFER_NETT,ON_THE_SPOT',
-            'payment_channel'        => 'nullable|in:CASH,DEBIT,CREDIT',
-            'notes'                  => 'nullable|string|max:2000',
-            'status'                 => 'required|in:PENDING,CONFIRMED,CANCELLED,NO_SHOW,COMPLETED',
+            'guest_name'     => 'required|string|max:255',
+            'guest_country'  => 'nullable|string|max:100',
+            'visit_date'     => 'required|date',
+            'payment_method' => 'nullable|in:TRANSFER_GROSS,TRANSFER_NETT,ON_THE_SPOT',
+            'payment_channel'=> 'nullable|in:CASH,DEBIT,CREDIT',
+            'notes'          => 'nullable|string|max:2000',
+            'status'         => 'required|in:PENDING,CONFIRMED,CANCELLED,NO_SHOW,COMPLETED',
+            'pax_babies'     => 'nullable|integer|min:0',
         ]);
 
         $reservation->update($validated);

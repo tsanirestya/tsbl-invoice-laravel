@@ -73,7 +73,13 @@
                             @endforeach
                         </select>
                     </div>
-                    <div class="col-12">
+                    <div class="col-sm-3">
+                        <label class="form-label">Jumlah Baby <span class="badge bg-success fw-normal">FREE</span></label>
+                        <input type="number" name="pax_babies"
+                               value="{{ old('pax_babies', $reservation->pax_babies ?? 0) }}"
+                               min="0" class="form-control">
+                    </div>
+                    <div class="col-sm-9">
                         <label class="form-label">Catatan</label>
                         <textarea name="notes" class="form-control" rows="2">{{ old('notes', $reservation->notes) }}</textarea>
                     </div>

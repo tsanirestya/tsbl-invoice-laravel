@@ -58,6 +58,18 @@
                         @if($reservation->guest_country)
                             <small class="text-muted">{{ $reservation->guest_country }}</small>
                         @endif
+                        @php
+                            $adults  = $reservation->pax_adults ?? 0;
+                            $kids    = $reservation->pax_kids ?? 0;
+                            $babies  = $reservation->pax_babies ?? 0;
+                        @endphp
+                        @if($adults || $kids || $babies)
+                        <div class="mt-1 d-flex gap-1 flex-wrap">
+                            @if($adults)  <span class="badge bg-primary fw-normal">{{ $adults }} Adult</span> @endif
+                            @if($kids)    <span class="badge bg-info text-dark fw-normal">{{ $kids }} Child</span> @endif
+                            @if($babies)  <span class="badge bg-success fw-normal">{{ $babies }} Baby FREE</span> @endif
+                        </div>
+                        @endif
                     </div>
                     <div class="col-sm-6">
                         <div class="text-muted small">Partner</div>

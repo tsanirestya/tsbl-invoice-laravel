@@ -1,7 +1,7 @@
 # TODO: Revisi Reservation Form — Pax-Based Pricing
 
 - **Date:** 2026-05-15
-- **Status:** FASE 1 DONE
+- **Status:** FASE 1-3 DONE — Testing remaining
 - **Branch:** `feat/phase-N-reservation-pax-form`
 
 ---
