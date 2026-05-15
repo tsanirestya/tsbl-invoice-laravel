@@ -6,6 +6,8 @@
 
 // Set timezone to match expected runner time or be consistent
 date_default_timezone_set('UTC');
+set_time_limit(0);
+ignore_user_abort(true);
 
 // Basic security - token check
 $key = $_GET['key'] ?? '';
