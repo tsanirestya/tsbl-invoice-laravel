@@ -7,6 +7,7 @@ use App\Models\Partner;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class PartnerController extends Controller
 {
@@ -119,6 +120,44 @@ class PartnerController extends Controller
     {
         $partner->load('creditClass');
         return response()->json($partner->creditInfo());
+    }
+
+    // ── Phase 10: Reservation token management ────────────────────────────────
+
+    public function generateReservationToken(Partner $partner)
+    {
+        $token = \Illuminate\Support\Str::random(48);
+        $partner->update([
+            'reservation_token'            => $token,
+            'reservation_token_expires_at' => now()->addDays(365),
+            'known_devices'                => [],
+        ]);
+
+        return back()->with('success', 'Token reservasi berhasil digenerate. Partner bisa mengakses link: '
+            . route('partner.reserve.form', $token));
+    }
+
+    public function resetDevices(Partner $partner)
+    {
+        $partner->update(['known_devices' => []]);
+        return back()->with('success', 'Device list partner berhasil direset. Partner bisa login dari perangkat baru.');
+    }
+
+    public function toggleReservationSuspension(Partner $partner)
+    {
+        if ($partner->reservation_suspended) {
+            $partner->update([
+                'reservation_suspended'        => false,
+                'reservation_suspended_reason' => null,
+            ]);
+            return back()->with('success', 'Suspensi reservasi partner berhasil dicabut.');
+        }
+
+        $partner->update([
+            'reservation_suspended'        => true,
+            'reservation_suspended_reason' => 'Suspended manually by admin.',
+        ]);
+        return back()->with('success', 'Partner berhasil disuspend dari reservasi.');
     }
 
     public function performance(Request $request)

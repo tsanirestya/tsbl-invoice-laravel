@@ -607,6 +607,33 @@
             <label class="form-label">Catatan</label>
             <textarea name="notes" class="form-control" rows="2" maxlength="1000">{{ old('notes', $invoice?->notes ?? '') }}</textarea>
         </div>
+
+        {{-- Payment Method --}}
+        <div class="mt-2">
+            <label class="form-label fw-semibold">Metode Pembayaran</label>
+            <select name="payment_method" id="payment_method"
+                    class="form-select @error('payment_method') is-invalid @enderror">
+                <option value="">— Pilih Metode Pembayaran —</option>
+                <option value="transfer_nett"
+                    @selected(old('payment_method', $invoice?->payment_method ?? '') === 'transfer_nett')>
+                    Transfer Nett
+                </option>
+                <option value="transfer_gross"
+                    @selected(old('payment_method', $invoice?->payment_method ?? '') === 'transfer_gross')>
+                    Transfer Gross
+                </option>
+                <option value="ots_nett"
+                    @selected(old('payment_method', $invoice?->payment_method ?? '') === 'ots_nett')>
+                    On the Spot Nett
+                </option>
+                <option value="ots_gross"
+                    @selected(old('payment_method', $invoice?->payment_method ?? '') === 'ots_gross')>
+                    On the Spot Gross
+                </option>
+            </select>
+            <div class="form-text" id="payment-method-hint"></div>
+            @error('payment_method')<div class="invalid-feedback">{{ $message }}</div>@enderror
+        </div>
     </div>
 </div>
 
@@ -925,19 +952,22 @@
 @php
 $productsJs = $products->map(function($p) {
     return [
-        'id'           => $p->id,
-        'dsi_code'     => $p->dsi_code,
-        'name'         => $p->product_name,
-        'category'     => $p->category,
-        'price'        => (float) $p->nett_price,
-        'publish_rate' => (float) $p->publish_rate,
-        'komisi'       => (float) $p->komisi,
-        'nett_price'   => (float) $p->nett_price,
+        'id'            => $p->id,
+        'dsi_code'      => $p->dsi_code,
+        'name'          => $p->product_name,
+        'category'      => $p->category,
+        'price'         => (float) $p->nett_price,
+        'publish_rate'  => (float) $p->publish_rate,
+        'default_price' => (float) $p->default_price,
+        'komisi'        => (float) $p->komisi,
+        'nett_price'    => (float) $p->nett_price,
     ];
 })->values();
 @endphp
 <script>
+console.log('[FORM] script parsed');
 const products = @json($productsJs);
+console.log('[FORM] products count:', products.length, '| sample nett_price:', products[0]?.nett_price);
 @php
 // Build prefill array for JS:
 // Jika ada $importRows (multi-item dari 1 transaksi), gunakan semua.
@@ -1045,7 +1075,7 @@ function pickProduct(row, value) {
                 }
                 tsName.setValue(prod.name, true); // silent — no loop
             }
-            row.querySelector('.item-price').value = fmtCurrency(prod.price);
+            row.querySelector('.item-price').value = fmtCurrency(getPriceForProduct(prod));
             recalcRow(row.querySelector('.item-pax'));
             checkCategoryMismatch();
             return;
@@ -1069,7 +1099,7 @@ function pickProductByName(row, value) {
     if (prod) {
         const tsDsi = row._tsDsi;
         if (tsDsi) tsDsi.setValue(String(prod.id), true); // silent — no loop
-        row.querySelector('.item-price').value = fmtCurrency(prod.price);
+        row.querySelector('.item-price').value = fmtCurrency(getPriceForProduct(prod));
         recalcRow(row.querySelector('.item-pax'));
     } else {
         // Custom name — clear DSI
@@ -1083,6 +1113,49 @@ function pickProductByName(row, value) {
 // ── Product Filtering ──────────────────────────────────────────────────────
 let currentPartnerId = null;
 let currentProductCategory = null;
+let currentPaymentMethod = document.getElementById('payment_method')?.value || '';
+
+function isNettMode(pm) {
+    return pm === 'transfer_nett' || pm === 'ots_nett';
+}
+function isGrossMode(pm) {
+    return pm === 'transfer_gross' || pm === 'ots_gross';
+}
+
+// Price to use based on payment method
+function getPriceForProduct(prod) {
+    if (isGrossMode(currentPaymentMethod)) return prod.publish_rate;
+    return prod.nett_price; // default: nett
+}
+
+// Filter product list by payment method nett/gross flag
+// Uses nett_price directly (always present in products data)
+function applyPaymentMethodFilter(list) {
+    console.log('[PaymentFilter] method=', currentPaymentMethod, 'list=', list.length);
+    if (isNettMode(currentPaymentMethod)) {
+        const r = list.filter(p => p.nett_price > 0);
+        console.log('[PaymentFilter] nett result=', r.length, r.map(p => p.name + '(' + p.nett_price + ')'));
+        return r;
+    }
+    if (isGrossMode(currentPaymentMethod)) {
+        const r = list.filter(p => !(p.nett_price > 0));
+        console.log('[PaymentFilter] gross result=', r.length, r.map(p => p.name + '(' + p.nett_price + ')'));
+        return r;
+    }
+    return list; // no filter when no method selected
+}
+
+function updatePaymentMethodHint(pm) {
+    const hint = document.getElementById('payment-method-hint');
+    if (!hint) return;
+    const map = {
+        'transfer_nett':  'Hanya produk dengan Nett Price. Harga otomatis = Nett Price.',
+        'transfer_gross': 'Hanya produk tanpa Nett Price. Harga otomatis = Publish Rate.',
+        'ots_nett':       'Hanya produk dengan Nett Price. Harga otomatis = Nett Price.',
+        'ots_gross':      'Hanya produk tanpa Nett Price. Harga otomatis = Publish Rate.',
+    };
+    hint.textContent = map[pm] || '';
+}
 
 function filterProductsByPartner(partnerId) {
     currentPartnerId = partnerId;
@@ -1128,22 +1201,25 @@ function updateRowPickers(row) {
     } else if (currentProductCategory) {
         filtered = products.filter(p => p.category === currentProductCategory || p.category === 'OPE');
     }
+    filtered = applyPaymentMethodFilter(filtered);
 
     // Update Name Picker
     tsName.clearOptions();
     filtered.forEach(p => {
         tsName.addOption({ value: p.name, text: p.name });
     });
+    tsName.refreshOptions(false);
 
     // Update DSI Picker
     tsDsi.clearOptions();
     filtered.forEach(p => {
-        tsDsi.addOption({ 
-            value: String(p.id), 
-            text: p.dsi_code, 
-            product_name: p.name 
+        tsDsi.addOption({
+            value: String(p.id),
+            text: p.dsi_code,
+            product_name: p.name
         });
     });
+    tsDsi.refreshOptions(false);
 
     // LOGIC: Reset if mismatch (except for DSI Imports which show warning instead)
     const isMismatch = (currentNameValue && !filtered.find(p => p.name === currentNameValue)) ||
@@ -1503,8 +1579,9 @@ document.getElementById('invoice_date')?.addEventListener('change', function() {
 function addRow(name = '', productId = '', pax = 1, price = 0, lockPicker = false) {
     const i = rowIdx++;
     
-    // Use filtered products if category is set
-    const filtered = products.filter(p => !currentProductCategory || p.category === currentProductCategory);
+    // Use filtered products if category is set, then by payment method
+    let filtered = products.filter(p => !currentProductCategory || p.category === currentProductCategory);
+    filtered = applyPaymentMethodFilter(filtered);
     
     const opts = filtered.map(p =>
         `<option value="${p.id}"
@@ -1812,6 +1889,34 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     initCurrencyInputs(document);
+
+    // Payment method change → re-filter all row pickers + update prices on selected products
+    const pmSel = document.getElementById('payment_method');
+    console.log('[FORM] pmSel found:', !!pmSel);
+    if (pmSel) {
+        // Init hint on load
+        updatePaymentMethodHint(pmSel.value);
+
+        pmSel.addEventListener('change', function() {
+            console.log('[PM] change fired, value:', this.value);
+            currentPaymentMethod = this.value;
+            updatePaymentMethodHint(this.value);
+
+            document.querySelectorAll('.item-row').forEach(row => {
+                updateRowPickers(row);
+
+                // If a product is already selected, update its price to match new method
+                const productId = row.dataset.productId;
+                if (productId) {
+                    const prod = products.find(p => p.id == productId);
+                    if (prod) {
+                        row.querySelector('.item-price').value = fmtCurrency(getPriceForProduct(prod));
+                        recalcRow(row.querySelector('.item-pax'));
+                    }
+                }
+            });
+        });
+    }
 });
 </script>
 @endpush

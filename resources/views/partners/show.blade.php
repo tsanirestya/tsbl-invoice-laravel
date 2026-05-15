@@ -512,4 +512,111 @@
         </div>
     </div>
 </div>
+{{-- Phase 10: Reservation Panel --}}
+<div class="row g-3 mt-1">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center fw-semibold">
+                <span><i class="bi bi-calendar-check me-2"></i>Reservasi Partner</span>
+                <div class="d-flex gap-2">
+                    @if(auth()->user()->isAdmin())
+                        @if($partner->reservation_token)
+                            <span class="badge bg-{{ $partner->isReservationTokenValid() ? 'success' : 'danger' }}">
+                                {{ $partner->isReservationTokenValid() ? 'Token Aktif' : 'Token Expired/Suspended' }}
+                            </span>
+                            <form method="POST" action="{{ route('partners.reset-devices', $partner) }}">@csrf
+                                <button type="submit" class="btn btn-xs btn-outline-secondary">Reset Devices</button>
+                            </form>
+                            <form method="POST" action="{{ route('partners.toggle-suspension', $partner) }}">@csrf
+                                <button type="submit" class="btn btn-xs btn-outline-{{ $partner->reservation_suspended ? 'success' : 'danger' }}">
+                                    {{ $partner->reservation_suspended ? 'Cabut Suspensi' : 'Suspend' }}
+                                </button>
+                            </form>
+                        @endif
+                        <form method="POST" action="{{ route('partners.generate-token', $partner) }}" onsubmit="return confirm('Generate/reset token reservasi untuk partner ini?')">@csrf
+                            <button type="submit" class="btn btn-xs btn-primary">
+                                <i class="bi bi-key me-1"></i> {{ $partner->reservation_token ? 'Reset Token' : 'Generate Token' }}
+                            </button>
+                        </form>
+                    @endif
+                </div>
+            </div>
+            <div class="card-body">
+                {{-- Token info --}}
+                @if($partner->reservation_token && auth()->user()->isAdmin())
+                <div class="alert alert-info py-2 small mb-3">
+                    <strong>Link Partner:</strong>
+                    <a href="{{ route('partner.reserve.form', $partner->reservation_token) }}" target="_blank">
+                        {{ route('partner.reserve.form', $partner->reservation_token) }}
+                    </a>
+                    @if($partner->reservation_token_expires_at)
+                        <span class="ms-2 text-muted">Exp: {{ $partner->reservation_token_expires_at->format('d/m/Y') }}</span>
+                    @endif
+                </div>
+                @endif
+
+                {{-- Fraud score --}}
+                <div class="row g-3 mb-3">
+                    <div class="col-sm-3">
+                        <div class="p-2 bg-light rounded text-center">
+                            <div class="small text-muted">Fraud Score</div>
+                            <div class="fw-bold fs-5 text-{{ $partner->fraudRiskBadge() }}">{{ $partner->fraud_score }}</div>
+                        </div>
+                    </div>
+                    <div class="col-sm-3">
+                        <div class="p-2 bg-light rounded text-center">
+                            <div class="small text-muted">Risk Level</div>
+                            <span class="badge bg-{{ $partner->fraudRiskBadge() }}">{{ $partner->fraudRiskLevel() }}</span>
+                        </div>
+                    </div>
+                    <div class="col-sm-3">
+                        <div class="p-2 bg-light rounded text-center">
+                            <div class="small text-muted">Total Reservasi</div>
+                            <div class="fw-bold">{{ $partner->reservations()->count() }}</div>
+                        </div>
+                    </div>
+                    <div class="col-sm-3">
+                        <div class="p-2 bg-light rounded text-center">
+                            <div class="small text-muted">Devices Terdaftar</div>
+                            <div class="fw-bold">{{ count($partner->known_devices ?? []) }} / {{ $partner->max_devices }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                @if($partner->reservation_suspended)
+                    <div class="alert alert-danger py-2 small">
+                        <i class="bi bi-lock me-1"></i> <strong>SUSPENDED:</strong> {{ $partner->reservation_suspended_reason }}
+                    </div>
+                @endif
+
+                {{-- Recent reservations --}}
+                @php $recentRes = $partner->reservations()->with('items')->latest()->limit(5)->get(); @endphp
+                @if($recentRes->isNotEmpty())
+                    <div class="small text-muted fw-semibold mb-2">5 Reservasi Terakhir</div>
+                    <table class="table table-sm mb-0">
+                        <thead><tr><th>No. Reservasi</th><th>Tamu</th><th>Visit Date</th><th class="text-end">Total</th><th>Status</th></tr></thead>
+                        <tbody>
+                            @foreach($recentRes as $res)
+                            <tr>
+                                <td><a href="{{ route('reservations.show', $res) }}" class="text-decoration-none small fw-semibold">{{ $res->reservation_no }}</a></td>
+                                <td class="small">{{ $res->guest_name }}</td>
+                                <td class="small">{{ $res->visit_date->format('d/m/Y') }}</td>
+                                <td class="text-end small">Rp {{ number_format($res->total_amount, 0, ',', '.') }}</td>
+                                <td><span class="badge bg-{{ $res->statusBadge() }}">{{ $res->status }}</span></td>
+                            </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                    <div class="mt-2">
+                        <a href="{{ route('reservations.index', ['partner_id' => $partner->id]) }}" class="btn btn-sm btn-outline-secondary">
+                            Lihat Semua Reservasi
+                        </a>
+                    </div>
+                @else
+                    <div class="text-muted small">Belum ada reservasi untuk partner ini.</div>
+                @endif
+            </div>
+        </div>
+    </div>
+</div>
 @endsection

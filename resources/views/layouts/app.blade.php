@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta http-equiv="Permissions-Policy" content="geolocation=(self)">
     <title>@yield('title', 'TSBL Invoice') — TSBL</title>
     @php $favicon = \App\Models\Setting::get('favicon_path'); @endphp
     @if($favicon)
@@ -299,6 +300,26 @@
         <a href="{{ route('imports.index') }}" class="nav-link {{ request()->routeIs('imports.*') ? 'active' : '' }}">
             <i class="bi bi-file-earmark-spreadsheet-fill"></i> Import Transaksi
         </a>
+
+        <div class="nav-section">Reservasi</div>
+        <a href="{{ route('reservations.index') }}" class="nav-link {{ request()->routeIs('reservations.*') ? 'active' : '' }}">
+            <i class="bi bi-calendar-check-fill"></i> Reservasi
+        </a>
+        <a href="{{ route('anomalies.index') }}" class="nav-link {{ request()->routeIs('anomalies.*') || request()->routeIs('commission-review.*') ? 'active' : '' }}">
+            <i class="bi bi-shield-exclamation"></i> Anomali & Fraud
+            @php $pendingAnomalies = \App\Models\ReservationAnomaly::where('is_resolved', false)->count(); @endphp
+            @if($pendingAnomalies > 0)
+                <span class="badge ms-auto" style="background:#ef4444;font-size:.56rem;padding:.2em .48em;border-radius:5px;font-weight:700;">{{ $pendingAnomalies }}</span>
+            @endif
+        </a>
+        @if(auth()->user()->isAdmin())
+        <a href="{{ route('self-service.qr-admin') }}" class="nav-link {{ request()->routeIs('self-service.*') ? 'active' : '' }}">
+            <i class="bi bi-qr-code"></i> QR Self-Service
+        </a>
+        <a href="{{ route('booking-pass-templates.index') }}" class="nav-link {{ request()->routeIs('booking-pass-templates.*') ? 'active' : '' }}">
+            <i class="bi bi-file-earmark-image"></i> Booking Pass Templates
+        </a>
+        @endif
 
         <div class="nav-section">Keuangan</div>
         <a href="{{ route('payments.index') }}" class="nav-link {{ request()->routeIs('payments.*') ? 'active' : '' }}">

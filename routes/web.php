@@ -19,6 +19,11 @@ use App\Http\Controllers\PaymentMemoController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\PartnerController;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\ReservationController;
+use App\Http\Controllers\PartnerReservationController;
+use App\Http\Controllers\SelfServiceController;
+use App\Http\Controllers\BookingPassController;
+use App\Http\Controllers\ReservationAnomalyController;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
 
@@ -58,6 +63,22 @@ Route::middleware('guest')->group(function () {
 // Authenticated routes
 Route::middleware('auth')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+
+    // Geocode proxy — server-side reverse geocoding agar User-Agent bisa dikirim
+    Route::get('/api/geocode/reverse', function (\Illuminate\Http\Request $request) {
+        $lat = (float) $request->query('lat');
+        $lng = (float) $request->query('lng');
+        if (!$lat || !$lng) return response()->json(['error' => 'invalid'], 400);
+
+        $url = "https://nominatim.openstreetmap.org/reverse?format=json&lat={$lat}&lon={$lng}&accept-language=id";
+        $ctx = stream_context_create(['http' => [
+            'header' => "User-Agent: TSBL-Invoice/1.0\r\nAccept: application/json\r\n",
+            'timeout' => 5,
+        ]]);
+        $body = @file_get_contents($url, false, $ctx);
+        if ($body === false) return response()->json(['error' => 'fetch_failed'], 502);
+        return response($body, 200)->header('Content-Type', 'application/json');
+    })->name('geocode.reverse');
 
     // F-009: Force change password (exempt from RequirePasswordChange middleware)
     Route::get('/change-password', [PasswordResetController::class, 'showChangeForm'])->name('password.change.form');
@@ -170,6 +191,43 @@ Route::middleware('auth')->group(function () {
     Route::get('reports/export-credit-csv', [ReportController::class, 'exportCreditCsv'])->name('reports.export-credit-csv');
     Route::get('reports/export-credit-pdf', [ReportController::class, 'exportCreditPdf'])->name('reports.export-credit-pdf');
 
+    // ── Phase 10: Reservation System ──────────────────────────────────────────
+
+    // Internal reservations (authenticated)
+    Route::resource('reservations', ReservationController::class)->except(['destroy']);
+    Route::post('reservations/{reservation}/cancel', [ReservationController::class, 'cancel'])->name('reservations.cancel');
+    Route::get('reservations/{reservation}/booking-pass', [ReservationController::class, 'bookingPassDownload'])->name('reservations.booking-pass');
+
+    // Anomaly & Fraud
+    Route::get('anomalies', [ReservationAnomalyController::class, 'index'])->name('anomalies.index');
+    Route::get('anomalies/{anomaly}', [ReservationAnomalyController::class, 'show'])->name('anomalies.show');
+    Route::post('anomalies/{anomaly}/resolve', [ReservationAnomalyController::class, 'resolve'])->name('anomalies.resolve')->middleware('role:FINANCE,ADMIN');
+
+    // Commission Review
+    Route::get('commission-review', [ReservationAnomalyController::class, 'commissionIndex'])->name('commission-review.index');
+    Route::post('commission-review/{payment}/release', [ReservationAnomalyController::class, 'commissionRelease'])->name('commission-review.release')->middleware('role:ADMIN');
+    Route::post('commission-review/{payment}/revoke', [ReservationAnomalyController::class, 'commissionRevoke'])->name('commission-review.revoke')->middleware('role:ADMIN');
+
+    // Booking Pass Templates (admin)
+    Route::resource('booking-pass-templates', BookingPassController::class)->except(['show'])->middleware('role:ADMIN');
+    Route::post('booking-pass-templates/{bookingPassTemplate}/upload-bg', [BookingPassController::class, 'uploadBackground'])->name('booking-pass-templates.upload-bg')->middleware('role:ADMIN');
+    Route::put('booking-pass-templates/{bookingPassTemplate}/field-mapping', [BookingPassController::class, 'updateFieldMapping'])->name('booking-pass-templates.update-mapping')->middleware('role:ADMIN');
+    Route::get('booking-pass-templates/{bookingPassTemplate}/preview', [BookingPassController::class, 'previewPdf'])->name('booking-pass-templates.preview')->middleware('role:ADMIN');
+
+    // Self-Service QR Admin
+    Route::get('self-service-qr', [SelfServiceController::class, 'qrIndex'])->name('self-service.qr-admin');
+    Route::post('self-service-qr/generate', [SelfServiceController::class, 'generateQr'])->name('self-service.generate-qr')->middleware('role:ADMIN,SALES');
+
+    // Employee-Partner Checks (admin)
+    Route::get('admin/employee-partner-checks', [ReservationAnomalyController::class, 'employeeCheckIndex'])->name('admin.employee-partner-checks.index')->middleware('role:ADMIN');
+    Route::post('admin/employee-partner-checks/run', [ReservationAnomalyController::class, 'employeeCheckRun'])->name('admin.employee-partner-checks.run')->middleware('role:ADMIN');
+    Route::post('admin/employee-partner-checks/{check}/review', [ReservationAnomalyController::class, 'employeeCheckReview'])->name('admin.employee-partner-checks.review')->middleware('role:ADMIN');
+
+    // Partner token generate/reset (admin)
+    Route::post('partners/{partner}/generate-token', [PartnerController::class, 'generateReservationToken'])->name('partners.generate-token')->middleware('role:ADMIN');
+    Route::post('partners/{partner}/reset-devices', [PartnerController::class, 'resetDevices'])->name('partners.reset-devices')->middleware('role:ADMIN');
+    Route::post('partners/{partner}/toggle-suspension', [PartnerController::class, 'toggleReservationSuspension'])->name('partners.toggle-suspension')->middleware('role:ADMIN');
+
     // Admin-only
     Route::middleware('role:ADMIN')->group(function () {
         Route::resource('users', UserController::class)->except(['show']);
@@ -183,3 +241,37 @@ Route::middleware('auth')->group(function () {
     });
 
 });
+
+// ── Phase 10: Public Routes (no auth required) ────────────────────────────────
+
+// Partner self-service reservation (token-based)
+Route::middleware(\App\Http\Middleware\ValidateReservationToken::class)->group(function () {
+    Route::get('/reserve/{token}', [PartnerReservationController::class, 'form'])->name('partner.reserve.form');
+    Route::post('/reserve/{token}', [PartnerReservationController::class, 'store'])->name('partner.reserve.store');
+    Route::get('/reserve/{token}/success/{reservationNo}', [PartnerReservationController::class, 'success'])->name('partner.reserve.success');
+    Route::get('/reserve/{token}/history', [PartnerReservationController::class, 'history'])->name('partner.reserve.history');
+    Route::get('/reserve/{token}/booking-pass/{reservationNo}', [PartnerReservationController::class, 'bookingPassDownload'])->name('partner.reserve.booking-pass');
+});
+
+// Self-service QR (public, daily token validation)
+// Public geocode proxy for self-service (no auth required)
+Route::get('/api/public/geocode/reverse', function (\Illuminate\Http\Request $request) {
+    $lat = (float) $request->query('lat');
+    $lng = (float) $request->query('lng');
+    if (!$lat || !$lng) return response()->json(['error' => 'invalid'], 400);
+
+    $url = "https://nominatim.openstreetmap.org/reverse?format=json&lat={$lat}&lon={$lng}&accept-language=id";
+    $ctx = stream_context_create(['http' => [
+        'header'  => "User-Agent: TSBL-Invoice/1.0\r\nAccept: application/json\r\n",
+        'timeout' => 5,
+    ]]);
+    $body = @file_get_contents($url, false, $ctx);
+    if ($body === false) return response()->json(['error' => 'fetch_failed'], 502);
+    return response($body, 200)->header('Content-Type', 'application/json');
+})->name('geocode.public');
+
+Route::get('/self-service/{token}', [SelfServiceController::class, 'scan'])->name('self-service.scan');
+Route::post('/self-service/{token}', [SelfServiceController::class, 'store'])->name('self-service.store');
+Route::get('/self-service/{token}/success/{reservationNo}', [SelfServiceController::class, 'success'])->name('self-service.success');
+Route::get('/self-service/{token}/booking-pass/{reservationNo}', [SelfServiceController::class, 'bookingPassDownload'])->name('self-service.booking-pass');
+Route::get('/self-service/{token}/booking-pass/{reservationNo}/view', [SelfServiceController::class, 'bookingPassView'])->name('self-service.booking-pass-view');

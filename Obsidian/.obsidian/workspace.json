@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "TODO/TODO-UX-OPTIMIZATIONS.md",
+                "file": "TODO/TODO-PHASE-10-RESERVATION.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "TODO-UX-OPTIMIZATIONS"
+              "title": "TODO-PHASE-10-RESERVATION"
             }
           }
         ]
@@ -185,14 +185,31 @@
   },
   "active": "f75570c9470dc731",
   "lastOpenFiles": [
-    "TODO/TODO-BILLING-REDESIGN.md",
+    "INDEX.md",
+    "TODO/TODO-PHASE-10-RESERVATION.md",
+    "Planning/FEATURE-BOOKING-PASS-VISUAL-EDITOR.md",
+    "TODO/REVISI-RESERVASI.md",
+    "Development-Phases/PHASE-10-SUMMARY.md",
+    "Planning/FEATURE-BOOKING-PASS.md",
+    "Planning/FEATURE-RESERVATION-SYSTEM.md",
+    "Architecture/LARAVEL-STRUCTURE.md",
+    "Architecture/BILLING-FLOW.md",
+    "Untitled 1.canvas",
+    "Untitled.canvas",
+    "Untitled.base",
+    "TODO-PHASE-4-FINANCE.md",
+    "Planning/FEATURE-FRAUD-DETECTION.md",
+    "AUDIT-REPORT-2026-05-08.md.tmp.29088.1778641417834",
+    "AUDIT-REPORT-2026-05-08.md.tmp.29088.1778641409543",
+    "TODO-AUDIT-2026-05-08.md",
+    "TODO/TODO-PHASE-7-EXCEL-IMPORT.md",
+    "TODO/TODO-PHASE-8-CREDIT-FACILITY.md",
     "TODO/TODO-UX-OPTIMIZATIONS.md",
+    "TODO/TODO-BILLING-REDESIGN.md",
     "Issues/ISSUE-002-DYNAMIC-DROPDOWN-FILTERING.md",
     "Issues/ISSUE-001-PARTIAL-ANOMALY-HANDLING.md",
     "Issues",
     "Features/PARTIAL-ANOMALY-HANDLING.md",
-    "Untitled.base",
-    "Untitled.canvas",
     "Development-Phases/PHASE-4-SUMMARY.md",
     "Development-Phases/PHASE-3-SUMMARY.md",
     "Development-Phases/PHASE-2-SUMMARY.md",
@@ -203,12 +220,6 @@
     "Untitled 4.canvas",
     "Untitled 3.canvas",
     "Features/PAYMENT-ALLOCATION.md",
-    "Features/DSI-RECONCILIATION.md",
-    "Bugs/BUG-006-PRODUCTION-FILE-UPLOADS-404.md",
-    "Architecture/BILLING-FLOW.md",
-    "Planning/PHASE-H-DOCS.md",
-    "TODO-AUDIT-2026-05-08.md",
-    "MANUAL-BOOK.md",
     "images/manual/add_partner_form.png",
     "images/manual/invoice_items_and_total.png",
     "images/manual/reset_password_request.png",
@@ -222,20 +233,9 @@
     "images/manual",
     "images",
     "MANUAL-BOOK.html",
-    "AUDIT-REPORT-2026-05-08.md",
-    "AUDIT-PROMPT-TEMPLATE.md",
-    "INDEX.md",
     "Untitled 2.canvas",
-    "Untitled 1.canvas",
-    "UI-UX/DESIGN-SYSTEM.md",
     "TODO-AUDIT-2026-05-08.md.tmp.26320.1778231416699",
-    "Database/SCHEMA.md",
-    "Logs/LOG-2026-05-05.md",
-    "Architecture/LARAVEL-STRUCTURE.md",
-    "TODO-PHASE-4-FINANCE.md",
     "TODO/TODO-PHASE-6-PARTNER-DEPOSIT.md.tmp.13364.1778033879884",
-    "Planning/FEATURE-PARTNER-DEPOSIT.md.tmp.13364.1778033828793",
-    "Planning/FEATURE-PARTNER-DEPOSIT.md.tmp.13364.1778033772128",
-    "INDEX.md.tmp.13364.1778033461215"
+    "Planning/FEATURE-PARTNER-DEPOSIT.md.tmp.13364.1778033828793"
   ]
 }

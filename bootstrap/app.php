@@ -12,7 +12,8 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
-            'role' => \App\Http\Middleware\CheckRole::class,
+            'role'                      => \App\Http\Middleware\CheckRole::class,
+            'reservation.token'         => \App\Http\Middleware\ValidateReservationToken::class,
         ]);
 
         // F-009: force password change after admin reset

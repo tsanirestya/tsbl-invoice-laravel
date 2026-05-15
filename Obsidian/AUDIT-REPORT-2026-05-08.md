@@ -1,7 +1,7 @@
 # TSBL Invoice System — Comprehensive Security & Fraud Audit Report
 
 **Audit Date:** 2026-05-08
-**Last Remediation:** 2026-05-09 — 23 findings fixed (F-001 through F-021, F-023, F-024, F-026)
+**Last Remediation:** 2026-05-13 — F-024 & F-026 re-implemented correctly (previous fix was incomplete)
 **Auditor Roles:** Senior System Auditor · Fraud Detection Specialist · Cyber Security Auditor · Financial Risk Analyst · Internal Control Consultant
 **Codebase:** `d:\XAMPP NEW\htdocs\tsbl-invoice-laravel`
 **Stack:** Laravel 11, PHP 8.2, MySQL/MariaDB, Bootstrap 5.3, DomPDF
@@ -52,9 +52,9 @@
 | FINDING-021 | MEDIUM   | Fraud / Internal Control  | Single-user void of batch credit payments, no dual control                  | One finance staff reverses confirmed payments unilaterally  |
 | FINDING-022 | MEDIUM   | Data Integrity            | Invoice sequence breaks on prefix change mid-year                           | Wrong sequence; potential collision                         |
 | FINDING-023 | LOW      | Data Integrity            | Partner hard-delete with no invoice cascade check                           | Orphaned invoices, financial history lost                   |
-| FINDING-024 | LOW      | Data Integrity / Fraud    | ✅ FIXED: Add UNIQUE constraint on import_row_id            | Duplicate invoices prevented                                |
+| FINDING-024 | LOW      | Data Integrity / Fraud    | ✅ FIXED: UNIQUE constraint on dsi_transaction_no (1 DSI transaction = 1 invoice) | Duplicate invoices prevented across all rows of same transaction |
 | FINDING-025 | LOW      | Security                  | Minimum password length 6 characters                                        | Weak passwords accepted                                     |
-| FINDING-026 | LOW      | Operational               | ✅ FIXED: Scheduled cron job for mark-overdue               | Automated status updates without manual trigger             |
+| FINDING-026 | LOW      | Operational               | ✅ FIXED: Schedule::command('invoices:mark-overdue')->dailyAt('00:01') di routes/console.php | Automated status updates setiap tengah malam |
 | FINDING-027 | LOW      | Security                  | Bootstrap CDN loaded without SRI hashes                                     | CDN compromise injects malicious JS                         |
 | FINDING-028 | LOW      | Security                  | Storage proxy MIME detection can be spoofed                                 | Executable files served with wrong MIME                     |
 
@@ -467,9 +467,15 @@ Upload file with all prices off by 1 rupiah → all rows `PRICE_MISMATCH` → ov
 
 `InvoiceController::store()` doesn't check that `import_row_id` is not already associated with an existing invoice. Can create duplicate invoices from same transaction row.
 
-**Recommended Fix:** Add UNIQUE constraint on `invoices.import_row_id`.
+**Root Cause Analysis (2026-05-13):** Previous fix (UNIQUE on `import_row_id`) was incorrect. One DSI transaction can have multiple rows (multiple products), all consolidated into 1 invoice. The form only stores the first row's `import_row_id` — leaving remaining rows unprotected. The correct guard is at `dsi_transaction_no` level.
 
-**Priority: This Month.**
+**Implemented Fix (2026-05-13):**
+- Migration `2026_05_13_000001_fix_f024_unique_dsi_transaction_no_on_invoices.php`:
+  - Drops wrong UNIQUE on `import_row_id`
+  - Adds UNIQUE on `dsi_transaction_no` (NULL-safe — manual invoices unaffected)
+- `InvoiceController::validateInvoice()`: Added `Rule::unique('invoices','dsi_transaction_no')->ignore($ignoreId)` with `$ignoreId` support for edit flow
+
+**Priority: DONE.**
 
 ---
 
@@ -491,9 +497,11 @@ Upload file with all prices off by 1 rupiah → all rows `PRICE_MISMATCH` → ov
 
 Command exists but not scheduled in `routes/console.php`. OVERDUE status only updates on dashboard load.
 
-**Recommended Fix:** `Schedule::command('invoices:mark-overdue')->dailyAt('00:01')` in `routes/console.php`.
+**Implemented Fix (2026-05-13):**
+- `routes/console.php`: Added `Schedule::command('invoices:mark-overdue')->dailyAt('00:01')`
+- Command `MarkOverdueInvoices` sudah proper — logs setiap status change ke `invoice_logs`
 
-**Priority: This Month.**
+**Priority: DONE.**
 
 ---
 

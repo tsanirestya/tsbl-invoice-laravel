@@ -97,6 +97,65 @@ Mobile-first finance operational web system built di Laravel 11.
 - [x] Report tab Kredit: credit summary + credit aging (bucket editable dari Settings)
 - [x] Settings: field warning threshold + 4 aging bucket (validasi urutan)
 
+### ✅ Phase 10 — Reservation System + Fraud Detection (SELESAI 2026-05-13)
+→ TODO: [[TODO-PHASE-10-RESERVATION]]
+→ Planning: [[FEATURE-RESERVATION-SYSTEM]] | [[FEATURE-BOOKING-PASS]] | [[FEATURE-FRAUD-DETECTION]]
+
+#### 10a — Core Reservation ✅
+- [x] Migration `reservations`, `reservation_items`, `reservation_payments`
+- [x] Migration alter `partners` (token + fraud score + suspension fields)
+- [x] Migration seed reservation settings (10 keys)
+- [x] Model `Reservation` + `generateReservationNo()` + `statusBadge()`
+- [x] Model `ReservationItem`, `ReservationPayment`, `ReservationAnomaly`
+- [x] `ReservationController` CRUD (internal, authenticated)
+- [x] Views: `reservations/index`, `create`, `show`, `edit`
+
+#### 10b — Partner Portal ✅
+- [x] `ValidateReservationToken` middleware (token validation + device binding)
+- [x] `PartnerReservationController` (public, token-based)
+- [x] Partner token generate/reset/suspend methods in `PartnerController`
+- [x] Views: `partner-reserve/form`, `success`, `history`
+- [x] Rate limiting (per hour) + visit date range validation
+- [x] Device binding (max 3 devices per token)
+
+#### 10c — Booking Pass System ✅
+- [x] Migration `booking_pass_templates`
+- [x] Model `BookingPassTemplate`
+- [x] `BookingPassService` — generate/template logic
+- [x] `BookingPassController` CRUD (ADMIN only)
+- [x] Blade view `booking-pass/pdf.blade.php` (DomPDF)
+- [x] Views: `booking-pass-templates/index`, `create`, `edit`
+
+#### 10d — Self-Service QR ✅
+- [x] Migration `daily_qr_codes`
+- [x] Model `DailyQrCode`
+- [x] `SelfServiceController` (public + admin QR management)
+- [x] Views: `self-service/form`, `success`, `qr-admin`
+- [x] Public routes for QR scan + booking pass download
+
+#### 10e — Geolocation & Danger Zone ✅
+- [x] `DangerZoneService` — Haversine distance + radius check
+- [x] JS Geolocation API integrated in all reservation forms (internal + partner + self-service)
+- [x] Auto-flag `is_danger_zone` on server-side validation
+- [x] Client-side danger zone warning before submit
+
+#### 10f — Anomaly & Fraud Detection ✅
+- [x] Migration `reservation_anomalies`, `employee_partner_checks`
+- [x] Model `ReservationAnomaly`, `EmployeePartnerCheck`
+- [x] `AnomalyDetectionService` — 11 detection rules (5 layers)
+- [x] `EmployeePartnerCheckService` — cross-reference phone/email/name
+- [x] Auto-suspend partner when fraud_score > 50
+- [x] Commission hold auto-trigger for HIGH/CRITICAL risk
+- [x] `ReservationAnomalyController` — index, show, resolve, commission review, employee check
+- [x] Views: `anomalies/index`, `anomalies/show`, `commission-review/index`, `employee-partner-checks/index`
+
+#### 10g — Integration & Reports ✅
+- [x] Sidebar: menu Reservasi, Anomali & Fraud, QR Self-Service, Booking Pass Templates
+- [x] Dashboard widget: Today's reservations, pending anomalies, held commissions, suspended partners
+- [x] Partners/show: Reservation panel with token management + fraud score + recent reservations
+- [x] Routes: all Phase 10 routes registered in `web.php` (authenticated + public)
+- [x] Fix: pre-existing migration `fix_f024_unique_dsi` FK constraint issue
+
 ### 📋 Phase 9 — Batch Credit Payment + Memo Tagihan (PLANNING 2026-05-08)
 
 #### 9a — Batch Credit Payment
@@ -177,3 +236,4 @@ Mobile-first finance operational web system built di Laravel 11.
 - 2026-05-07 — Phase 8 (Credit Facility) direncanakan.
 - 2026-05-08 — Phase 9 (Batch Credit Payment) direncanakan. Keputusan: sisa → deposit, void → rollback penuh, akses = FINANCE. Scope: credit classes, credit engine per partner, dashboard widgets, invoice soft-block validation, credit aging editable via settings.
 - 2026-05-08 — Phase 9b (Memo Tagihan) selesai. Tables: payment_memos, payment_memo_invoices. Features: CRUD memo, PDF DomPDF, AJAX invoice loader, dashboard widget "Partner Perlu Ditagih", shortcut di partner show.
+- 2026-05-13 — Phase 10 (Reservation System + Fraud Detection) selesai. Tables: reservations, reservation_items, reservation_payments, booking_pass_templates, daily_qr_codes, reservation_anomalies, employee_partner_checks + partner fields. Features: internal CRUD, partner portal (token-based), self-service QR, booking pass PDF (DomPDF), DangerZoneService (Haversine), AnomalyDetectionService (11 rules, 5 layers), commission hold, auto-suspend, employee-partner cross-check, dashboard widgets, sidebar menu. Fix: pre-existing FK constraint in fix_f024 migration.

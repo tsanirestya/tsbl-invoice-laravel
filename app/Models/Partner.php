@@ -18,15 +18,22 @@ class Partner extends Model
         'doc_akta_pendirian', 'doc_akta_perubahan', 'doc_surat_kuasa',
         'doc_ktp', 'doc_nib', 'doc_npwp',
         'notes', 'is_active', 'created_by', 'updated_by',
+        // Phase 10: Reservation fields
+        'reservation_token', 'reservation_token_expires_at',
+        'known_devices', 'max_devices', 'fraud_score',
+        'reservation_suspended', 'reservation_suspended_reason',
     ];
 
     protected function casts(): array
     {
         return [
-            'is_active'      => 'boolean',
-            'contract_start' => 'date',
-            'contract_end'   => 'date',
-            'limit_credit'   => 'integer',
+            'is_active'                    => 'boolean',
+            'contract_start'               => 'date',
+            'contract_end'                 => 'date',
+            'limit_credit'                 => 'integer',
+            'reservation_token_expires_at' => 'datetime',
+            'known_devices'                => 'array',
+            'reservation_suspended'        => 'boolean',
         ];
     }
 
@@ -48,6 +55,38 @@ class Partner extends Model
     public function creditPayments()
     {
         return $this->hasMany(CreditPayment::class);
+    }
+
+    public function reservations()
+    {
+        return $this->hasMany(Reservation::class);
+    }
+
+    public function fraudRiskLevel(): string
+    {
+        $score = (int) $this->fraud_score;
+        if ($score > 50) return 'CRITICAL';
+        if ($score > 30) return 'HIGH';
+        if ($score > 10) return 'MEDIUM';
+        return 'LOW';
+    }
+
+    public function fraudRiskBadge(): string
+    {
+        return match($this->fraudRiskLevel()) {
+            'CRITICAL' => 'danger',
+            'HIGH'     => 'warning',
+            'MEDIUM'   => 'info',
+            default    => 'success',
+        };
+    }
+
+    public function isReservationTokenValid(): bool
+    {
+        return $this->reservation_token
+            && $this->reservation_token_expires_at
+            && $this->reservation_token_expires_at->isFuture()
+            && !$this->reservation_suspended;
     }
 
     public function depositBalance(): float

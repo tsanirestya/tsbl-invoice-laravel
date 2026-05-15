@@ -61,6 +61,13 @@
     .cat-trd { background: #fef3c7; color: #92400e; }
     .cat-tvl { background: #f0fdf4; color: #166534; }
     .cat-other { background: #f1f5f9; color: #475569; }
+
+    .badge-foreign  { background: #fdf2f8; color: #9d174d; }
+    .badge-domestic { background: #f0fdf4; color: #166534; }
+    .badge-child    { background: #fff7ed; color: #c2410c; }
+    .badge-adult    { background: #eff6ff; color: #1d4ed8; }
+    .badge-nett     { background: #f0fdf4; color: #166534; }
+    .badge-gross    { background: #f8fafc; color: #475569; }
 </style>
 @endpush
 
@@ -70,6 +77,19 @@
 <div class="d-flex justify-content-between align-items-center mb-3 page-hdr">
     <div>
         <div class="page-title">Daftar Produk</div>
+        <div class="d-flex align-items-center gap-2 mt-1 flex-wrap">
+            <span style="font-size:.72rem;color:#64748b;background:#f1f5f9;border-radius:20px;padding:.1em .65em;font-weight:600;">
+                {{ $totalCount }} total
+            </span>
+            <span style="font-size:.72rem;color:#166534;background:#dcfce7;border-radius:20px;padding:.1em .65em;font-weight:600;">
+                {{ $activeCount }} aktif
+            </span>
+            @if($totalCount - $activeCount > 0)
+            <span style="font-size:.72rem;color:#475569;background:#f1f5f9;border-radius:20px;padding:.1em .65em;font-weight:600;">
+                {{ $totalCount - $activeCount }} nonaktif
+            </span>
+            @endif
+        </div>
     </div>
     <a href="{{ route('products.create') }}" class="btn btn-primary btn-sm" style="border-radius:8px;">
         <i class="bi bi-plus-lg"></i>
@@ -99,12 +119,33 @@
                 <option value="0" @selected(request('active') === '0')>Nonaktif</option>
             </select>
         </div>
+        <div class="col-6 col-sm-3 col-md-2">
+            <select name="market_type" class="form-select form-select-sm">
+                <option value="">Semua Market</option>
+                <option value="foreign"  @selected(request('market_type') === 'foreign')>Foreign</option>
+                <option value="domestic" @selected(request('market_type') === 'domestic')>Domestic</option>
+            </select>
+        </div>
+        <div class="col-6 col-sm-3 col-md-2">
+            <select name="sub_market_type" class="form-select form-select-sm">
+                <option value="">Adult/Child</option>
+                <option value="adult" @selected(request('sub_market_type') === 'adult')>Adult</option>
+                <option value="child" @selected(request('sub_market_type') === 'child')>Child</option>
+            </select>
+        </div>
+        <div class="col-6 col-sm-3 col-md-2">
+            <select name="sub_payment_mode" class="form-select form-select-sm">
+                <option value="">NETT/GROSS</option>
+                <option value="NETT"  @selected(request('sub_payment_mode') === 'NETT')>NETT</option>
+                <option value="GROSS" @selected(request('sub_payment_mode') === 'GROSS')>GROSS</option>
+            </select>
+        </div>
         <div class="col-auto d-flex gap-2">
             <button class="btn btn-sm btn-primary" type="submit" style="border-radius:8px;padding:.35rem .8rem;">
                 <i class="bi bi-search"></i>
             </button>
-            @if(request()->hasAny(['search','active','category']))
-            <a href="{{ route('products.index') }}" class="btn btn-sm btn-outline-secondary" style="border-radius:8px;padding:.35rem .8rem;">
+            @if(request()->hasAny(['search','active','category','market_type','sub_market_type','sub_payment_mode']))
+            <a href="{{ route('products.index') }}" class="btn btn-sm btn-outline-secondary" style="border-radius:8px;padding:.35rem .8rem;" title="Reset filter">
                 <i class="bi bi-x-lg"></i>
             </a>
             @endif
@@ -129,6 +170,7 @@
                     <th class="th-std td-num">Nett Price</th>
                     <th class="th-std td-num">% Komisi</th>
                     <th class="th-std d-none d-xl-table-cell">Payment Mode</th>
+                    <th class="th-std d-none d-xl-table-cell">Klasifikasi</th>
                     <th class="th-std"></th>
                 </tr>
             </thead>
@@ -192,6 +234,20 @@
                         {{ $product->payment_mode ?: '—' }}
                     </td>
 
+                    <td class="td-std d-none d-xl-table-cell">
+                        <div class="d-flex flex-column gap-1">
+                            @if($product->market_type)
+                                <span class="badge-cat badge-{{ $product->market_type }}">{{ ucfirst($product->market_type) }}</span>
+                            @endif
+                            @if($product->sub_market_type)
+                                <span class="badge-cat badge-{{ $product->sub_market_type }}">{{ ucfirst($product->sub_market_type) }}</span>
+                            @endif
+                            @if($product->sub_payment_mode)
+                                <span class="badge-cat badge-{{ strtolower($product->sub_payment_mode) }}">{{ $product->sub_payment_mode }}</span>
+                            @endif
+                        </div>
+                    </td>
+
                     <td class="td-std">
                         <div class="d-flex gap-1 justify-content-end product-actions">
                             <a href="{{ route('products.edit', $product) }}" class="btn-act edit" title="Edit">
@@ -250,6 +306,17 @@
                         <span>Nett: <strong class="text-dark">{{ $product->nett_price > 0 ? 'Rp '.number_format($product->nett_price, 0, ',', '.') : '—' }}</strong></span>
                         @if($pct !== null)
                         <span style="color:#0f766e;font-weight:600;">{{ $pct }}%</span>
+                        @endif
+                    </div>
+                    <div class="d-flex gap-1 mt-1 flex-wrap">
+                        @if($product->market_type)
+                            <span class="badge-cat badge-{{ $product->market_type }}">{{ ucfirst($product->market_type) }}</span>
+                        @endif
+                        @if($product->sub_market_type)
+                            <span class="badge-cat badge-{{ $product->sub_market_type }}">{{ ucfirst($product->sub_market_type) }}</span>
+                        @endif
+                        @if($product->sub_payment_mode)
+                            <span class="badge-cat badge-{{ strtolower($product->sub_payment_mode) }}">{{ $product->sub_payment_mode }}</span>
                         @endif
                     </div>
                 </div>

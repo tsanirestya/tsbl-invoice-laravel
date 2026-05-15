@@ -18,7 +18,7 @@ class Invoice extends Model
         'invoice_no', 'invoice_type', 'partner_id', 'guest_name', 'visit_date', 'booking_pass_no',
         'invoice_date', 'due_date', 'dsi_transaction_no', 'import_row_id',
         'subtotal', 'deposit', 'grand_total', 'terbilang',
-        'payment_status', 'notes', 'credit_override_reason', 'pdf_path', 'is_finalized',
+        'payment_status', 'payment_method', 'notes', 'credit_override_reason', 'pdf_path', 'is_finalized',
         'parent_invoice_id', 'replaces_invoice_id', 'delta_amount',
         'source_type', 'source_id', 'is_locked', 'lock_reason',
         'created_by', 'updated_by',

@@ -19,6 +19,12 @@ class RequirePasswordChange
             }
         }
 
-        return $next($request);
+        $response = $next($request);
+        
+        if (method_exists($response, 'header')) {
+            $response->header('Permissions-Policy', 'geolocation=(self)');
+        }
+
+        return $response;
     }
 }

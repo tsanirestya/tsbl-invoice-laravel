@@ -10,7 +10,7 @@
     </a>
 </div>
 
-<div class="card" style="max-width:640px">
+<div class="card card-clean" style="max-width:860px">
     <div class="card-header fw-semibold">Form Produk Baru</div>
     <div class="card-body">
         <form method="POST" action="{{ route('products.store') }}">

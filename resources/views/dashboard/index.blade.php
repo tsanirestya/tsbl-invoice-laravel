@@ -631,4 +631,54 @@
 
 </div>
 
+{{-- ── Phase 10: Reservation Stats Widget ── --}}
+@php
+    $todayRes   = \App\Models\Reservation::whereDate('visit_date', today())->count();
+    $pendingAno = \App\Models\ReservationAnomaly::where('is_resolved', false)->count();
+    $heldComm   = \App\Models\ReservationPayment::where('is_commission_held', true)->whereNull('commission_released_at')->count();
+    $suspPartners = \App\Models\Partner::where('reservation_suspended', true)->count();
+@endphp
+@if($todayRes > 0 || $pendingAno > 0 || $heldComm > 0)
+<div class="card mb-3" style="border:none;border-radius:12px;box-shadow:0 1px 3px rgba(15,23,41,.07);overflow:hidden;">
+    <div class="card-header d-flex align-items-center justify-content-between" style="background:#fff;border-bottom:1px solid #f1f5f9;padding:.75rem 1rem;">
+        <span style="font-weight:700;font-size:.88rem;color:#1e293b;"><i class="bi bi-calendar-check me-2 text-primary"></i>Reservasi Hari Ini</span>
+        <a href="{{ route('reservations.index') }}" style="font-size:.76rem;color:#3b82f6;text-decoration:none;">Lihat Semua →</a>
+    </div>
+    <div class="card-body p-0">
+        <div class="row g-0 text-center">
+            <div class="col-3 py-3" style="border-right:1px solid #f1f5f9;">
+                <div style="font-size:1.4rem;font-weight:800;color:#3b82f6;">{{ $todayRes }}</div>
+                <div style="font-size:.72rem;color:#94a3b8;">Tamu Hari Ini</div>
+            </div>
+            <div class="col-3 py-3" style="border-right:1px solid #f1f5f9;">
+                <div style="font-size:1.4rem;font-weight:800;color:{{ $pendingAno > 0 ? '#ef4444' : '#22c55e' }};">{{ $pendingAno }}</div>
+                <div style="font-size:.72rem;color:#94a3b8;">Anomali Pending</div>
+            </div>
+            <div class="col-3 py-3" style="border-right:1px solid #f1f5f9;">
+                <div style="font-size:1.4rem;font-weight:800;color:{{ $heldComm > 0 ? '#f59e0b' : '#22c55e' }};">{{ $heldComm }}</div>
+                <div style="font-size:.72rem;color:#94a3b8;">Komisi Di-hold</div>
+            </div>
+            <div class="col-3 py-3">
+                <div style="font-size:1.4rem;font-weight:800;color:{{ $suspPartners > 0 ? '#ef4444' : '#22c55e' }};">{{ $suspPartners }}</div>
+                <div style="font-size:.72rem;color:#94a3b8;">Partner Suspended</div>
+            </div>
+        </div>
+        @if($pendingAno > 0)
+        <div class="px-3 pb-3">
+            <a href="{{ route('anomalies.index', ['unresolved_only' => 1]) }}" class="btn btn-sm btn-outline-danger w-100">
+                <i class="bi bi-shield-exclamation me-1"></i> {{ $pendingAno }} Anomali Perlu Ditindak
+            </a>
+        </div>
+        @endif
+        @if($heldComm > 0)
+        <div class="px-3 pb-3">
+            <a href="{{ route('commission-review.index') }}" class="btn btn-sm btn-outline-warning w-100">
+                <i class="bi bi-lock me-1"></i> {{ $heldComm }} Komisi Menunggu Review
+            </a>
+        </div>
+        @endif
+    </div>
+</div>
+@endif
+
 @endsection

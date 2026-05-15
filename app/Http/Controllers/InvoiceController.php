@@ -16,6 +16,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 
 class InvoiceController extends Controller
 {
@@ -162,6 +163,7 @@ class InvoiceController extends Controller
                 'grand_total'             => $grandTotal,
                 'terbilang'               => ucfirst(Terbilang::convert($grandTotal)),
                 'payment_status'          => 'UNPAID',
+                'payment_method'          => $validated['payment_method'] ?? null,
                 'notes'                   => $validated['notes'] ?? null,
                 'credit_override_reason'  => $validated['credit_override_reason'] ?? null,
                 'import_row_id'           => $validated['import_row_id'] ?? null,
@@ -242,7 +244,7 @@ class InvoiceController extends Controller
             return redirect()->route('invoices.show', $invoice)->with('error', 'Invoice sudah final — tidak bisa diedit.');
         }
 
-        $validated     = $this->validateInvoice($request);
+        $validated     = $this->validateInvoice($request, $invoice->id);
         $items         = $this->validateItems($request);
         $newDeposit    = (float) ($validated['deposit'] ?? 0);
         $oldDeposit    = (float) $invoice->deposit;
@@ -305,6 +307,7 @@ class InvoiceController extends Controller
                 'deposit'                => $depositAmount,
                 'grand_total'            => $grandTotal,
                 'terbilang'              => ucfirst(Terbilang::convert($grandTotal)),
+                'payment_method'         => $validated['payment_method'] ?? null,
                 'notes'                  => $validated['notes'] ?? null,
                 'credit_override_reason' => $validated['credit_override_reason'] ?? null,
                 'updated_by'             => auth()->id(),
@@ -631,7 +634,7 @@ class InvoiceController extends Controller
         return [$subtotal, max(0, $subtotal - $deposit), $itemsData];
     }
 
-    private function validateInvoice(Request $request): array
+    private function validateInvoice(Request $request, ?int $ignoreId = null): array
     {
         return $request->validate([
             'partner_id'         => 'required|exists:partners,id',
@@ -640,11 +643,16 @@ class InvoiceController extends Controller
             'booking_pass_no'    => 'required|string|max:100',
             'invoice_date'       => 'required|date',
             'due_date'           => 'nullable|date|after_or_equal:invoice_date',
-            'dsi_transaction_no' => 'nullable|string|max:100',
+            // 1 dsi_transaction_no = 1 invoice; null exempt (manual invoices)
+            'dsi_transaction_no' => [
+                'nullable', 'string', 'max:100',
+                Rule::unique('invoices', 'dsi_transaction_no')->ignore($ignoreId),
+            ],
             'deposit'                   => 'nullable|numeric|min:0',
+            'payment_method'            => 'nullable|string|in:transfer_nett,transfer_gross,ots_nett,ots_gross',
             'notes'                     => 'nullable|string',
             'credit_override_reason'    => 'nullable|string|max:500',
-            'import_row_id'             => 'nullable|integer|exists:transaction_import_rows,id|unique:invoices,import_row_id',
+            'import_row_id'             => 'nullable|integer|exists:transaction_import_rows,id',
         ]);
     }
 
