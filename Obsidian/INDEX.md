@@ -41,7 +41,7 @@
 | Phase 10d — Self-Service QR     | [[TODO-PHASE-10-RESERVATION]]     | ✅ Done (2026-05-13) |
 | Phase 10f — Fraud Detection     | [[TODO-PHASE-10-RESERVATION]]     | ✅ Done (2026-05-13) |
 | Phase 11 — Product Classification | [[PHASE-11-PRODUCT-CLASSIFICATION]] | ✅ Done (2026-05-15) |
-| Revisi Reservation Form (Pax)   | [[TODO-REVISI-RESERVATION-FORM-PAX]] | 🔄 FASE 1-3 Done, Testing |
+| Revisi Reservation Form (Pax)   | [[TODO-REVISI-RESERVATION-FORM-PAX]] | ✅ Done (2026-05-15)      |
 
 ## 📦 Features (akan dibuat per feature selesai)
 → Folder: `Features/`

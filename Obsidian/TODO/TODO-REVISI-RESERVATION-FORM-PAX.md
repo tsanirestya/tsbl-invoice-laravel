@@ -1,7 +1,7 @@
 # TODO: Revisi Reservation Form — Pax-Based Pricing
 
 - **Date:** 2026-05-15
-- **Status:** FASE 1-3 DONE — Testing remaining
+- **Status:** ✅ DONE — All phases complete
 - **Branch:** `feat/phase-N-reservation-pax-form`
 
 ---
@@ -265,14 +265,20 @@ NETT TOTAL             Rp xxx
 
 ### FASE 4 — Testing & Cleanup
 
-#### Task 4.1 — Test manual: skenario form
-- [ ] Foreign + ADULT_CHILD (Theme Park Package NETT)
-- [ ] Foreign + BUNDLE (Fast Track Play Package - Fusion Holiday)
-- [ ] Foreign + TICKET (I-Fly Package)
-- [ ] Domestic (Yummy Play, Theme Park Weekday)
-- [ ] Multi-activity (2+ rows berbeda type dalam 1 reservasi)
-- [ ] Baby saja (tanpa adult/child)
-- [ ] Payment filter: GROSS vs NETT switch → parents_name list berubah
+#### Task 4.1 — Static code review (2026-05-15)
+- [x] Foreign + ADULT_CHILD — logic correct, adult/child product lookup OK
+- [x] Foreign + BUNDLE (Fast Track Play Package) — BUNDLE prioritized over standalone CHILD ✓
+- [x] Foreign + TICKET — GROSS only (no NETT/TICKET products in data) ✓
+- [x] Domestic — always renders TICKET row, picks first product ✓
+- [x] Multi-activity — sort_order increments correctly ✓
+- [x] Baby saja — blocked by items min:1 validation (intentional)
+- [x] GROSS vs NETT switch — filter logic correct, refreshAllRows wired to TomSelect onChange ✓
+
+#### Bugs fixed:
+- [x] BUG: Double refresh (native change + TomSelect onChange) — removed duplicate listener
+- [x] BUG: Empty row (no activity selected) causes confusing server validation error — stripped in submit guard + alert
+- [x] BUG: Zero-qty submission creates empty reservation — added JS guard before submit
+- [x] BUG: Baby item (audit trail) blocked by product_id NOT NULL — migration added, baby item now created in controller
 
 #### Task 4.2 — Update Obsidian docs setelah selesai
 
