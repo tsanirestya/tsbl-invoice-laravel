@@ -22,13 +22,15 @@ if ($key !== $expectedKey) {
     exit;
 }
 
-if (!class_exists('ZipArchive')) {
-    header('HTTP/1.0 500 Internal Server Error');
-    echo "ERROR: ZipArchive extension is not installed on this server.";
-    exit;
+// Check for ZipArchive
+$hasZipArchive = class_exists('ZipArchive');
+
+if (!$hasZipArchive) {
+    file_put_contents(__DIR__ . '/deploy_log.txt', date('[Y-m-d H:i:s]') . " ZipArchive missing. Fallback to shell unzip.\n", FILE_APPEND);
 }
 
 $target = $_GET['target'] ?? ''; // 'app' or 'web'
+
 $zipFile = ($target === 'app') ? __DIR__ . '/../tsbl-invoice-laravel/app.zip' : __DIR__ . '/web.zip';
 $extractTo = ($target === 'app') ? __DIR__ . '/../tsbl-invoice-laravel/' : __DIR__ . '/public/';
 
@@ -46,27 +48,50 @@ if (!file_exists($zipFile)) {
     exit;
 }
 
-$zip = new ZipArchive;
-$openResult = $zip->open($zipFile);
-if ($openResult === TRUE) {
-    file_put_contents(__DIR__ . '/deploy_log.txt', date('[Y-m-d H:i:s]') . " Successfully opened $zipFile for $target.\n", FILE_APPEND);
-    
-    // Attempt extraction
-    if ($zip->extractTo($extractTo)) {
-        $zip->close();
-        unlink($zipFile);
-        file_put_contents(__DIR__ . '/deploy_log.txt', date('[Y-m-d H:i:s]') . " SUCCESS: $target extracted to $extractTo.\n", FILE_APPEND);
-        echo "SUCCESS: $target extracted successfully.";
+if ($hasZipArchive) {
+    $zip = new ZipArchive;
+    $openResult = $zip->open($zipFile);
+    if ($openResult === TRUE) {
+        file_put_contents(__DIR__ . '/deploy_log.txt', date('[Y-m-d H:i:s]') . " Successfully opened $zipFile for $target.\n", FILE_APPEND);
+        
+        // Attempt extraction
+        if ($zip->extractTo($extractTo)) {
+            $zip->close();
+            unlink($zipFile);
+            file_put_contents(__DIR__ . '/deploy_log.txt', date('[Y-m-d H:i:s]') . " SUCCESS: $target extracted to $extractTo.\n", FILE_APPEND);
+            echo "SUCCESS: $target extracted successfully.";
+        } else {
+            $error = error_get_last();
+            file_put_contents(__DIR__ . '/deploy_log.txt', date('[Y-m-d H:i:s]') . " ERROR: Failed to extract $target to $extractTo. Error: " . ($error['message'] ?? 'Unknown PHP error') . "\n", FILE_APPEND);
+            header('HTTP/1.0 500 Internal Server Error');
+            echo "ERROR: Failed to extract zip file to $extractTo. Check permissions.";
+        }
     } else {
-        $error = error_get_last();
-        file_put_contents(__DIR__ . '/deploy_log.txt', date('[Y-m-d H:i:s]') . " ERROR: Failed to extract $target to $extractTo. Error: " . ($error['message'] ?? 'Unknown PHP error') . "\n", FILE_APPEND);
+        file_put_contents(__DIR__ . '/deploy_log.txt', date('[Y-m-d H:i:s]') . " ERROR: Failed to open zip file $target at $zipFile. Code: $openResult\n", FILE_APPEND);
         header('HTTP/1.0 500 Internal Server Error');
-        echo "ERROR: Failed to extract zip file to $extractTo. Check permissions.";
+        echo "ERROR: Failed to open zip file $target at $zipFile. Code: $openResult";
     }
 } else {
-    file_put_contents(__DIR__ . '/deploy_log.txt', date('[Y-m-d H:i:s]') . " ERROR: Failed to open zip file $target at $zipFile. Code: $openResult\n", FILE_APPEND);
-    header('HTTP/1.0 500 Internal Server Error');
-    echo "ERROR: Failed to open zip file $target at $zipFile. Code: $openResult";
+    // Fallback to shell unzip
+    $command = "unzip -o " . escapeshellarg($zipFile) . " -d " . escapeshellarg($extractTo) . " 2>&1";
+    $output = shell_exec($command);
+    if ($output === null) {
+        file_put_contents(__DIR__ . '/deploy_log.txt', date('[Y-m-d H:i:s]') . " ERROR: shell_exec is disabled or failed for $target.\n", FILE_APPEND);
+        header('HTTP/1.0 500 Internal Server Error');
+        echo "ERROR: ZipArchive missing and shell_exec disabled.";
+    } else {
+        file_put_contents(__DIR__ . '/deploy_log.txt', date('[Y-m-d H:i:s]') . " Shell unzip triggered for $target. Output length: " . strlen($output) . "\n", FILE_APPEND);
+        if (strpos($output, 'inflating') !== false || strpos($output, 'extracting') !== false) {
+            unlink($zipFile);
+            file_put_contents(__DIR__ . '/deploy_log.txt', date('[Y-m-d H:i:s]') . " SUCCESS: $target extracted via shell.\n", FILE_APPEND);
+            echo "SUCCESS: $target extracted via shell.";
+        } else {
+            file_put_contents(__DIR__ . '/deploy_log.txt', date('[Y-m-d H:i:s]') . " ERROR: Shell unzip failed for $target. Output: $output\n", FILE_APPEND);
+            header('HTTP/1.0 500 Internal Server Error');
+            echo "ERROR: Shell unzip failed.";
+        }
+    }
 }
+
 
 
