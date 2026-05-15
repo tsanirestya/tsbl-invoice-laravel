@@ -86,6 +86,13 @@ jobs:
           mv app.zip dist_app/
           mv web.zip deploy_helper.php file_check.php dist_web/
 
+      - name: List Files for Debug
+        run: |
+          echo "Content of dist_app:"
+          ls -R dist_app/
+          echo "Content of dist_web:"
+          ls -R dist_web/
+
       - name: Upload App Package
         uses: SamKirkland/FTP-Deploy-Action@v4.3.4
         with:
@@ -93,8 +100,8 @@ jobs:
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
           local-dir: ./dist_app/
-          server-dir: /tsbl-invoice-laravel/
-          state-name: .ftp-deploy-sync-state-zip-app.json
+          server-dir: tsbl-invoice-laravel/
+          state-name: .ftp-deploy-sync-state-zip-app-v2.json
 
       - name: Upload Web Package & Bridge
         uses: SamKirkland/FTP-Deploy-Action@v4.3.4
@@ -103,8 +110,8 @@ jobs:
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
           local-dir: ./dist_web/
-          server-dir: /invoice.transentertainment.id/
-          state-name: .ftp-deploy-sync-state-zip-web.json
+          server-dir: invoice.transentertainment.id/
+          state-name: .ftp-deploy-sync-state-zip-web-v2.json
 
       - name: Trigger Remote Unzip
         run: |
