@@ -1,11 +1,11 @@
-<?php
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
 date_default_timezone_set('UTC');
 echo "<h3>Server Environment</h3>";
 echo "Current Time (UTC): " . date('Y-m-d H:i:s') . "<br>";
-echo "Current Date (Ymd): " . date('Ymd') . "<br>";
-echo "Expected Token: tsbl_deploy_" . date('Ymd') . "<br>";
-echo "PHP Version: " . phpversion() . "<br>";
-echo "ZipArchive: " . (class_exists('ZipArchive') ? "Enabled" : "DISABLED") . "<br>";
+echo "ZipArchive Status: " . (class_exists('ZipArchive') ? "<b style='color:green'>ENABLED</b>" : "<b style='color:red'>DISABLED</b>") . "<br>";
+echo "PHP version: " . phpversion() . "<br>";
+
 
 echo "<h3>Current Directory: " . __DIR__ . "</h3>";
 echo "<h3>Files in this directory:</h3><pre>";
