@@ -17,18 +17,22 @@ foreach ($files as $file) {
 echo "</pre>";
 
 $appDir = __DIR__ . '/../tsbl-invoice-laravel';
-echo "<h3>Files in ../tsbl-invoice-laravel:</h3><pre>";
+echo "<h3>Files in $appDir:</h3><pre>";
 if (file_exists($appDir)) {
+    echo "Directory Permissions: " . substr(sprintf('%o', fileperms($appDir)), -4) . "\n";
+    echo "Directory Owner: " . fileowner($appDir) . " / Group: " . filegroup($appDir) . "\n\n";
     $files = scandir($appDir);
     foreach ($files as $file) {
         $filePath = $appDir . '/' . $file;
         $size = is_file($filePath) ? filesize($filePath) . " bytes" : "[DIR]";
-        echo str_pad($file, 30) . " $size\n";
+        $perms = substr(sprintf('%o', fileperms($filePath)), -4);
+        echo str_pad($file, 30) . " " . str_pad($size, 20) . " $perms\n";
     }
 } else {
     echo "Directory not found: $appDir";
 }
 echo "</pre>";
+
 
 $layoutFile = $appDir . '/resources/views/layouts/app.blade.php';
 echo "<h3>App Layout Status:</h3>";
