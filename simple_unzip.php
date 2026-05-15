@@ -5,7 +5,11 @@
  */
 class SimpleZipExtractor {
     public static function extract($zipFile, $targetDir) {
+        if (!function_exists('gzinflate')) {
+            throw new Exception("gzinflate function not found. Please enable zlib extension.");
+        }
         if (!file_exists($targetDir)) mkdir($targetDir, 0755, true);
+
         $fh = fopen($zipFile, 'rb');
         if (!$fh) return false;
         
