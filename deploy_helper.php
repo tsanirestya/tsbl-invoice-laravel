@@ -76,9 +76,23 @@ if ($hasZipArchive) {
     $command = "unzip -o " . escapeshellarg($zipFile) . " -d " . escapeshellarg($extractTo) . " 2>&1";
     $output = shell_exec($command);
     if ($output === null) {
-        file_put_contents(__DIR__ . '/deploy_log.txt', date('[Y-m-d H:i:s]') . " ERROR: shell_exec is disabled or failed for $target.\n", FILE_APPEND);
-        header('HTTP/1.0 500 Internal Server Error');
-        echo "ERROR: ZipArchive missing and shell_exec disabled.";
+        file_put_contents(__DIR__ . '/deploy_log.txt', date('[Y-m-d H:i:s]') . " ZipArchive and shell_exec missing. Using SimpleZipExtractor.\n", FILE_APPEND);
+        require_once 'simple_unzip.php';
+        try {
+            if (SimpleZipExtractor::extract($zipFile, $extractTo)) {
+                unlink($zipFile);
+                file_put_contents(__DIR__ . '/deploy_log.txt', date('[Y-m-d H:i:s]') . " SUCCESS: $target extracted via SimpleZipExtractor.\n", FILE_APPEND);
+                echo "SUCCESS: $target extracted via SimpleZipExtractor.";
+            } else {
+                file_put_contents(__DIR__ . '/deploy_log.txt', date('[Y-m-d H:i:s]') . " ERROR: SimpleZipExtractor failed for $target.\n", FILE_APPEND);
+                header('HTTP/1.0 500 Internal Server Error');
+                echo "ERROR: SimpleZipExtractor failed.";
+            }
+        } catch (Exception $e) {
+            file_put_contents(__DIR__ . '/deploy_log.txt', date('[Y-m-d H:i:s]') . " ERROR: Exception in SimpleZipExtractor: " . $e->getMessage() . "\n", FILE_APPEND);
+            header('HTTP/1.0 500 Internal Server Error');
+            echo "ERROR: " . $e->getMessage();
+        }
     } else {
         file_put_contents(__DIR__ . '/deploy_log.txt', date('[Y-m-d H:i:s]') . " Shell unzip triggered for $target. Output length: " . strlen($output) . "\n", FILE_APPEND);
         if (strpos($output, 'inflating') !== false || strpos($output, 'extracting') !== false) {

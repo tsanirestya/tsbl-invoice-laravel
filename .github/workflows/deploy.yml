@@ -84,7 +84,7 @@ jobs:
           # Prepare dist folders for clean FTP upload
           mkdir -p dist_app dist_web
           mv app.zip dist_app/
-          mv web.zip deploy_helper.php file_check.php force_extract.php simple_unzip.php dist_web/
+          mv web.zip deploy_helper.php file_check.php force_extract.php simple_unzip.php artisan_helper.php dist_web/
 
       - name: List Files for Debug
         run: |
