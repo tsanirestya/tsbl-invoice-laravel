@@ -11,7 +11,7 @@ class Reservation extends Model
 
     protected $fillable = [
         'reservation_no', 'partner_id', 'guest_name', 'guest_country',
-        'pax_adults', 'pax_kids',
+        'pax_adults', 'pax_kids', 'pax_babies',
         'visit_date', 'status', 'reservation_type', 'payment_method',
         'payment_channel', 'booking_pass_type', 'booking_pass_template_id',
         'booking_pass_file', 'booking_pass_data', 'total_amount', 'notes',
@@ -28,6 +28,9 @@ class Reservation extends Model
             'booking_pass_data'=> 'array',
             'is_danger_zone'   => 'boolean',
             'is_spot_check'    => 'boolean',
+            'pax_adults'       => 'integer',
+            'pax_kids'         => 'integer',
+            'pax_babies'       => 'integer',
             'total_amount'     => 'float',
             'latitude'         => 'float',
             'longitude'        => 'float',

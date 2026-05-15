@@ -9,6 +9,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 120
 
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -105,12 +108,12 @@ jobs:
 
       - name: Trigger Remote Unzip
         run: |
-          # Generate token matching deploy_bridge.php logic
-          TOKEN="tsbl_deploy_$(date +'%Y%m%d')"
+          # Generate token matching deploy_bridge.php logic (using UTC)
+          TOKEN="tsbl_deploy_$(date -u +'%Y%m%d')"
           echo "Extracting App..."
-          curl -f -s "https://invoice.transentertainment.id/deploy_bridge.php?token=$TOKEN&target=app"
+          curl -f -sS "https://invoice.transentertainment.id/deploy_bridge.php?token=$TOKEN&target=app"
           echo "Extracting Web..."
-          curl -f -s "https://invoice.transentertainment.id/deploy_bridge.php?token=$TOKEN&target=web"
+          curl -f -sS "https://invoice.transentertainment.id/deploy_bridge.php?token=$TOKEN&target=web"
           
       - name: Final Cleanup
         run: |

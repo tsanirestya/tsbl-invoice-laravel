@@ -51,31 +51,67 @@ class ReservationController extends Controller
     public function create()
     {
         $partners = Partner::where('is_active', true)->orderBy('nama_partner')->get(['id', 'nama_partner', 'partner_type', 'category']);
-        $products = Product::where('is_active', true)
-            ->orderBy('product_name')
-            ->get(['id', 'product_name', 'partner_type', 'publish_rate', 'nett_price', 'komisi', 'category', 'market_type', 'payment_mode', 'sub_payment_mode']);
 
-        return view('reservations.create', compact('partners', 'products'));
+        $products = Product::where('is_active', true)
+            ->whereNotNull('parents_name')
+            ->select('id','product_name','parents_name','pax_type',
+                     'sub_payment_mode','market_type','publish_rate',
+                     'nett_price','komisi','payment_mode',
+                     'bundle_adult_count','bundle_child_count')
+            ->orderBy('parents_name')
+            ->orderBy('pax_type')
+            ->get();
+
+        // grouped[parents_name][sub_payment_mode][market_type] = [{id, pax_type, ...}]
+        $groupedProducts = [];
+        foreach ($products as $p) {
+            $parent  = $p->parents_name;
+            $payMode = strtoupper($p->sub_payment_mode ?? 'GROSS');
+            $market  = strtoupper($p->market_type ?? 'FOREIGN');
+            $groupedProducts[$parent][$payMode][$market][] = [
+                'id'                 => $p->id,
+                'product_name'       => $p->product_name,
+                'pax_type'           => $p->pax_type,
+                'publish_rate'       => (float) $p->publish_rate,
+                'nett_price'         => (float) $p->nett_price,
+                'komisi'             => (float) $p->komisi,
+                'bundle_adult_count' => (int) $p->bundle_adult_count,
+                'bundle_child_count' => (int) $p->bundle_child_count,
+            ];
+        }
+
+        return view('reservations.create', compact('partners', 'groupedProducts'));
     }
 
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'partner_id'             => 'nullable|exists:partners,id',
-            'guest_name'             => 'required|string|max:255',
-            'guest_country'          => 'nullable|string|max:100',
-            'visit_date'             => 'required|date',
-            'reservation_type'       => 'required|in:PARTNER,INTERNAL,SELF_SERVICE',
-            'payment_method'         => 'nullable|in:TRANSFER_GROSS,TRANSFER_NETT,ON_THE_SPOT',
-            'payment_channel'        => 'nullable|in:CASH,DEBIT,CREDIT',
-            'notes'                  => 'nullable|string|max:2000',
-            'latitude'               => 'nullable|numeric',
-            'longitude'              => 'nullable|numeric',
-            'location_name'          => 'nullable|string|max:255',
-            'items'                  => 'required|array|min:1',
-            'items.*.product_id'     => 'required|exists:products,id',
-            'items.*.qty'            => 'required|integer|min:1',
-            'items.*.price_per_pax'  => 'required|numeric|min:0',
+            'partner_id'                    => 'nullable|exists:partners,id',
+            'guest_name'                    => 'required|string|max:255',
+            'guest_country'                 => 'nullable|string|max:100',
+            'visit_date'                    => 'required|date',
+            'reservation_type'              => 'required|in:PARTNER,INTERNAL,SELF_SERVICE',
+            'payment_method'                => 'nullable|in:TRANSFER_GROSS,TRANSFER_NETT,ON_THE_SPOT',
+            'payment_channel'               => 'nullable|in:CASH,DEBIT,CREDIT',
+            'notes'                         => 'nullable|string|max:2000',
+            'latitude'                      => 'nullable|numeric',
+            'longitude'                     => 'nullable|numeric',
+            'location_name'                 => 'nullable|string|max:255',
+            'pax_babies'                    => 'nullable|integer|min:0',
+            'items'                         => 'required|array|min:1',
+            'items.*.row_type'              => 'required|in:ADULT_CHILD,BUNDLE,TICKET,DOMESTIC',
+            'items.*.adult_product_id'      => 'nullable|exists:products,id',
+            'items.*.adult_qty'             => 'nullable|integer|min:0',
+            'items.*.adult_price'           => 'nullable|numeric|min:0',
+            'items.*.child_product_id'      => 'nullable|exists:products,id',
+            'items.*.child_qty'             => 'nullable|integer|min:0',
+            'items.*.child_price'           => 'nullable|numeric|min:0',
+            'items.*.bundle_product_id'     => 'nullable|exists:products,id',
+            'items.*.bundle_qty'            => 'nullable|integer|min:0',
+            'items.*.bundle_price'          => 'nullable|numeric|min:0',
+            'items.*.ticket_product_id'     => 'nullable|exists:products,id',
+            'items.*.ticket_qty'            => 'nullable|integer|min:0',
+            'items.*.ticket_price'          => 'nullable|numeric|min:0',
         ]);
 
         $reservation = DB::transaction(function () use ($validated, $request) {
@@ -131,23 +167,94 @@ class ReservationController extends Controller
                 'created_by'       => auth()->id(),
             ]);
 
-            // Create items
-            $total = 0;
-            foreach ($validated['items'] as $i => $item) {
-                $product = Product::find($item['product_id']);
-                $amount  = $item['price_per_pax'] * $item['qty'];
-                $total  += $amount;
-                ReservationItem::create([
-                    'reservation_id' => $reservation->id,
-                    'product_id'     => $item['product_id'],
-                    'product_name'   => $product->product_name,
-                    'qty'            => $item['qty'],
-                    'price_per_pax'  => $item['price_per_pax'],
-                    'amount'         => $amount,
-                    'sort_order'     => $i,
-                ]);
+            // Create items (pax-based)
+            $total       = 0;
+            $totalAdults = 0;
+            $totalKids   = 0;
+            $paxBabies   = (int) ($validated['pax_babies'] ?? 0);
+            $sortOrder   = 0;
+
+            foreach ($validated['items'] as $item) {
+                switch ($item['row_type']) {
+                    case 'ADULT_CHILD':
+                        if (!empty($item['adult_product_id']) && ($item['adult_qty'] ?? 0) > 0) {
+                            $prod   = Product::find($item['adult_product_id']);
+                            $amount = (float) $item['adult_price'] * (int) $item['adult_qty'];
+                            $total += $amount;
+                            $totalAdults += (int) $item['adult_qty'];
+                            ReservationItem::create([
+                                'reservation_id' => $reservation->id,
+                                'product_id'     => $item['adult_product_id'],
+                                'product_name'   => $prod->product_name,
+                                'qty'            => $item['adult_qty'],
+                                'price_per_pax'  => $item['adult_price'],
+                                'amount'         => $amount,
+                                'sort_order'     => $sortOrder++,
+                            ]);
+                        }
+                        if (!empty($item['child_product_id']) && ($item['child_qty'] ?? 0) > 0) {
+                            $prod   = Product::find($item['child_product_id']);
+                            $amount = (float) $item['child_price'] * (int) $item['child_qty'];
+                            $total += $amount;
+                            $totalKids += (int) $item['child_qty'];
+                            ReservationItem::create([
+                                'reservation_id' => $reservation->id,
+                                'product_id'     => $item['child_product_id'],
+                                'product_name'   => $prod->product_name,
+                                'qty'            => $item['child_qty'],
+                                'price_per_pax'  => $item['child_price'],
+                                'amount'         => $amount,
+                                'sort_order'     => $sortOrder++,
+                            ]);
+                        }
+                        break;
+
+                    case 'BUNDLE':
+                        if (!empty($item['bundle_product_id']) && ($item['bundle_qty'] ?? 0) > 0) {
+                            $prod   = Product::find($item['bundle_product_id']);
+                            $amount = (float) $item['bundle_price'] * (int) $item['bundle_qty'];
+                            $total += $amount;
+                            $totalAdults += $prod->bundle_adult_count * (int) $item['bundle_qty'];
+                            $totalKids   += $prod->bundle_child_count * (int) $item['bundle_qty'];
+                            ReservationItem::create([
+                                'reservation_id' => $reservation->id,
+                                'product_id'     => $item['bundle_product_id'],
+                                'product_name'   => $prod->product_name,
+                                'qty'            => $item['bundle_qty'],
+                                'price_per_pax'  => $item['bundle_price'],
+                                'amount'         => $amount,
+                                'sort_order'     => $sortOrder++,
+                            ]);
+                        }
+                        break;
+
+                    case 'TICKET':
+                    case 'DOMESTIC':
+                        if (!empty($item['ticket_product_id']) && ($item['ticket_qty'] ?? 0) > 0) {
+                            $prod   = Product::find($item['ticket_product_id']);
+                            $amount = (float) $item['ticket_price'] * (int) $item['ticket_qty'];
+                            $total += $amount;
+                            $totalAdults += (int) $item['ticket_qty'];
+                            ReservationItem::create([
+                                'reservation_id' => $reservation->id,
+                                'product_id'     => $item['ticket_product_id'],
+                                'product_name'   => $prod->product_name,
+                                'qty'            => $item['ticket_qty'],
+                                'price_per_pax'  => $item['ticket_price'],
+                                'amount'         => $amount,
+                                'sort_order'     => $sortOrder++,
+                            ]);
+                        }
+                        break;
+                }
             }
-            $reservation->update(['total_amount' => $total]);
+
+            $reservation->update([
+                'total_amount' => $total,
+                'pax_adults'   => $totalAdults,
+                'pax_kids'     => $totalKids,
+                'pax_babies'   => $paxBabies,
+            ]);
 
             // Create payment record
             if ($validated['payment_method']) {
@@ -183,11 +290,8 @@ class ReservationController extends Controller
         }
 
         $partners = Partner::where('is_active', true)->orderBy('nama_partner')->get(['id', 'nama_partner', 'partner_type', 'category']);
-        $products = Product::where('is_active', true)
-            ->orderBy('product_name')
-            ->get(['id', 'product_name', 'partner_type', 'publish_rate', 'nett_price', 'komisi', 'category', 'market_type', 'payment_mode', 'sub_payment_mode']);
 
-        return view('reservations.edit', compact('reservation', 'partners', 'products'));
+        return view('reservations.edit', compact('reservation', 'partners'));
     }
 
     public function update(Request $request, Reservation $reservation)

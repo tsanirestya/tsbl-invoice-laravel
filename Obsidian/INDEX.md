@@ -71,6 +71,7 @@
 
 ## 🔄 Revisions
 - [[REVISI-RESERVASI]] — Cleanup & dynamic product filtering (2026-05-13)
+- [[TODO/TODO-REVISI-RESERVATION-FORM-PAX]] — Pax-based pricing revision — Fase 1 DB/Model done (2026-05-15)
 
 ## 🚀 Development Phases
 → Folder: `Development-Phases/`
