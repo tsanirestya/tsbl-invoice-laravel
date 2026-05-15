@@ -29,12 +29,7 @@ class SimpleZipExtractor {
             fseek($fh, $info['offset']);
             $localHeader = fread($fh, 30);
             $localInfo = unpack('vlen/vextra', substr($localHeader, 26));
-            fseek($fh, $localInfo['len'] + $localInfo['vextra'], SEEK_CUR);
-            
-            $content = fread($fh, $info['compressed']);
-            if ($info['method'] == 8) {
-                $content = gzinflate($content);
-            }
+            fseek($fh, $localInfo['len'] + $localInfo['extra'], SEEK_CUR);
             
             $targetPath = $targetDir . '/' . $filename;
             if (substr($filename, -1) === '/') {
@@ -42,9 +37,19 @@ class SimpleZipExtractor {
             } else {
                 $dir = dirname($targetPath);
                 if (!file_exists($dir)) mkdir($dir, 0755, true);
-                file_put_contents($targetPath, $content);
+                
+                if ($info['compressed'] > 0) {
+                    $content = fread($fh, $info['compressed']);
+                    if ($info['method'] == 8) {
+                        $content = gzinflate($content);
+                    }
+                    file_put_contents($targetPath, $content);
+                } else {
+                    file_put_contents($targetPath, '');
+                }
             }
             fseek($fh, $currentPos);
+
         }
         fclose($fh);
         return true;
