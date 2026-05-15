@@ -114,6 +114,19 @@ class ReservationController extends Controller
             'items.*.ticket_price'          => 'nullable|numeric|min:0',
         ]);
 
+        // Guard: at least one item must have qty > 0
+        $hasQty = false;
+        foreach ($validated['items'] as $item) {
+            if (($item['adult_qty'] ?? 0) > 0 || ($item['child_qty'] ?? 0) > 0 ||
+                ($item['bundle_qty'] ?? 0) > 0 || ($item['ticket_qty'] ?? 0) > 0) {
+                $hasQty = true;
+                break;
+            }
+        }
+        if (!$hasQty) {
+            return back()->withErrors(['items' => 'Minimal satu aktivitas harus diisi dengan jumlah tamu.'])->withInput();
+        }
+
         $reservation = DB::transaction(function () use ($validated, $request) {
             // Danger zone check
             $isDangerZone = false;
@@ -249,6 +262,19 @@ class ReservationController extends Controller
                 }
             }
 
+            // Baby item (price=0, audit trail only)
+            if ($paxBabies > 0) {
+                ReservationItem::create([
+                    'reservation_id' => $reservation->id,
+                    'product_id'     => null,
+                    'product_name'   => 'Baby (FREE)',
+                    'qty'            => $paxBabies,
+                    'price_per_pax'  => 0,
+                    'amount'         => 0,
+                    'sort_order'     => $sortOrder++,
+                ]);
+            }
+
             $reservation->update([
                 'total_amount' => $total,
                 'pax_adults'   => $totalAdults,
@@ -348,12 +374,14 @@ class ReservationController extends Controller
         $partner = $reservation->partner;
         $items   = $reservation->items;
 
-        // Calculate commission from product komisi fields
+        // NETT payment: partner already deducted commission, no payback owed
         $commissionAmount = 0;
-        foreach ($items as $item) {
-            $product = $item->product;
-            if ($product && $product->komisi > 0) {
-                $commissionAmount += $product->komisi * $item->qty;
+        if ($method !== 'TRANSFER_NETT') {
+            foreach ($items as $item) {
+                $product = $item->product;
+                if ($product && $product->komisi > 0) {
+                    $commissionAmount += $product->komisi * $item->qty;
+                }
             }
         }
 

@@ -4,301 +4,832 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Reservasi — {{ $partner->nama_partner }}</title>
+    <title>Form Reservasi — {{ $partner->nama_partner }}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet">
     <style>
         body { background: #f0f4fb; font-family: 'Segoe UI', sans-serif; }
-        .brand-bar { background: #0f1729; color: #fff; padding: 12px 16px; }
-        .brand-bar .badge-partner { background: rgba(59,130,246,.2); color: #93c5fd; border-radius: 6px; padding: 2px 8px; font-size: .7rem; }
-        .card { border-radius: 12px; border: none; box-shadow: 0 1px 4px rgba(0,0,0,.06); }
-        .form-control, .form-select { min-height: 44px; border-radius: 8px; }
-        .btn-primary { min-height: 44px; border-radius: 8px; }
-        .item-row td { vertical-align: middle; }
-        @media (max-width: 576px) { .container { padding: 0 8px; } }
+        .partner-bar { background: #0f1729; color: #fff; padding: 12px 20px; margin-bottom: 1.5rem; }
+        .partner-bar .badge-partner { background: rgba(59,130,246,.2); color: #93c5fd; border-radius: 6px; padding: 2px 10px; font-size: .75rem; }
+        .card { border-radius: 10px; border: 1px solid #e8edf3; box-shadow: 0 1px 3px rgba(0,0,0,.04); }
+        .card-header { background: #fff; border-bottom: 1px solid #e8edf3; border-radius: 10px 10px 0 0 !important; }
+        .page-title { font-size: 1.1rem; font-weight: 700; }
+        .page-sub { font-size: .8rem; color: rgba(255,255,255,.6); }
     </style>
 </head>
 <body>
-<div class="brand-bar mb-4">
+
+<div class="partner-bar">
     <div class="d-flex align-items-center gap-2">
         <i class="bi bi-calendar-check fs-5"></i>
         <div>
-            <div class="fw-bold">Form Reservasi</div>
-            <div class="badge-partner">{{ $partner->nama_partner }}</div>
+            <div class="page-title">Buat Reservasi</div>
+            <div class="page-sub">
+                <span class="badge-partner">{{ $partner->nama_partner }}</span>
+            </div>
+        </div>
+        <div class="ms-auto">
+            <a href="{{ route('partner.reserve.history', $token) }}" class="btn btn-sm btn-outline-light">
+                <i class="bi bi-clock-history me-1"></i> Riwayat
+            </a>
         </div>
     </div>
 </div>
 
-<div class="container" style="max-width:640px">
-    @if(session('error'))
-        <div class="alert alert-danger mb-3">{{ session('error') }}</div>
-    @endif
-    @if($errors->any())
-        <div class="alert alert-danger mb-3">
-            <ul class="mb-0 ps-3">@foreach($errors->all() as $e)<li>{{ $e }}</li>@endforeach</ul>
-        </div>
-    @endif
+<div class="container" style="max-width: 1140px">
 
-    <form method="POST" action="{{ route('partner.reserve.store', $token) }}" id="partnerForm">
-    @csrf
-    <input type="hidden" name="device_fingerprint" id="dfp">
+@if(session('error'))
+    <div class="alert alert-danger mb-3">{{ session('error') }}</div>
+@endif
+@if($errors->any())
+    <div class="alert alert-danger mb-3">
+        <ul class="mb-0 ps-3">
+            @foreach($errors->all() as $e)<li>{{ $e }}</li>@endforeach
+        </ul>
+    </div>
+@endif
 
-    {{-- Tamu --}}
-    <div class="card mb-3">
-        <div class="card-header fw-semibold"><i class="bi bi-person me-2"></i>Data Tamu</div>
-        <div class="card-body">
-            <div class="mb-3">
-                <label class="form-label">Nama Tamu <span class="text-danger">*</span></label>
-                <input type="text" name="guest_name" value="{{ old('guest_name') }}"
-                       class="form-control" required placeholder="Nama lengkap tamu">
-            </div>
-            <div class="row g-2">
-                <div class="col-6">
-                    <label class="form-label">Negara</label>
-                    <select name="guest_country" id="countrySelect">
-                        @include('partials._country_options', ['selected' => old('guest_country', 'Indonesia')])
-                    </select>
+<form method="POST" action="{{ route('partner.reserve.store', $token) }}" id="resForm">
+@csrf
+<input type="hidden" name="device_fingerprint" id="dfp">
+
+<div class="row g-3">
+    {{-- Left column --}}
+    <div class="col-lg-7">
+        {{-- Tamu --}}
+        <div class="card mb-3">
+            <div class="card-header fw-semibold"><i class="bi bi-person me-2"></i>Data Tamu</div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-sm-8">
+                        <label class="form-label">Nama Tamu <span class="text-danger">*</span></label>
+                        <input type="text" name="guest_name" value="{{ old('guest_name') }}"
+                               class="form-control" required placeholder="Nama lengkap tamu">
+                    </div>
+                    <div class="col-sm-4">
+                        <label class="form-label">Negara Tamu</label>
+                        <select name="guest_country" id="countrySelect" class="form-select">
+                            @include('partials._country_options', ['selected' => old('guest_country', 'Indonesia')])
+                        </select>
+                        <div class="mt-1">
+                            <span id="marketBadge" class="badge bg-secondary small">DOMESTIC</span>
+                        </div>
+                    </div>
                 </div>
-                <div class="col-6">
-                    <label class="form-label">Tanggal Kunjungan <span class="text-danger">*</span></label>
-                    <input type="date" name="visit_date" value="{{ old('visit_date') }}"
-                           class="form-control" required min="{{ now()->format('Y-m-d') }}">
+            </div>
+        </div>
+
+        {{-- Detail Reservasi --}}
+        <div class="card mb-3">
+            <div class="card-header fw-semibold"><i class="bi bi-calendar-event me-2"></i>Detail Reservasi</div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-sm-6">
+                        <label class="form-label">Tanggal Kunjungan <span class="text-danger">*</span></label>
+                        <input type="date" name="visit_date" value="{{ old('visit_date') }}"
+                               class="form-control" required min="{{ now()->format('Y-m-d') }}">
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="form-label">Metode Pembayaran <span class="text-danger">*</span></label>
+                        <select name="payment_method" class="form-select" id="paymentMethod" required>
+                            <option value="">— Pilih —</option>
+                            <option value="TRANSFER_GROSS" {{ old('payment_method') === 'TRANSFER_GROSS' ? 'selected' : '' }}>Transfer Gross</option>
+                            <option value="TRANSFER_NETT"  {{ old('payment_method') === 'TRANSFER_NETT'  ? 'selected' : '' }}>Transfer Nett</option>
+                            <option value="ON_THE_SPOT"    {{ old('payment_method') === 'ON_THE_SPOT'    ? 'selected' : '' }}>On The Spot</option>
+                        </select>
+                        <div class="mt-1">
+                            <span id="payModeBadge" class="badge bg-secondary small">—</span>
+                        </div>
+                    </div>
+                    <div class="col-sm-6" id="channelWrap" style="display:none">
+                        <label class="form-label">Channel Pembayaran</label>
+                        <select name="payment_channel" class="form-select">
+                            <option value="">— Pilih —</option>
+                            <option value="CASH">Cash</option>
+                            <option value="DEBIT">Debit</option>
+                            <option value="CREDIT">Credit</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{-- Aktivitas --}}
+        <div class="card mb-3">
+            <div class="card-header d-flex justify-content-between align-items-center fw-semibold">
+                <span><i class="bi bi-box-seam me-2"></i>Aktivitas</span>
+                <button type="button" class="btn btn-sm btn-outline-primary" id="addActivityBtn">
+                    <i class="bi bi-plus-lg"></i> Tambah Aktivitas
+                </button>
+            </div>
+            <div class="card-body">
+                <div id="activitiesContainer">
+                    <div id="emptyMessage" class="text-center text-muted py-3">
+                        Belum ada aktivitas. Klik "+ Tambah Aktivitas".
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{-- Baby & Catatan --}}
+        <div class="card mb-3">
+            <div class="card-body">
+                <div class="row g-3 align-items-end">
+                    <div class="col-sm-4">
+                        <label class="form-label">
+                            Jumlah Baby
+                            <span class="badge bg-success ms-1 fw-normal">FREE</span>
+                        </label>
+                        <input type="number" name="pax_babies" id="paxBabies" value="{{ old('pax_babies', 0) }}"
+                               min="0" class="form-control" placeholder="0">
+                        <div class="form-text">Baby tidak dikenakan biaya</div>
+                    </div>
+                    <div class="col-sm-8">
+                        <label class="form-label">Catatan</label>
+                        <textarea name="notes" class="form-control" rows="2" placeholder="Opsional">{{ old('notes') }}</textarea>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    {{-- Asal tamu --}}
-    <div class="card mb-3">
-        <div class="card-header fw-semibold"><i class="bi bi-people me-2"></i>Asal Tamu</div>
-        <div class="card-body">
-            <div class="mb-3">
-                <label class="form-label">Asal Tamu</label>
-                <select name="customer_origin" class="form-select">
-                    <option value="">— Pilih —</option>
-                    <option value="HOTEL" {{ old('customer_origin') === 'HOTEL' ? 'selected' : '' }}>Hotel</option>
-                    <option value="TRAVEL_AGENT" {{ old('customer_origin') === 'TRAVEL_AGENT' ? 'selected' : '' }}>Travel Agent</option>
-                    <option value="WALK_IN" {{ old('customer_origin') === 'WALK_IN' ? 'selected' : '' }}>Walk In (tanpa referral)</option>
-                    <option value="ONLINE_AD" {{ old('customer_origin') === 'ONLINE_AD' ? 'selected' : '' }}>Online Ad</option>
-                    <option value="OTHER" {{ old('customer_origin') === 'OTHER' ? 'selected' : '' }}>Lainnya</option>
-                </select>
-            </div>
-            <div>
-                <label class="form-label">Nama Hotel / Agent (jika ada)</label>
-                <input type="text" name="customer_origin_detail" value="{{ old('customer_origin_detail') }}"
-                       class="form-control" placeholder="Opsional">
-            </div>
-        </div>
-    </div>
+    {{-- Right column --}}
+    <div class="col-lg-5">
+        <input type="hidden" name="latitude" id="lat">
+        <input type="hidden" name="longitude" id="lng">
+        <input type="hidden" name="location_name" id="locationName">
 
-    {{-- Pembayaran --}}
-    <div class="card mb-3">
-        <div class="card-header fw-semibold"><i class="bi bi-credit-card me-2"></i>Pembayaran</div>
-        <div class="card-body">
-            <div class="mb-3">
-                <label class="form-label">Metode Pembayaran <span class="text-danger">*</span></label>
-                <select name="payment_method" class="form-select" required id="pm">
-                    <option value="">— Pilih —</option>
-                    <option value="TRANSFER_GROSS">Transfer Gross (terima komisi)</option>
-                    <option value="TRANSFER_NETT">Transfer Nett (sudah dipotong komisi)</option>
-                    <option value="ON_THE_SPOT">On The Spot (tamu bayar langsung)</option>
-                </select>
-            </div>
-            <div id="channelWrap" style="display:none">
-                <label class="form-label">Channel Pembayaran</label>
-                <select name="payment_channel" class="form-select">
-                    <option value="CASH">Cash</option>
-                    <option value="DEBIT">Debit</option>
-                    <option value="CREDIT">Credit Card</option>
-                </select>
+        {{-- Partner info --}}
+        <div class="card mb-3 border-primary">
+            <div class="card-body py-2 px-3">
+                <div class="small text-muted mb-1">Reservasi atas nama</div>
+                <div class="fw-semibold">{{ $partner->nama_partner }}</div>
+                <div class="small text-muted">{{ $partner->partner_type }} · {{ $partner->category ?? '—' }}</div>
             </div>
         </div>
-    </div>
 
-    {{-- Produk --}}
-    <div class="card mb-3">
-        <div class="card-header d-flex justify-content-between align-items-center fw-semibold">
-            <span><i class="bi bi-box-seam me-2"></i>Produk</span>
-            <button type="button" class="btn btn-sm btn-outline-primary" id="addItemBtn">
-                <i class="bi bi-plus-lg"></i> Tambah
-            </button>
-        </div>
-        <div class="card-body p-0">
-            <table class="table mb-0" id="itemsTable">
-                <thead>
+        {{-- Pax Summary --}}
+        <div class="card mb-3">
+            <div class="card-header fw-semibold"><i class="bi bi-people me-2"></i>Ringkasan Tamu & Biaya</div>
+            <div class="card-body">
+                <table class="table table-sm mb-0">
                     <tr>
-                        <th>Produk</th>
-                        <th style="width:70px">Qty</th>
-                        <th class="text-end" style="width:110px">Subtotal</th>
-                        <th style="width:36px"></th>
+                        <td class="text-muted">Adult</td>
+                        <td class="text-end"><span id="summAdults">0</span> pax</td>
                     </tr>
-                </thead>
-                <tbody id="itemsBody">
-                    <tr id="emptyRow">
-                        <td colspan="4" class="text-center text-muted py-3">
-                            Belum ada produk. Klik "+ Tambah".
-                        </td>
+                    <tr>
+                        <td class="text-muted">Child</td>
+                        <td class="text-end"><span id="summKids">0</span> pax</td>
                     </tr>
-                </tbody>
-                <tfoot>
-                    <tr class="table-light fw-semibold">
-                        <td colspan="2" class="text-end">Total</td>
-                        <td class="text-end" id="grandTotal">Rp 0</td>
-                        <td></td>
+                    <tr>
+                        <td class="text-muted">Baby <span class="badge bg-success fw-normal">FREE</span></td>
+                        <td class="text-end"><span id="summBabies">0</span> pax</td>
                     </tr>
-                </tfoot>
-            </table>
+                    <tr class="table-light">
+                        <td class="fw-semibold">Gross Total</td>
+                        <td class="text-end fw-semibold" id="summGross">Rp 0</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Komisi</td>
+                        <td class="text-end text-warning fw-semibold" id="summComm">Rp 0</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Nett Total</td>
+                        <td class="text-end" id="summNett">Rp 0</td>
+                    </tr>
+                </table>
+            </div>
         </div>
-    </div>
 
-    {{-- GPS --}}
-    <div class="card mb-3">
-        <div class="card-header fw-semibold"><i class="bi bi-geo-alt me-2"></i>Lokasi</div>
-        <div class="card-body">
-            <p class="small text-muted mb-2">Izinkan akses lokasi agar reservasi dapat diproses dengan lebih cepat.</p>
-            <button type="button" class="btn btn-outline-secondary btn-sm mb-2" id="captureGps">
-                <i class="bi bi-crosshair me-1"></i> Izinkan Akses Lokasi
-            </button>
-            <div id="gpsStatus" class="small"></div>
-            <input type="hidden" name="latitude" id="lat">
-            <input type="hidden" name="longitude" id="lng">
+        {{-- Lokasi --}}
+        <div class="card mb-3" id="locationCard">
+            <div class="card-body py-2 px-3">
+                <div class="d-flex align-items-start gap-2">
+                    <i class="bi bi-geo-alt-fill text-secondary mt-1" style="font-size:.95rem"></i>
+                    <div id="locationDisplay" class="small text-muted lh-sm flex-grow-1">
+                        <span class="fst-italic">Mendeteksi lokasi...</span>
+                    </div>
+                </div>
+                <div id="gpsErrorAlert" class="alert alert-warning py-1 px-2 mt-2 mb-0 small d-none">
+                    <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                    <span id="gpsErrorMsg">Izinkan akses lokasi untuk melanjutkan.</span>
+                    <button type="button" class="btn btn-sm btn-warning py-0 ms-2" id="retryGps">
+                        <i class="bi bi-arrow-clockwise me-1"></i>Coba Lagi
+                    </button>
+                </div>
+                <div id="dangerZoneWarning" class="badge bg-danger mt-2 d-none">
+                    <i class="bi bi-exclamation-triangle-fill me-1"></i> Danger Zone!
+                </div>
+            </div>
         </div>
-    </div>
-
-    {{-- Catatan --}}
-    <div class="card mb-4">
-        <div class="card-body">
-            <label class="form-label">Catatan Tambahan</label>
-            <textarea name="notes" class="form-control" rows="2" placeholder="Opsional">{{ old('notes') }}</textarea>
-        </div>
-    </div>
-
-    <button type="submit" class="btn btn-primary w-100 mb-4" id="submitBtn">
-        <i class="bi bi-check-lg me-1"></i> Buat Reservasi
-    </button>
-    </form>
-
-    <div class="text-center mb-4">
-        <a href="{{ route('partner.reserve.history', $token) }}" class="text-decoration-none small text-muted">
-            <i class="bi bi-clock-history me-1"></i> Riwayat Reservasi Saya
-        </a>
     </div>
 </div>
 
-{{-- Item template --}}
-<template id="itemRowTpl">
-    <tr class="item-row">
-        <td>
-            <select name="items[__IDX__][product_id]" class="form-select form-select-sm product-select" required>
-                <option value="">— Pilih Produk —</option>
-                @foreach($products as $p)
-                    <option value="{{ $p->id }}"
-                            data-publish="{{ $p->publish_rate }}"
-                            data-nett="{{ $p->nett_price }}"
-                            data-komisi="{{ $p->komisi }}">
-                        {{ $p->product_name }} — Rp {{ number_format($p->publish_rate, 0, ',', '.') }}
-                    </option>
-                @endforeach
+<div class="d-flex gap-2 justify-content-end align-items-center mb-4">
+    <span id="noActivityHint" class="text-muted small d-none">
+        <i class="bi bi-info-circle me-1"></i> Tambahkan minimal 1 aktivitas
+    </span>
+    <span id="gpsHint" class="text-warning small d-none">
+        <i class="bi bi-geo-alt me-1"></i> Izinkan akses lokasi untuk melanjutkan
+    </span>
+    <button type="submit" class="btn btn-primary" id="submitBtn" disabled>
+        <i class="bi bi-check-lg me-1"></i> Simpan Reservasi
+    </button>
+</div>
+
+</form>
+</div>
+
+{{-- Activity row template --}}
+<template id="activityRowTpl">
+<div class="activity-row border rounded p-3 mb-2" data-idx="__IDX__">
+    <div class="d-flex align-items-center gap-2 mb-2">
+        <div class="flex-grow-1">
+            <label class="form-label mb-1 small fw-semibold">Aktivitas</label>
+            <select name="items[__IDX__][parents_name]" class="form-select form-select-sm activity-select">
+                <option value="">— Pilih Aktivitas —</option>
             </select>
-            <input type="hidden" name="items[__IDX__][price_per_pax]" class="price-hidden" value="0">
-        </td>
-        <td>
-            <input type="number" name="items[__IDX__][qty]" value="1" min="1"
-                   class="form-control form-control-sm qty-input" required>
-        </td>
-        <td class="text-end fw-semibold subtotal">Rp 0</td>
-        <td>
-            <button type="button" class="btn btn-sm btn-outline-danger remove-row">
+        </div>
+        <div class="align-self-end">
+            <button type="button" class="btn btn-sm btn-outline-danger remove-activity">
                 <i class="bi bi-trash"></i>
             </button>
-        </td>
-    </tr>
+        </div>
+    </div>
+
+    <input type="hidden" name="items[__IDX__][row_type]" class="row-type-input">
+
+    {{-- ADULT_CHILD inputs --}}
+    <div class="adult-child-inputs d-none">
+        <div class="row g-2">
+            <div class="col-sm-4">
+                <label class="form-label mb-1 small">Adult <span class="adult-price-display text-muted"></span></label>
+                <input type="number" name="items[__IDX__][adult_qty]" class="form-control form-control-sm adult-qty" value="1" min="0">
+                <input type="hidden" name="items[__IDX__][adult_product_id]" class="adult-product-id">
+                <input type="hidden" name="items[__IDX__][adult_price]" class="adult-price">
+                <input class="adult-nett" type="hidden">
+                <input class="adult-komisi" type="hidden">
+            </div>
+            <div class="col-sm-4 child-section">
+                <label class="form-label mb-1 small">Child <span class="child-price-display text-muted"></span></label>
+                <input type="number" name="items[__IDX__][child_qty]" class="form-control form-control-sm child-qty" value="0" min="0">
+                <input type="hidden" name="items[__IDX__][child_product_id]" class="child-product-id">
+                <input type="hidden" name="items[__IDX__][child_price]" class="child-price">
+                <input class="child-nett" type="hidden">
+                <input class="child-komisi" type="hidden">
+            </div>
+            <div class="col-sm-4">
+                <label class="form-label mb-1 small">Subtotal</label>
+                <div class="fw-semibold row-subtotal pt-1">Rp 0</div>
+            </div>
+        </div>
+    </div>
+
+    {{-- BUNDLE inputs --}}
+    <div class="bundle-inputs d-none">
+        <div class="row g-2">
+            <div class="col-sm-5">
+                <label class="form-label mb-1 small">Varian Bundle</label>
+                <select name="items[__IDX__][bundle_product_id]" class="form-select form-select-sm bundle-select">
+                    <option value="">— Pilih Varian —</option>
+                </select>
+                <div class="bundle-composition small text-muted mt-1"></div>
+                <input type="hidden" name="items[__IDX__][bundle_price]" class="bundle-price">
+                <input class="bundle-nett" type="hidden">
+                <input class="bundle-komisi" type="hidden">
+            </div>
+            <div class="col-sm-3">
+                <label class="form-label mb-1 small">Qty</label>
+                <input type="number" name="items[__IDX__][bundle_qty]" class="form-control form-control-sm bundle-qty" value="1" min="1">
+            </div>
+            <div class="col-sm-4">
+                <label class="form-label mb-1 small">Subtotal</label>
+                <div class="fw-semibold row-subtotal pt-1">Rp 0</div>
+            </div>
+        </div>
+    </div>
+
+    {{-- TICKET / DOMESTIC inputs --}}
+    <div class="ticket-inputs d-none">
+        <div class="row g-2">
+            <div class="col-sm-5">
+                <label class="form-label mb-1 small">Produk</label>
+                <div class="ticket-price-display small text-muted fst-italic">—</div>
+                <input type="hidden" name="items[__IDX__][ticket_product_id]" class="ticket-product-id">
+                <input type="hidden" name="items[__IDX__][ticket_price]" class="ticket-price">
+                <input class="ticket-nett" type="hidden">
+                <input class="ticket-komisi" type="hidden">
+            </div>
+            <div class="col-sm-3">
+                <label class="form-label mb-1 small">Jumlah Tiket</label>
+                <input type="number" name="items[__IDX__][ticket_qty]" class="form-control form-control-sm ticket-qty" value="1" min="1">
+            </div>
+            <div class="col-sm-4">
+                <label class="form-label mb-1 small">Subtotal</label>
+                <div class="fw-semibold row-subtotal pt-1">Rp 0</div>
+            </div>
+        </div>
+    </div>
+</div>
 </template>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
 <script>
-new TomSelect('#countrySelect', {
-    create: false,
-    allowEmptyOption: true,
-    placeholder: 'Cari negara...',
-});
-
 // Device fingerprint
 const dfp = [navigator.userAgent, screen.width, screen.height, Intl.DateTimeFormat().resolvedOptions().timeZone].join('|');
 document.getElementById('dfp').value = btoa(dfp).substring(0, 64);
 
-// Payment method -> channel
-document.getElementById('pm').addEventListener('change', e => {
-    document.getElementById('channelWrap').style.display = e.target.value === 'ON_THE_SPOT' ? '' : 'none';
-});
+// ── Product data from server ────────────────────────────────────────────────
+const grouped = @json($groupedProducts);
 
-// Items
-let idx = 0;
-const tpl = document.getElementById('itemRowTpl');
-const tbody = document.getElementById('itemsBody');
-const emptyRow = document.getElementById('emptyRow');
+let rowIdx = 0;
 
-document.getElementById('addItemBtn').addEventListener('click', () => {
-    emptyRow.style.display = 'none';
-    const html = tpl.innerHTML.replaceAll('__IDX__', idx++);
-    const wrap = document.createElement('tbody');
+// ── Helpers ─────────────────────────────────────────────────────────────────
+function getPayMode() {
+    const pm = document.getElementById('paymentMethod').value;
+    if (pm === 'TRANSFER_NETT') return 'NETT';
+    if (pm === 'TRANSFER_GROSS' || pm === 'ON_THE_SPOT') return 'GROSS';
+    return '';
+}
+
+function getMarketType() {
+    const country = document.querySelector('#countrySelect')?.value
+                  || document.querySelector('[name="guest_country"]')?.value
+                  || 'Indonesia';
+    return (country === 'Indonesia') ? 'DOMESTIC' : 'FOREIGN';
+}
+
+function fmtNum(n) {
+    return Math.round(n).toLocaleString('id-ID');
+}
+
+// ── Activity options based on current payMode + market ─────────────────────
+function getActivityOptions() {
+    const payMode = getPayMode();
+    const market  = getMarketType();
+    const opts = [];
+
+    for (const [parent, payModes] of Object.entries(grouped)) {
+        let show = false;
+        if (!payMode) {
+            show = Object.values(payModes).some(markets =>
+                Object.keys(markets).some(m => m === market || m === 'DOMESTIC' || m === 'FOREIGN')
+            );
+        } else {
+            show = (payModes[payMode]?.[market]?.length ?? 0) > 0;
+        }
+        if (show) opts.push(parent);
+    }
+    return opts.sort();
+}
+
+function detectRowType(parentsName, payMode, marketType) {
+    if (marketType === 'DOMESTIC') return 'DOMESTIC';
+
+    const products = grouped[parentsName]?.[payMode]?.[marketType] || [];
+    if (!products.length) return 'TICKET';
+
+    const hasBundle = products.some(p => p.pax_type === 'BUNDLE');
+    if (hasBundle) return 'BUNDLE';
+
+    const hasAdult = products.some(p => p.pax_type === 'ADULT');
+    const hasChild = products.some(p => p.pax_type === 'CHILD');
+    if (hasAdult || hasChild) return 'ADULT_CHILD';
+
+    return 'TICKET';
+}
+
+// ── Row management ──────────────────────────────────────────────────────────
+function addActivityRow() {
+    const idx = rowIdx++;
+    const tpl = document.getElementById('activityRowTpl').innerHTML;
+    const html = tpl.replaceAll('__IDX__', idx);
+    const container = document.getElementById('activitiesContainer');
+
+    document.getElementById('emptyMessage').style.display = 'none';
+
+    const wrap = document.createElement('div');
     wrap.innerHTML = html;
     const row = wrap.firstElementChild;
-    tbody.appendChild(row);
-    bindRow(row);
-    recalc();
+    container.appendChild(row);
+
+    initRow(row);
+    refreshActivityOptions(row);
+}
+
+function initRow(row) {
+    const actSelect    = row.querySelector('.activity-select');
+    const bundleSelect = row.querySelector('.bundle-select');
+
+    actSelect.addEventListener('change', () => onActivityChange(row));
+    bundleSelect.addEventListener('change', () => onBundleVariantChange(row));
+
+    row.querySelectorAll('.adult-qty, .child-qty, .bundle-qty, .ticket-qty').forEach(inp => {
+        inp.addEventListener('input', () => { recalcRow(row); recalcTotal(); });
+    });
+
+    row.querySelector('.remove-activity').addEventListener('click', () => {
+        row.remove();
+        recalcTotal();
+        if (!document.querySelector('.activity-row')) {
+            document.getElementById('emptyMessage').style.display = '';
+        }
+    });
+}
+
+function refreshActivityOptions(row) {
+    const actSelect  = row.querySelector('.activity-select');
+    const currentVal = actSelect.value;
+    const opts       = getActivityOptions();
+
+    actSelect.innerHTML = '<option value="">— Pilih Aktivitas —</option>';
+    opts.forEach(parent => {
+        const opt = document.createElement('option');
+        opt.value = parent;
+        opt.textContent = parent;
+        if (parent === currentVal) opt.selected = true;
+        actSelect.appendChild(opt);
+    });
+
+    if (currentVal && !opts.includes(currentVal)) {
+        actSelect.value = '';
+        clearRowInputs(row);
+    } else if (currentVal) {
+        onActivityChange(row);
+    }
+}
+
+function refreshAllRows() {
+    const market  = getMarketType();
+    const payMode = getPayMode();
+    document.getElementById('marketBadge').textContent  = market;
+    document.getElementById('marketBadge').className    = 'badge small ' + (market === 'FOREIGN' ? 'bg-info text-dark' : 'bg-secondary');
+    document.getElementById('payModeBadge').textContent = payMode || '—';
+
+    document.querySelectorAll('.activity-row').forEach(row => refreshActivityOptions(row));
+    recalcTotal();
+}
+
+// ── Activity change handler ─────────────────────────────────────────────────
+function onActivityChange(row) {
+    const parentsName = row.querySelector('.activity-select').value;
+    if (!parentsName) { clearRowInputs(row); return; }
+
+    const payMode    = getPayMode();
+    const marketType = getMarketType();
+    const rowType    = detectRowType(parentsName, payMode, marketType);
+
+    row.querySelector('.row-type-input').value = rowType;
+
+    row.querySelector('.adult-child-inputs').classList.add('d-none');
+    row.querySelector('.bundle-inputs').classList.add('d-none');
+    row.querySelector('.ticket-inputs').classList.add('d-none');
+
+    const products = grouped[parentsName]?.[payMode]?.[marketType]
+                  || grouped[parentsName]?.[payMode]?.['FOREIGN']
+                  || grouped[parentsName]?.[payMode]?.['DOMESTIC']
+                  || [];
+
+    const isNett = (payMode === 'NETT');
+
+    if (rowType === 'ADULT_CHILD') {
+        row.querySelector('.adult-child-inputs').classList.remove('d-none');
+
+        const adultProd = products.find(p => p.pax_type === 'ADULT');
+        const childProd = products.find(p => p.pax_type === 'CHILD');
+
+        if (adultProd) {
+            const aPrice = isNett ? adultProd.nett_price : adultProd.publish_rate;
+            row.querySelector('.adult-product-id').value           = adultProd.id;
+            row.querySelector('.adult-price').value                = aPrice;
+            row.querySelector('.adult-nett').value                 = adultProd.nett_price;
+            row.querySelector('.adult-komisi').value               = isNett ? 0 : adultProd.komisi;
+            row.querySelector('.adult-price-display').textContent  = '@ Rp ' + fmtNum(aPrice);
+        }
+        if (childProd) {
+            const cPrice = isNett ? childProd.nett_price : childProd.publish_rate;
+            row.querySelector('.child-product-id').value           = childProd.id;
+            row.querySelector('.child-price').value                = cPrice;
+            row.querySelector('.child-nett').value                 = childProd.nett_price;
+            row.querySelector('.child-komisi').value               = isNett ? 0 : childProd.komisi;
+            row.querySelector('.child-price-display').textContent  = '@ Rp ' + fmtNum(cPrice);
+        }
+        row.querySelector('.child-section').classList.toggle('d-none', !childProd);
+
+    } else if (rowType === 'BUNDLE') {
+        row.querySelector('.bundle-inputs').classList.remove('d-none');
+
+        const bundleSelect = row.querySelector('.bundle-select');
+        const bundles = products.filter(p => p.pax_type === 'BUNDLE');
+
+        bundleSelect.innerHTML = '<option value="">— Pilih Varian —</option>';
+        row.querySelector('.bundle-price').value  = 0;
+        row.querySelector('.bundle-nett').value   = 0;
+        row.querySelector('.bundle-komisi').value = 0;
+        row.querySelector('.bundle-composition').textContent = '';
+        bundles.forEach(bp => {
+            const variantLabel = bp.product_name.includes(' - ')
+                ? bp.product_name.split(' - ').slice(1).join(' - ')
+                : bp.product_name;
+            const opt = document.createElement('option');
+            opt.value            = bp.id;
+            opt.textContent      = variantLabel;
+            opt.dataset.price    = isNett ? bp.nett_price : bp.publish_rate;
+            opt.dataset.nett     = bp.nett_price;
+            opt.dataset.komisi   = isNett ? 0 : bp.komisi;
+            opt.dataset.adults   = bp.bundle_adult_count;
+            opt.dataset.kids     = bp.bundle_child_count;
+            bundleSelect.appendChild(opt);
+        });
+
+        if (bundles.length === 1) {
+            bundleSelect.value = bundles[0].id;
+            onBundleVariantChange(row);
+        }
+
+    } else {
+        row.querySelector('.ticket-inputs').classList.remove('d-none');
+
+        const ticketProd = products.find(p => p.pax_type === 'TICKET') || products[0];
+        if (ticketProd) {
+            const tPrice = isNett ? ticketProd.nett_price : ticketProd.publish_rate;
+            row.querySelector('.ticket-product-id').value      = ticketProd.id;
+            row.querySelector('.ticket-price').value           = tPrice;
+            row.querySelector('.ticket-nett').value            = ticketProd.nett_price;
+            row.querySelector('.ticket-komisi').value          = isNett ? 0 : ticketProd.komisi;
+            row.querySelector('.ticket-price-display').textContent =
+                ticketProd.product_name + ' — Rp ' + fmtNum(tPrice) + '/pax';
+        }
+    }
+
+    recalcRow(row);
+    recalcTotal();
+}
+
+function onBundleVariantChange(row) {
+    const bundleSelect = row.querySelector('.bundle-select');
+    const opt = bundleSelect.selectedOptions[0];
+
+    if (!opt?.value) {
+        row.querySelector('.bundle-price').value = 0;
+        row.querySelector('.bundle-composition').textContent = '';
+        recalcRow(row); recalcTotal();
+        return;
+    }
+
+    row.querySelector('.bundle-price').value   = opt.dataset.price;
+    row.querySelector('.bundle-nett').value    = opt.dataset.nett;
+    row.querySelector('.bundle-komisi').value  = opt.dataset.komisi;
+
+    const adults = parseInt(opt.dataset.adults) || 0;
+    const kids   = parseInt(opt.dataset.kids) || 0;
+    const parts  = [];
+    if (adults) parts.push(adults + ' Adult');
+    if (kids)   parts.push(kids + ' Child');
+    row.querySelector('.bundle-composition').textContent =
+        parts.length ? '(' + parts.join(' + ') + ')' : '';
+
+    recalcRow(row);
+    recalcTotal();
+}
+
+function clearRowInputs(row) {
+    row.querySelector('.row-type-input').value = '';
+    row.querySelector('.adult-child-inputs').classList.add('d-none');
+    row.querySelector('.bundle-inputs').classList.add('d-none');
+    row.querySelector('.ticket-inputs').classList.add('d-none');
+    row.querySelector('.row-subtotal').textContent = 'Rp 0';
+    recalcTotal();
+}
+
+// ── Recalculation ───────────────────────────────────────────────────────────
+function recalcRow(row) {
+    const rowType = row.querySelector('.row-type-input').value;
+    let subtotal = 0;
+    let subtotalEl;
+
+    if (rowType === 'ADULT_CHILD') {
+        const aq = parseFloat(row.querySelector('.adult-qty').value) || 0;
+        const ap = parseFloat(row.querySelector('.adult-price').value) || 0;
+        const cq = parseFloat(row.querySelector('.child-qty').value) || 0;
+        const cp = parseFloat(row.querySelector('.child-price').value) || 0;
+        subtotal    = aq * ap + cq * cp;
+        subtotalEl  = row.querySelector('.adult-child-inputs .row-subtotal');
+    } else if (rowType === 'BUNDLE') {
+        const bq = parseFloat(row.querySelector('.bundle-qty').value) || 0;
+        const bp = parseFloat(row.querySelector('.bundle-price').value) || 0;
+        subtotal    = bq * bp;
+        subtotalEl  = row.querySelector('.bundle-inputs .row-subtotal');
+    } else {
+        const tq = parseFloat(row.querySelector('.ticket-qty').value) || 0;
+        const tp = parseFloat(row.querySelector('.ticket-price').value) || 0;
+        subtotal    = tq * tp;
+        subtotalEl  = row.querySelector('.ticket-inputs .row-subtotal');
+    }
+
+    if (subtotalEl) subtotalEl.textContent = 'Rp ' + fmtNum(subtotal);
+    return subtotal;
+}
+
+function recalcTotal() {
+    let gross = 0, nett = 0, comm = 0;
+    let totalAdults = 0, totalKids = 0;
+
+    document.querySelectorAll('.activity-row').forEach(row => {
+        const rowType = row.querySelector('.row-type-input').value;
+
+        if (rowType === 'ADULT_CHILD') {
+            const aq = parseInt(row.querySelector('.adult-qty').value) || 0;
+            const ap = parseFloat(row.querySelector('.adult-price').value) || 0;
+            const an = parseFloat(row.querySelector('.adult-nett').value) || 0;
+            const ak = parseFloat(row.querySelector('.adult-komisi').value) || 0;
+            const cq = parseInt(row.querySelector('.child-qty').value) || 0;
+            const cp = parseFloat(row.querySelector('.child-price').value) || 0;
+            const cn = parseFloat(row.querySelector('.child-nett').value) || 0;
+            const ck = parseFloat(row.querySelector('.child-komisi').value) || 0;
+            gross += aq * ap + cq * cp;
+            nett  += aq * an + cq * cn;
+            comm  += aq * ak + cq * ck;
+            totalAdults += aq;
+            totalKids   += cq;
+
+        } else if (rowType === 'BUNDLE') {
+            const bq  = parseInt(row.querySelector('.bundle-qty').value) || 0;
+            const bp  = parseFloat(row.querySelector('.bundle-price').value) || 0;
+            const bn  = parseFloat(row.querySelector('.bundle-nett').value) || 0;
+            const bk  = parseFloat(row.querySelector('.bundle-komisi').value) || 0;
+            const opt = row.querySelector('.bundle-select').selectedOptions[0];
+            gross += bq * bp;
+            nett  += bq * bn;
+            comm  += bq * bk;
+            totalAdults += bq * (parseInt(opt?.dataset?.adults) || 0);
+            totalKids   += bq * (parseInt(opt?.dataset?.kids) || 0);
+
+        } else if (rowType === 'TICKET' || rowType === 'DOMESTIC') {
+            const tq = parseInt(row.querySelector('.ticket-qty').value) || 0;
+            const tp = parseFloat(row.querySelector('.ticket-price').value) || 0;
+            const tn = parseFloat(row.querySelector('.ticket-nett').value) || 0;
+            const tk = parseFloat(row.querySelector('.ticket-komisi').value) || 0;
+            gross += tq * tp;
+            nett  += tq * tn;
+            comm  += tq * tk;
+            totalAdults += tq;
+        }
+    });
+
+    const babies = parseInt(document.getElementById('paxBabies').value) || 0;
+    document.getElementById('summAdults').textContent = totalAdults;
+    document.getElementById('summKids').textContent   = totalKids;
+    document.getElementById('summBabies').textContent = babies;
+    document.getElementById('summGross').textContent  = 'Rp ' + fmtNum(gross);
+    document.getElementById('summNett').textContent   = 'Rp ' + fmtNum(nett);
+    document.getElementById('summComm').textContent   = 'Rp ' + fmtNum(comm);
+
+    const hasActivity = totalAdults > 0 || totalKids > 0;
+    document.getElementById('submitBtn').disabled           = !hasActivity || !gpsReady;
+    document.getElementById('noActivityHint').classList.toggle('d-none', hasActivity || !gpsReady);
+    document.getElementById('gpsHint').classList.toggle('d-none', gpsReady || !hasActivity);
+}
+
+// ── Event listeners ─────────────────────────────────────────────────────────
+document.getElementById('addActivityBtn').addEventListener('click', addActivityRow);
+
+document.getElementById('paymentMethod').addEventListener('change', e => {
+    document.getElementById('channelWrap').style.display =
+        e.target.value === 'ON_THE_SPOT' ? '' : 'none';
+    refreshAllRows();
 });
 
-function bindRow(row) {
-    row.querySelector('.product-select').addEventListener('change', e => {
-        const opt = e.target.selectedOptions[0];
-        row.querySelector('.price-hidden').value = opt.dataset.publish || 0;
-        recalc();
-    });
-    row.querySelector('.qty-input').addEventListener('input', recalc);
-    row.querySelector('.remove-row').addEventListener('click', () => {
-        row.remove();
-        if (!tbody.querySelector('.item-row')) emptyRow.style.display = '';
-        recalc();
-    });
-}
+document.getElementById('paxBabies').addEventListener('input', recalcTotal);
 
-function recalc() {
-    let total = 0;
-    tbody.querySelectorAll('.item-row').forEach(row => {
-        const qty   = parseFloat(row.querySelector('.qty-input').value) || 0;
-        const price = parseFloat(row.querySelector('.price-hidden').value) || 0;
-        const sub   = qty * price;
-        total += sub;
-        row.querySelector('.subtotal').textContent = 'Rp ' + Math.round(sub).toLocaleString('id-ID');
-    });
-    document.getElementById('grandTotal').textContent = 'Rp ' + Math.round(total).toLocaleString('id-ID');
-}
+// ── TomSelect ────────────────────────────────────────────────────────────────
+new TomSelect('#countrySelect', {
+    create: false,
+    allowEmptyOption: true,
+    onChange: refreshAllRows,
+});
 
-// GPS
+// ── GPS Capture ───────────────────────────────────────────────────────────────
 const dangerLat = {{ \App\Models\Setting::get('danger_zone_latitude', -8.7908) }};
 const dangerLng = {{ \App\Models\Setting::get('danger_zone_longitude', 115.1553) }};
 const dangerRad = {{ \App\Models\Setting::get('danger_zone_radius_meters', 500) }};
 
-document.getElementById('captureGps').addEventListener('click', () => {
-    const status = document.getElementById('gpsStatus');
-    status.textContent = 'Mendeteksi lokasi...';
+let gpsReady = false;
+
+function setGpsDetecting() {
+    gpsReady = false;
+    document.getElementById('locationDisplay').innerHTML =
+        '<span class="spinner-border spinner-border-sm me-1 text-warning"></span><span class="fst-italic text-muted"> Mendeteksi lokasi...</span>';
+    document.getElementById('gpsErrorAlert').classList.add('d-none');
+    document.getElementById('locationCard').className = 'card mb-3';
+    recalcTotal();
+}
+
+function setGpsSuccess(lat, lng, areaName) {
+    gpsReady = true;
+    document.getElementById('lat').value          = lat;
+    document.getElementById('lng').value          = lng;
+    document.getElementById('locationDisplay').innerHTML =
+        `<strong class="text-success">${areaName}</strong><br><span class="text-secondary">${lat.toFixed(6)}, ${lng.toFixed(6)}</span>`;
+    document.getElementById('gpsErrorAlert').classList.add('d-none');
+    document.getElementById('locationCard').className = 'card mb-3 border-success';
+    const dist = haversine(lat, lng, dangerLat, dangerLng);
+    document.getElementById('dangerZoneWarning').classList.toggle('d-none', dist > dangerRad);
+    recalcTotal();
+}
+
+function setGpsError(msg) {
+    gpsReady = false;
+    document.getElementById('lat').value = '';
+    document.getElementById('lng').value = '';
+    document.getElementById('locationDisplay').innerHTML = '';
+    document.getElementById('gpsErrorMsg').textContent = msg;
+    document.getElementById('gpsErrorAlert').classList.remove('d-none');
+    document.getElementById('locationCard').className = 'card mb-3 border-danger';
+    document.getElementById('dangerZoneWarning').classList.add('d-none');
+    recalcTotal();
+}
+
+function captureGPS() {
+    setGpsDetecting();
+    if (!navigator.geolocation) {
+        setGpsError('Browser tidak mendukung geolocation.');
+        return;
+    }
     navigator.geolocation.getCurrentPosition(pos => {
-        document.getElementById('lat').value = pos.coords.latitude;
-        document.getElementById('lng').value = pos.coords.longitude;
-        status.innerHTML = '<span class="text-success"><i class="bi bi-check-circle me-1"></i>Lokasi berhasil ditangkap.</span>';
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+        setGpsSuccess(lat, lng, `${lat.toFixed(6)}, ${lng.toFixed(6)}`);
+
+        fetch(`{{ route('geocode.public') }}?lat=${lat}&lng=${lng}`)
+            .then(r => r.json())
+            .then(data => {
+                const addr     = data.address || {};
+                const areaName = addr.village || addr.suburb || addr.town || addr.city || addr.county || 'Lokasi terdeteksi';
+                document.getElementById('locationName').value = areaName;
+                setGpsSuccess(lat, lng, areaName);
+            })
+            .catch(() => setGpsSuccess(lat, lng, `${lat.toFixed(6)}, ${lng.toFixed(6)}`));
     }, err => {
-        status.innerHTML = '<span class="text-warning"><i class="bi bi-exclamation-triangle me-1"></i>Tidak bisa mendapatkan lokasi: ' + err.message + '</span>';
-    }, { enableHighAccuracy: true, timeout: 10000 });
+        const msg = err.code === 1
+            ? 'Akses lokasi ditolak. Izinkan akses lokasi di browser, lalu klik Coba Lagi.'
+            : 'Gagal mendeteksi lokasi. Pastikan GPS aktif, lalu klik Coba Lagi.';
+        setGpsError(msg);
+    }, { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 });
+}
+
+function haversine(lat1, lon1, lat2, lon2) {
+    const R = 6371000;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLon/2)**2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+document.getElementById('retryGps').addEventListener('click', captureGPS);
+
+window.addEventListener('load', () => {
+    captureGPS();
+    refreshAllRows();
 });
 
-// Submit guard
-document.getElementById('partnerForm').addEventListener('submit', () => {
-    const btn = document.getElementById('submitBtn');
-    btn.disabled = true;
-    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Memproses...';
+// ── Submit guard ─────────────────────────────────────────────────────────────
+document.getElementById('resForm').addEventListener('submit', e => {
+    document.querySelectorAll('.activity-row').forEach(row => {
+        if (!row.querySelector('.row-type-input').value) row.remove();
+    });
+
+    const rows = document.querySelectorAll('.activity-row');
+    if (!rows.length) {
+        e.preventDefault();
+        alert('Tambahkan minimal 1 aktivitas sebelum menyimpan.');
+        return;
+    }
+
+    let hasQty = false;
+    rows.forEach(row => {
+        const rt = row.querySelector('.row-type-input').value;
+        if (rt === 'ADULT_CHILD') {
+            hasQty = hasQty
+                || (parseInt(row.querySelector('.adult-qty').value) || 0) > 0
+                || (parseInt(row.querySelector('.child-qty').value) || 0) > 0;
+        } else if (rt === 'BUNDLE') {
+            hasQty = hasQty || (parseInt(row.querySelector('.bundle-qty').value) || 0) > 0;
+        } else {
+            hasQty = hasQty || (parseInt(row.querySelector('.ticket-qty').value) || 0) > 0;
+        }
+    });
+
+    if (!hasQty) {
+        e.preventDefault();
+        alert('Masukkan jumlah tamu minimal 1 untuk salah satu aktivitas.');
+        return;
+    }
+
+    document.getElementById('submitBtn').disabled = true;
+    document.getElementById('submitBtn').innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Menyimpan...';
 });
 </script>
 </body>

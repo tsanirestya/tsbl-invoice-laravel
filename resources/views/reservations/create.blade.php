@@ -64,12 +64,11 @@
                                class="form-control" required>
                     </div>
                     <div class="col-sm-4">
-                        <label class="form-label">Tipe Reservasi <span class="text-danger">*</span></label>
-                        <select name="reservation_type" class="form-select" required>
-                            <option value="INTERNAL" {{ old('reservation_type','INTERNAL') === 'INTERNAL' ? 'selected' : '' }}>Internal (Tim TSBL)</option>
-                            <option value="PARTNER" {{ old('reservation_type') === 'PARTNER' ? 'selected' : '' }}>Partner</option>
-                            <option value="SELF_SERVICE" {{ old('reservation_type') === 'SELF_SERVICE' ? 'selected' : '' }}>Self-Service</option>
-                        </select>
+                        <label class="form-label">Tipe Reservasi</label>
+                        <input type="hidden" name="reservation_type" value="INTERNAL">
+                        <div class="form-control bg-light text-muted">
+                            <i class="bi bi-people me-1"></i> Internal (Tim TSBL)
+                        </div>
                     </div>
                     <div class="col-sm-4">
                         <label class="form-label">Partner</label>
@@ -188,13 +187,20 @@
         </div>
 
         {{-- Lokasi --}}
-        <div class="card mb-3 border-0 bg-light">
+        <div class="card mb-3" id="locationCard">
             <div class="card-body py-2 px-3">
                 <div class="d-flex align-items-start gap-2">
-                    <i class="bi bi-geo-alt-fill text-secondary mt-1" style="font-size:.95rem"></i>
-                    <div id="locationDisplay" class="small text-muted lh-sm">
+                    <i class="bi bi-geo-alt-fill text-secondary mt-1" id="locationIcon" style="font-size:.95rem"></i>
+                    <div id="locationDisplay" class="small text-muted lh-sm flex-grow-1">
                         <span class="fst-italic">Mendeteksi lokasi...</span>
                     </div>
+                </div>
+                <div id="gpsErrorAlert" class="alert alert-warning py-1 px-2 mt-2 mb-0 small d-none">
+                    <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                    <span id="gpsErrorMsg">Izinkan akses lokasi untuk melanjutkan.</span>
+                    <button type="button" class="btn btn-sm btn-warning py-0 ms-2" id="retryGps">
+                        <i class="bi bi-arrow-clockwise me-1"></i>Coba Lagi
+                    </button>
                 </div>
                 <div id="dangerZoneWarning" class="badge bg-danger mt-2 d-none">
                     <i class="bi bi-exclamation-triangle-fill me-1"></i> Danger Zone!
@@ -204,9 +210,15 @@
     </div>
 </div>
 
-<div class="d-flex gap-2 justify-content-end mb-4">
+<div class="d-flex gap-2 justify-content-end align-items-center mb-4">
+    <span id="noActivityHint" class="text-muted small d-none">
+        <i class="bi bi-info-circle me-1"></i> Tambahkan minimal 1 aktivitas
+    </span>
+    <span id="gpsHint" class="text-warning small d-none">
+        <i class="bi bi-geo-alt me-1"></i> Izinkan akses lokasi untuk melanjutkan
+    </span>
     <a href="{{ route('reservations.index') }}" class="btn btn-outline-secondary">Batal</a>
-    <button type="submit" class="btn btn-primary" id="submitBtn">
+    <button type="submit" class="btn btn-primary" id="submitBtn" disabled>
         <i class="bi bi-check-lg me-1"></i> Simpan Reservasi
     </button>
 </div>
@@ -466,6 +478,9 @@ function onActivityChange(row) {
                   || grouped[parentsName]?.[payMode]?.['DOMESTIC']
                   || [];
 
+    // For NETT payment: partner pays nett_price, no commission payback
+    const isNett = (payMode === 'NETT');
+
     if (rowType === 'ADULT_CHILD') {
         row.querySelector('.adult-child-inputs').classList.remove('d-none');
 
@@ -473,18 +488,20 @@ function onActivityChange(row) {
         const childProd = products.find(p => p.pax_type === 'CHILD');
 
         if (adultProd) {
+            const aPrice = isNett ? adultProd.nett_price : adultProd.publish_rate;
             row.querySelector('.adult-product-id').value      = adultProd.id;
-            row.querySelector('.adult-price').value           = adultProd.publish_rate;
+            row.querySelector('.adult-price').value           = aPrice;
             row.querySelector('.adult-nett').value            = adultProd.nett_price;
-            row.querySelector('.adult-komisi').value          = adultProd.komisi;
-            row.querySelector('.adult-price-display').textContent = '@ Rp ' + fmtNum(adultProd.publish_rate);
+            row.querySelector('.adult-komisi').value          = isNett ? 0 : adultProd.komisi;
+            row.querySelector('.adult-price-display').textContent = '@ Rp ' + fmtNum(aPrice);
         }
         if (childProd) {
+            const cPrice = isNett ? childProd.nett_price : childProd.publish_rate;
             row.querySelector('.child-product-id').value      = childProd.id;
-            row.querySelector('.child-price').value           = childProd.publish_rate;
+            row.querySelector('.child-price').value           = cPrice;
             row.querySelector('.child-nett').value            = childProd.nett_price;
-            row.querySelector('.child-komisi').value          = childProd.komisi;
-            row.querySelector('.child-price-display').textContent = '@ Rp ' + fmtNum(childProd.publish_rate);
+            row.querySelector('.child-komisi').value          = isNett ? 0 : childProd.komisi;
+            row.querySelector('.child-price-display').textContent = '@ Rp ' + fmtNum(cPrice);
         }
         row.querySelector('.child-section').classList.toggle('d-none', !childProd);
 
@@ -495,6 +512,10 @@ function onActivityChange(row) {
         const bundles = products.filter(p => p.pax_type === 'BUNDLE');
 
         bundleSelect.innerHTML = '<option value="">— Pilih Varian —</option>';
+        row.querySelector('.bundle-price').value  = 0;
+        row.querySelector('.bundle-nett').value   = 0;
+        row.querySelector('.bundle-komisi').value = 0;
+        row.querySelector('.bundle-composition').textContent = '';
         bundles.forEach(bp => {
             const variantLabel = bp.product_name.includes(' - ')
                 ? bp.product_name.split(' - ').slice(1).join(' - ')
@@ -502,9 +523,9 @@ function onActivityChange(row) {
             const opt = document.createElement('option');
             opt.value            = bp.id;
             opt.textContent      = variantLabel;
-            opt.dataset.price    = bp.publish_rate;
+            opt.dataset.price    = isNett ? bp.nett_price : bp.publish_rate;
             opt.dataset.nett     = bp.nett_price;
-            opt.dataset.komisi   = bp.komisi;
+            opt.dataset.komisi   = isNett ? 0 : bp.komisi;
             opt.dataset.adults   = bp.bundle_adult_count;
             opt.dataset.kids     = bp.bundle_child_count;
             bundleSelect.appendChild(opt);
@@ -521,12 +542,13 @@ function onActivityChange(row) {
 
         const ticketProd = products.find(p => p.pax_type === 'TICKET') || products[0];
         if (ticketProd) {
+            const tPrice = isNett ? ticketProd.nett_price : ticketProd.publish_rate;
             row.querySelector('.ticket-product-id').value      = ticketProd.id;
-            row.querySelector('.ticket-price').value           = ticketProd.publish_rate;
+            row.querySelector('.ticket-price').value           = tPrice;
             row.querySelector('.ticket-nett').value            = ticketProd.nett_price;
-            row.querySelector('.ticket-komisi').value          = ticketProd.komisi;
+            row.querySelector('.ticket-komisi').value          = isNett ? 0 : ticketProd.komisi;
             row.querySelector('.ticket-price-display').textContent =
-                ticketProd.product_name + ' — Rp ' + fmtNum(ticketProd.publish_rate) + '/pax';
+                ticketProd.product_name + ' — Rp ' + fmtNum(tPrice) + '/pax';
         }
     }
 
@@ -574,24 +596,28 @@ function clearRowInputs(row) {
 function recalcRow(row) {
     const rowType = row.querySelector('.row-type-input').value;
     let subtotal = 0;
+    let subtotalEl;
 
     if (rowType === 'ADULT_CHILD') {
         const aq = parseFloat(row.querySelector('.adult-qty').value) || 0;
         const ap = parseFloat(row.querySelector('.adult-price').value) || 0;
         const cq = parseFloat(row.querySelector('.child-qty').value) || 0;
         const cp = parseFloat(row.querySelector('.child-price').value) || 0;
-        subtotal = aq * ap + cq * cp;
+        subtotal    = aq * ap + cq * cp;
+        subtotalEl  = row.querySelector('.adult-child-inputs .row-subtotal');
     } else if (rowType === 'BUNDLE') {
         const bq = parseFloat(row.querySelector('.bundle-qty').value) || 0;
         const bp = parseFloat(row.querySelector('.bundle-price').value) || 0;
-        subtotal = bq * bp;
+        subtotal    = bq * bp;
+        subtotalEl  = row.querySelector('.bundle-inputs .row-subtotal');
     } else {
         const tq = parseFloat(row.querySelector('.ticket-qty').value) || 0;
         const tp = parseFloat(row.querySelector('.ticket-price').value) || 0;
-        subtotal = tq * tp;
+        subtotal    = tq * tp;
+        subtotalEl  = row.querySelector('.ticket-inputs .row-subtotal');
     }
 
-    row.querySelector('.row-subtotal').textContent = 'Rp ' + fmtNum(subtotal);
+    if (subtotalEl) subtotalEl.textContent = 'Rp ' + fmtNum(subtotal);
     return subtotal;
 }
 
@@ -648,6 +674,12 @@ function recalcTotal() {
     document.getElementById('summGross').textContent  = 'Rp ' + fmtNum(gross);
     document.getElementById('summNett').textContent   = 'Rp ' + fmtNum(nett);
     document.getElementById('summComm').textContent   = 'Rp ' + fmtNum(comm);
+
+    // Enable submit only when at least one activity has qty > 0
+    const hasActivity = totalAdults > 0 || totalKids > 0;
+    document.getElementById('submitBtn').disabled           = !hasActivity || !gpsReady;
+    document.getElementById('noActivityHint').classList.toggle('d-none', hasActivity || !gpsReady);
+    document.getElementById('gpsHint').classList.toggle('d-none', gpsReady || !hasActivity);
 }
 
 // ── Event listeners ─────────────────────────────────────────────────────────
@@ -658,9 +690,6 @@ document.getElementById('paymentMethod').addEventListener('change', e => {
         e.target.value === 'ON_THE_SPOT' ? '' : 'none';
     refreshAllRows();
 });
-
-// Country select (TomSelect wraps the select — listen to the underlying element)
-document.querySelector('[name="guest_country"]').addEventListener('change', refreshAllRows);
 
 document.getElementById('paxBabies').addEventListener('input', recalcTotal);
 
@@ -677,34 +706,68 @@ const dangerLat = {{ \App\Models\Setting::get('danger_zone_latitude', -8.7908) }
 const dangerLng = {{ \App\Models\Setting::get('danger_zone_longitude', 115.1553) }};
 const dangerRad = {{ \App\Models\Setting::get('danger_zone_radius_meters', 500) }};
 
-function captureGPS() {
-    const display = document.getElementById('locationDisplay');
-    display.innerHTML = '<span class="fst-italic">Mendeteksi lokasi...</span>';
-    if (!navigator.geolocation) { display.textContent = 'Geolocation tidak didukung browser.'; return; }
+let gpsReady = false;
 
+function setGpsDetecting() {
+    gpsReady = false;
+    document.getElementById('locationDisplay').innerHTML =
+        '<span class="spinner-border spinner-border-sm me-1 text-warning"></span><span class="fst-italic text-muted"> Mendeteksi lokasi...</span>';
+    document.getElementById('gpsErrorAlert').classList.add('d-none');
+    document.getElementById('locationCard').className = 'card mb-3';
+    recalcTotal();
+}
+
+function setGpsSuccess(lat, lng, areaName) {
+    gpsReady = true;
+    document.getElementById('lat').value          = lat;
+    document.getElementById('lng').value          = lng;
+    document.getElementById('locationDisplay').innerHTML =
+        `<strong class="text-success">${areaName}</strong><br><span class="text-secondary">${lat.toFixed(6)}, ${lng.toFixed(6)}</span>`;
+    document.getElementById('gpsErrorAlert').classList.add('d-none');
+    document.getElementById('locationCard').className = 'card mb-3 border-success';
+    const dist = haversine(lat, lng, dangerLat, dangerLng);
+    document.getElementById('dangerZoneWarning').classList.toggle('d-none', dist > dangerRad);
+    recalcTotal();
+}
+
+function setGpsError(msg) {
+    gpsReady = false;
+    document.getElementById('lat').value = '';
+    document.getElementById('lng').value = '';
+    document.getElementById('locationDisplay').innerHTML = '';
+    document.getElementById('gpsErrorMsg').textContent = msg;
+    document.getElementById('gpsErrorAlert').classList.remove('d-none');
+    document.getElementById('locationCard').className = 'card mb-3 border-danger';
+    document.getElementById('dangerZoneWarning').classList.add('d-none');
+    recalcTotal();
+}
+
+function captureGPS() {
+    setGpsDetecting();
+    if (!navigator.geolocation) {
+        setGpsError('Browser tidak mendukung geolocation.');
+        return;
+    }
     navigator.geolocation.getCurrentPosition(pos => {
         const lat = pos.coords.latitude;
         const lng = pos.coords.longitude;
-        document.getElementById('lat').value = lat;
-        document.getElementById('lng').value = lng;
-        display.innerHTML = `${lat.toFixed(6)}, ${lng.toFixed(6)}<br><span class="fst-italic">Mencari alamat...</span>`;
+        setGpsSuccess(lat, lng, `${lat.toFixed(6)}, ${lng.toFixed(6)}`);
 
         fetch(`{{ route('geocode.reverse') }}?lat=${lat}&lng=${lng}`)
             .then(r => r.json())
             .then(data => {
-                const addr = data.address;
-                const areaName = addr.village || addr.suburb || addr.town || addr.city || addr.county || 'Area tidak dikenal';
+                const addr     = data.address || {};
+                const areaName = addr.village || addr.suburb || addr.town || addr.city || addr.county || 'Lokasi terdeteksi';
                 document.getElementById('locationName').value = areaName;
-                display.innerHTML = `<strong>${areaName}</strong><br><span class="text-secondary">${data.display_name || areaName}</span>`;
-            }).catch(() => {
-                display.innerHTML = `${lat.toFixed(6)}, ${lng.toFixed(6)}<br><span class="text-danger">Gagal memuat alamat.</span>`;
-            });
-
-        const dist = haversine(lat, lng, dangerLat, dangerLng);
-        document.getElementById('dangerZoneWarning').classList.toggle('d-none', dist > dangerRad);
+                setGpsSuccess(lat, lng, areaName);
+            })
+            .catch(() => setGpsSuccess(lat, lng, `${lat.toFixed(6)}, ${lng.toFixed(6)}`));
     }, err => {
-        display.textContent = 'Lokasi tidak tersedia: ' + err.message;
-    }, { enableHighAccuracy: true });
+        const msg = err.code === 1
+            ? 'Akses lokasi ditolak. Izinkan akses lokasi di browser, lalu klik Coba Lagi.'
+            : 'Gagal mendeteksi lokasi. Pastikan GPS aktif, lalu klik Coba Lagi.';
+        setGpsError(msg);
+    }, { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 });
 }
 
 function haversine(lat1, lon1, lat2, lon2) {
@@ -715,13 +778,48 @@ function haversine(lat1, lon1, lat2, lon2) {
     return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 }
 
+document.getElementById('retryGps').addEventListener('click', captureGPS);
+
 window.addEventListener('load', () => {
     captureGPS();
     refreshAllRows();
 });
 
 // ── Submit guard ─────────────────────────────────────────────────────────────
-document.getElementById('resForm').addEventListener('submit', () => {
+document.getElementById('resForm').addEventListener('submit', e => {
+    // Strip rows with no activity selected (row_type empty)
+    document.querySelectorAll('.activity-row').forEach(row => {
+        if (!row.querySelector('.row-type-input').value) row.remove();
+    });
+
+    // Require at least one row with qty > 0
+    const rows = document.querySelectorAll('.activity-row');
+    if (!rows.length) {
+        e.preventDefault();
+        alert('Tambahkan minimal 1 aktivitas sebelum menyimpan.');
+        return;
+    }
+
+    let hasQty = false;
+    rows.forEach(row => {
+        const rt = row.querySelector('.row-type-input').value;
+        if (rt === 'ADULT_CHILD') {
+            hasQty = hasQty
+                || (parseInt(row.querySelector('.adult-qty').value) || 0) > 0
+                || (parseInt(row.querySelector('.child-qty').value) || 0) > 0;
+        } else if (rt === 'BUNDLE') {
+            hasQty = hasQty || (parseInt(row.querySelector('.bundle-qty').value) || 0) > 0;
+        } else {
+            hasQty = hasQty || (parseInt(row.querySelector('.ticket-qty').value) || 0) > 0;
+        }
+    });
+
+    if (!hasQty) {
+        e.preventDefault();
+        alert('Masukkan jumlah tamu minimal 1 untuk salah satu aktivitas.');
+        return;
+    }
+
     document.getElementById('submitBtn').disabled = true;
     document.getElementById('submitBtn').innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Menyimpan...';
 });
