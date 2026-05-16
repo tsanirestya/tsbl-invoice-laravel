@@ -24,6 +24,9 @@
         .location-box.detecting { border-color: #ffc107; background: #fffbf0; }
         .location-box.success { border-color: #198754; background: #f0faf4; }
         .location-box.error { border-color: #dc3545; background: #fff5f5; }
+        .gps-guide { display: none; margin-top: 10px; padding: 10px; background: #fff; border: 1px solid #dee2e6; border-radius: 8px; font-size: 0.85rem; }
+        .gps-guide.show { display: block; }
+        .gps-guide i { color: #0d6efd; }
         #submitBtn:disabled { opacity: .6; cursor: not-allowed; }
     </style>
 </head>
@@ -78,6 +81,15 @@
                     <i class="bi bi-arrow-clockwise me-1"></i>
                     <span data-id="Coba Lagi" data-en="Retry">Coba Lagi</span>
                 </button>
+                <div id="gpsGuide" class="gps-guide">
+                    <div class="fw-bold mb-1"><i class="bi bi-info-circle-fill me-1"></i> <span data-id="Cara Mengaktifkan:" data-en="How to Enable:">Cara Mengaktifkan:</span></div>
+                    <ol class="ps-3 mb-0">
+                        <li data-id="Klik ikon gembok/pengaturan di sebelah alamat situs (URL) di atas." data-en="Click the lock/settings icon next to the site address (URL) above.">Klik ikon gembok/pengaturan di sebelah alamat situs (URL) di atas.</li>
+                        <li data-id="Pilih 'Izin' atau 'Site Settings'." data-en="Select 'Permissions' or 'Site Settings'.">Pilih 'Izin' atau 'Site Settings'.</li>
+                        <li data-id="Aktifkan 'Lokasi' atau 'Location' ke 'Izinkan/Allow'." data-en="Switch 'Location' to 'Allow'.">Aktifkan 'Lokasi' atau 'Location' ke 'Izinkan/Allow'.</li>
+                        <li data-id="Refresh halaman ini." data-en="Refresh this page.">Refresh halaman ini.</li>
+                    </ol>
+                </div>
             </div>
             <input type="hidden" name="latitude" id="lat">
             <input type="hidden" name="longitude" id="lng">
@@ -272,10 +284,16 @@ function setLocationSuccess(lat, lng, areaName) {
         </div>`;
 }
 
-function setLocationError(msg) {
+function setLocationError(msg, isDeny = false) {
     locationBox.className = 'location-box error';
     locationErr.classList.remove('d-none');
     submitBtn.disabled = true;
+
+    if (isDeny) {
+        document.getElementById('gpsGuide').classList.add('show');
+    } else {
+        document.getElementById('gpsGuide').classList.remove('show');
+    }
 
     document.getElementById('locationContent').innerHTML = `
         <div class="d-flex align-items-start gap-2 text-danger">
@@ -320,9 +338,9 @@ function captureGPS() {
         },
         err => {
             if (err.code === 1) {
-                setLocationError(T.gps_deny[lang()]);
+                setLocationError(T.gps_deny[lang()], true);
             } else {
-                setLocationError(T.gps_fail[lang()]);
+                setLocationError(T.gps_fail[lang()], false);
             }
         },
         { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 }
