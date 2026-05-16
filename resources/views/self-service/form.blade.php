@@ -221,8 +221,9 @@ const T = {
     country_ph: { id: 'Cari negara...', en: 'Search country...' },
     detecting:  { id: 'Mendeteksi lokasi...', en: 'Detecting location...' },
     gps_ok:     { id: 'Lokasi terdeteksi', en: 'Location detected' },
-    gps_fail:   { id: 'Tidak dapat mendeteksi lokasi. Pastikan GPS aktif dan izin diberikan.', en: 'Could not detect location. Please enable GPS and allow location access.' },
-    gps_deny:   { id: 'Akses lokasi ditolak. Aktifkan izin lokasi di pengaturan browser.', en: 'Location access denied. Please enable location permissions in your browser settings.' },
+    gps_fail:   { id: 'Sinyal GPS lemah atau tidak tersedia. Pastikan Anda tidak berada di dalam ruangan tertutup rapat.', en: 'GPS signal is weak or unavailable. Please ensure you are not deep indoors.' },
+    gps_deny:   { id: 'Akses lokasi ditolak. Aktifkan izin lokasi di Chrome DAN pengaturan privasi HP Anda.', en: 'Location access denied. Please enable location in Chrome AND your phone\'s privacy settings.' },
+    gps_timeout: { id: 'Waktu pencarian lokasi habis (Timeout). Coba lagi di tempat yang lebih terbuka.', en: 'Location search timed out. Please try again in a more open area.' },
     processing: { id: 'Memproses...', en: 'Processing...' },
 };
 
@@ -302,7 +303,7 @@ function setLocationError(msg, isDeny = false) {
         </div>`;
 }
 
-function captureGPS() {
+function captureGPS(options = { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }) {
     setLocationDetecting();
 
     if (!navigator.geolocation) {
@@ -337,13 +338,22 @@ function captureGPS() {
                 });
         },
         err => {
-            if (err.code === 1) {
+            console.error('GPS Error:', err);
+            if (err.code === 1) { // PERMISSION_DENIED
                 setLocationError(T.gps_deny[lang()], true);
-            } else {
+            } else if (err.code === 3) { // TIMEOUT
+                // Fallback to low accuracy once if high accuracy times out
+                if (options.enableHighAccuracy) {
+                    console.warn('High accuracy timed out, retrying with low accuracy...');
+                    captureGPS({ enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 });
+                } else {
+                    setLocationError(T.gps_timeout[lang()], false);
+                }
+            } else { // POSITION_UNAVAILABLE
                 setLocationError(T.gps_fail[lang()], false);
             }
         },
-        { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 }
+        options
     );
 }
 
