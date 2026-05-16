@@ -11,7 +11,7 @@
 ## users
 | Column | Type | Notes |
 |---|---|---|
-| user_status | enum(ADMIN,FINANCE,SALES,VIEWER) | Roles check via `CheckRole` middleware. |
+| user_status | enum(ADMIN,FINANCE,SALES,VIEWER,ADMISSION) | Roles check via `CheckRole` middleware. |
 
 ---
 

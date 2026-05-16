@@ -467,7 +467,7 @@ CREATE TABLE `users` (
   `phone` varchar(30) DEFAULT NULL,
   `password` varchar(255) NOT NULL,
   `remember_token` varchar(100) DEFAULT NULL,
-  `user_status` enum('ADMIN','FINANCE','SALES','VIEWER') NOT NULL DEFAULT 'VIEWER',
+  `user_status` enum('ADMIN','FINANCE','SALES','VIEWER','ADMISSION') NOT NULL DEFAULT 'VIEWER',
   `signature_image` varchar(255) DEFAULT NULL,
   `position_name` varchar(100) DEFAULT NULL,
   `is_active` tinyint(1) NOT NULL DEFAULT 1,
