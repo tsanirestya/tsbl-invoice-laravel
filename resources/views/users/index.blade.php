@@ -21,7 +21,7 @@
         <div class="col-sm-4 col-md-3">
             <select name="status" class="form-select form-select-sm">
                 <option value="">Semua Role</option>
-                @foreach(['ADMIN','FINANCE','SALES','VIEWER'] as $role)
+                @foreach(['ADMIN','FINANCE','SALES','VIEWER','ADMISSION'] as $role)
                     <option value="{{ $role }}" @selected(request('status') === $role)>{{ $role }}</option>
                 @endforeach
             </select>
@@ -61,10 +61,11 @@
                     <td class="small">{{ $user->position_name ?? '—' }}</td>
                     <td>
                         <span class="badge bg-{{ match($user->user_status) {
-                            'ADMIN'   => 'danger',
-                            'FINANCE' => 'primary',
-                            'SALES'   => 'success',
-                            default   => 'secondary'
+                            'ADMIN'     => 'danger',
+                            'FINANCE'   => 'primary',
+                            'SALES'     => 'success',
+                            'ADMISSION' => 'info',
+                            default     => 'secondary'
                         } }}">{{ $user->user_status }}</span>
                     </td>
                     <td>

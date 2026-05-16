@@ -20,6 +20,7 @@ class SettingsController extends Controller
         'credit_warning_threshold',
         'credit_aging_bucket_1', 'credit_aging_bucket_2',
         'credit_aging_bucket_3', 'credit_aging_bucket_4',
+        'admission_visit_date_tolerance_days',
     ];
 
     public function index()
@@ -49,6 +50,7 @@ class SettingsController extends Controller
             'credit_aging_bucket_2'     => 'required|integer|min:1|max:999',
             'credit_aging_bucket_3'     => 'required|integer|min:1|max:999',
             'credit_aging_bucket_4'     => 'required|integer|min:1|max:999',
+            'admission_visit_date_tolerance_days' => 'nullable|integer|min:0|max:7',
             'logo'               => 'nullable|file|mimes:png,jpg,jpeg|max:2048',
             'favicon'            => 'nullable|file|mimes:png,jpg,jpeg,ico|max:512',
             'navbar_logo'        => 'nullable|file|mimes:png,jpg,jpeg|max:1024',

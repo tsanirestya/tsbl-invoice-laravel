@@ -369,6 +369,33 @@ class ReservationController extends Controller
         return response()->download($path, $reservation->reservation_no . '-booking-pass.pdf');
     }
 
+    public function search(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $q = trim($request->query('q', ''));
+        if (mb_strlen($q) < 2) {
+            return response()->json([]);
+        }
+
+        $results = Reservation::with('partner:id,nama_partner')
+            ->where(function ($query) use ($q) {
+                $query->where('reservation_no', 'like', "%{$q}%")
+                      ->orWhere('guest_name', 'like', "%{$q}%");
+            })
+            ->orderByRaw("CASE WHEN reservation_no LIKE ? THEN 0 ELSE 1 END", ["{$q}%"])
+            ->orderBy('visit_date', 'desc')
+            ->limit(8)
+            ->get(['id', 'reservation_no', 'guest_name', 'visit_date', 'status', 'partner_id']);
+
+        return response()->json($results->map(fn($r) => [
+            'reservation_no' => $r->reservation_no,
+            'guest_name'     => $r->guest_name,
+            'visit_date'     => $r->visit_date,
+            'status'         => $r->status,
+            'partner_id'     => $r->partner_id,
+            'partner_name'   => $r->partner?->nama_partner,
+        ]));
+    }
+
     private function createPaymentRecord(Reservation $reservation, string $method, float $grossAmount): void
     {
         $partner = $reservation->partner;

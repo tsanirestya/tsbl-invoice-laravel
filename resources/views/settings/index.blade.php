@@ -245,6 +245,29 @@
                 </div>
             </div>
 
+            {{-- Admission Config --}}
+            <div class="card mb-4">
+                <div class="card-header fw-semibold d-flex align-items-center gap-2">
+                    <i class="bi bi-door-open text-info"></i> Pengaturan Admission
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-12 col-md-4">
+                            <label class="form-label">Toleransi Visit Date (hari)</label>
+                            <div class="input-group">
+                                <input type="number" name="admission_visit_date_tolerance_days"
+                                    class="form-control @error('admission_visit_date_tolerance_days') is-invalid @enderror"
+                                    value="{{ old('admission_visit_date_tolerance_days', $settings['admission_visit_date_tolerance_days'] ?? 0) }}"
+                                    min="0" max="7">
+                                <span class="input-group-text">hari</span>
+                            </div>
+                            <div class="form-text">0 = hanya bisa redeem tepat di visit_date. 1 = bisa redeem H-1 sampai H+1.</div>
+                            @error('admission_visit_date_tolerance_days')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div class="d-flex gap-2 justify-content-end mb-4">
                 <button type="submit" class="btn btn-primary px-4">
                     <i class="bi bi-check-lg me-1"></i> Simpan Pengaturan

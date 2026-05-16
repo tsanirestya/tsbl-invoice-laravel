@@ -16,6 +16,8 @@
 - [[FEATURE-BOOKING-PASS]] — Feature planning: booking pass generation, template management (Phase 10c)
 - [[FEATURE-BOOKING-PASS-VISUAL-EDITOR]] — Feature planning: visual drag-and-drop template editor untuk Booking Pass (Phase 10d)
 - [[FEATURE-FRAUD-DETECTION]] — Feature planning: anomaly detection, fraud prevention, commission hold (Phase 10f)
+- [[PLAN-BOOKING-PASS-VALIDATION]] — Plan: Booking Pass No. validation di antrian invoice — indikator hijau/merah/abu per Reservation No.
+- [[FEATURE-ADMISSION-REDEEM]] — Feature planning: ADMISSION role + REDEEM reservation flow + transaction match (Phase 12)
 
 ## 🗄️ Database
 - [[SCHEMA]] — Semua table, columns, FK, data existing
@@ -42,6 +44,7 @@
 | Phase 10f — Fraud Detection     | [[TODO-PHASE-10-RESERVATION]]     | ✅ Done (2026-05-13) |
 | Phase 11 — Product Classification | [[PHASE-11-PRODUCT-CLASSIFICATION]] | ✅ Done (2026-05-15) |
 | Revisi Reservation Form (Pax)   | [[TODO-REVISI-RESERVATION-FORM-PAX]] | ✅ Done (2026-05-15)      |
+| Phase 12 — Admission + Redeem   | [[FEATURE-ADMISSION-REDEEM]]         | 📋 Planning               |
 
 ## 📦 Features (akan dibuat per feature selesai)
 → Folder: `Features/`
@@ -61,6 +64,7 @@
 - [[ISSUE-001-PARTIAL-ANOMALY-HANDLING]] — Handle partial anomalies in invoicing workflow 🔲
 - [[ISSUE-002-DYNAMIC-DROPDOWN-FILTERING]] — Dynamic dropdown filtering 🔲
 - [[ISSUE-003-BOOKING-PASS-TEMPLATE-FIELDS-AND-EDITOR]] — Booking Pass: field tambahan, style panel lengkap, barcode fix, preview real data ✅ (2026-05-14)
+- [[ISSUE-004-INVOICE-PRICE-INCONSISTENCY]] — Fix price mismatch between anomaly adjustments and invoice form ✅ (2026-05-15)
 
 ## 🔍 Audit
 - [[AUDIT-PROMPT-TEMPLATE]] — Template prompt audit menyeluruh (security, fraud, finance, ops)

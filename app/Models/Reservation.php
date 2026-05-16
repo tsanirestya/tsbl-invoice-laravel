@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Traits\Auditable;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Reservation extends Model
 {
@@ -19,6 +20,7 @@ class Reservation extends Model
         'room_key_photo', 'key_number', 'voucher_photo', 'partner_name_input', 'customer_origin',
         'customer_origin_detail', 'is_spot_check', 'fraud_score_snapshot',
         'ip_address', 'user_agent', 'device_fingerprint', 'qr_token', 'created_by',
+        'redeemed_at', 'redeemed_by', 'transaction_match', 'transaction_notes', 'actual_items',
     ];
 
     protected function casts(): array
@@ -26,6 +28,8 @@ class Reservation extends Model
         return [
             'visit_date'       => 'date',
             'booking_pass_data'=> 'array',
+        'actual_items'     => 'array',
+        'redeemed_at'      => 'datetime',
             'is_danger_zone'   => 'boolean',
             'is_spot_check'    => 'boolean',
             'pax_adults'       => 'integer',
@@ -62,6 +66,11 @@ class Reservation extends Model
         return $this->belongsTo(User::class, 'created_by');
     }
 
+    public function redeemer(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'redeemed_by');
+    }
+
     public function bookingPassTemplate()
     {
         return $this->belongsTo(BookingPassTemplate::class);
@@ -89,10 +98,21 @@ class Reservation extends Model
         return match($this->status) {
             'CONFIRMED'  => 'success',
             'PENDING'    => 'warning',
+            'REDEEMED'   => 'info',
             'CANCELLED'  => 'secondary',
             'NO_SHOW'    => 'danger',
             'COMPLETED'  => 'primary',
             default      => 'secondary',
+        };
+    }
+
+    public function transactionMatchBadge(): string
+    {
+        return match ($this->transaction_match) {
+            'MATCH'         => 'success',
+            'MISMATCH'      => 'warning',
+            'PENDING_CHECK' => 'secondary',
+            default         => 'secondary',
         };
     }
 }

@@ -10,6 +10,7 @@ use App\Models\Partner;
 use App\Models\PartnerDeposit;
 use App\Models\Payment;
 use App\Models\Product;
+use App\Models\Reservation;
 use App\Models\Setting;
 use App\Models\TransactionImportRow;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -95,7 +96,28 @@ class InvoiceController extends Controller
             }
         }
 
-        return view('invoices.create', compact('partners', 'products', 'defaultDue', 'importRow', 'importRows'));
+        // Booking Pass No. validation — remark dari DSI vs reservations table
+        $bookingPassNo          = null;
+        $bookingPassStatus      = null;
+        $bookingPassReservation = null;
+        if ($importRows->isNotEmpty()) {
+            $remark = trim($importRows->first()->remark ?? '');
+            if ($remark !== '') {
+                $bookingPassReservation = Reservation::with('partner:id,nama_partner')
+                    ->where('reservation_no', $remark)
+                    ->first(['id', 'reservation_no', 'guest_name', 'partner_id']);
+                $bookingPassNo     = $remark;
+                $bookingPassStatus = $bookingPassReservation ? 'found' : 'not_found';
+            } else {
+                $bookingPassStatus = 'empty';
+            }
+        }
+
+        return view('invoices.create', compact(
+            'partners', 'products', 'defaultDue',
+            'importRow', 'importRows',
+            'bookingPassNo', 'bookingPassStatus', 'bookingPassReservation'
+        ));
     }
 
     public function store(Request $request)

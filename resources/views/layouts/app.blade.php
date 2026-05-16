@@ -272,6 +272,25 @@
     </div>
 
     <div class="sidebar-scroll">
+        {{-- ── Admission-only menu ──────────────────────────── --}}
+        @if(auth()->user()->isAdmission() || auth()->user()->isAdmin())
+        <div class="nav-section">Admission</div>
+        <a href="{{ route('admission.dashboard') }}" class="nav-link {{ request()->routeIs('admission.dashboard') ? 'active' : '' }}">
+            <i class="bi bi-door-open-fill"></i> Dashboard Admission
+        </a>
+        <a href="{{ route('admission.scan') }}" class="nav-link {{ request()->routeIs('admission.scan') ? 'active' : '' }}">
+            <i class="bi bi-upc-scan"></i> Scan & Redeem
+        </a>
+        <a href="{{ route('admission.history') }}" class="nav-link {{ request()->routeIs('admission.history') ? 'active' : '' }}">
+            <i class="bi bi-clock-history"></i> History Hari Ini
+        </a>
+        <a href="{{ route('admission.qr') }}" class="nav-link {{ request()->routeIs('admission.qr') ? 'active' : '' }}">
+            <i class="bi bi-qr-code"></i> QR Self-Service
+        </a>
+        @endif
+
+        {{-- ── Non-admission menus ──────────────────────────── --}}
+        @unless(auth()->user()->isAdmission())
         <div class="nav-section">Menu Utama</div>
         <a href="{{ route('dashboard') }}" class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}">
             <i class="bi bi-grid-1x2-fill"></i> Dashboard
@@ -360,6 +379,7 @@
             <i class="bi bi-journal-text"></i> Audit Trail
         </a>
         @endif
+        @endunless
     </div>
 
     <div class="sidebar-footer">

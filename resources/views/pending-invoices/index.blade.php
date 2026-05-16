@@ -134,6 +134,7 @@
         font-size: 2rem;
         color: #198754;
     }
+
 </style>
 @endpush
 
@@ -164,7 +165,8 @@
     @php
         $urgentCount  = $transactions->filter(fn($t) => round(\Carbon\Carbon::parse($t->date)->floatDiffInDays(now())) >= 7)->count();
         $warningCount = $transactions->filter(fn($t) => ($d = round(\Carbon\Carbon::parse($t->date)->floatDiffInDays(now()))) >= 3 && $d < 7)->count();
-        $totalAmt     = $transactions->sum('total_amount');
+        $totalAmt     = $transactions->sum('total_gross');
+        $totalNett    = $transactions->sum('total_nett');
         $totalKomisi  = $transactions->sum('total_komisi');
     @endphp
     <div class="col-6 col-md-3">
@@ -270,7 +272,7 @@
                     <td>
                         <span class="trx-chip">{{ $trx->transaction_no ?? '—' }}</span>
                         @if(isset($trx->has_unhandled) && $trx->has_unhandled)
-                            <i class="bi bi-exclamation-triangle-fill text-warning ms-1" 
+                            <i class="bi bi-exclamation-triangle-fill text-warning ms-1"
                                title="Transaksi ini memiliki item Anomali yang belum ditangani. Invoice mungkin tidak lengkap."
                                data-bs-toggle="tooltip"></i>
                         @endif
@@ -307,8 +309,16 @@
                             </span>
                         @endif
                     </td>
-                    <td class="text-end fw-bold small">
-                        Rp {{ number_format($trx->total_amount ?? 0, 0, ',', '.') }}
+                    <td class="text-end small">
+                        <div class="text-muted" style="font-size: .7rem; margin-bottom: 2px;">
+                            {{ number_format($trx->unit_gross, 0, ',', '.') }} x {{ $trx->qty }} pax
+                        </div>
+                        <div class="fw-bold">Rp {{ number_format($trx->total_gross ?? 0, 0, ',', '.') }}</div>
+                        @if(isset($trx->total_nett) && $trx->total_nett != $trx->total_gross)
+                            <div class="text-muted" style="font-size: .7rem; margin-top: -2px;">
+                                <span class="badge bg-light text-secondary border-0 p-0">Nett: Rp {{ number_format($trx->total_nett, 0, ',', '.') }}</span>
+                            </div>
+                        @endif
                     </td>
                     <td class="text-end small d-none d-md-table-cell">
                         @if($trx->total_komisi)
@@ -333,8 +343,13 @@
                     <td colspan="4" class="ps-3 fw-semibold text-muted">
                         <i class="bi bi-calculator me-1"></i> Total (halaman ini)
                     </td>
-                    <td class="text-end fw-bold">Rp {{ number_format($transactions->sum('total_amount'), 0, ',', '.') }}</td>
-                    <td class="text-end fw-bold text-success d-none d-md-table-cell">Rp {{ number_format($transactions->sum('total_komisi'), 0, ',', '.') }}</td>
+                    <td class="text-end fw-bold">
+                        <div>Rp {{ number_format($totalAmt, 0, ',', '.') }}</div>
+                        @if($totalNett != $totalAmt)
+                            <div class="text-muted small fw-normal" style="font-size: .7rem;">Nett: Rp {{ number_format($totalNett, 0, ',', '.') }}</div>
+                        @endif
+                    </td>
+                    <td class="text-end fw-bold text-success d-none d-md-table-cell">Rp {{ number_format($totalKomisi, 0, ',', '.') }}</td>
                     <td></td>
                 </tr>
             </tfoot>

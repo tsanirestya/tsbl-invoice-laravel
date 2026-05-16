@@ -184,6 +184,78 @@
     }
 
 
+    /* ── Booking Pass reservation status indicator ── */
+    .bp-status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: .3rem;
+        font-size: .72rem;
+        font-weight: 600;
+        padding: .2rem .55rem;
+        border-radius: 20px;
+        white-space: nowrap;
+    }
+    .bp-status-badge.found     { background: #d1fadf; color: #166534; border: 1px solid #a3cfbb; }
+    .bp-status-badge.not-found { background: #ffe4e6; color: #991b1b; border: 1px solid #fca5a5; }
+    .bp-status-badge.empty     { background: #f3f4f6; color: #6b7280; border: 1px solid #d1d5db; }
+
+    /* ── Reservation autocomplete dropdown ── */
+    .bp-autocomplete-wrap { position: relative; }
+    .bp-dropdown {
+        display: none;
+        position: absolute;
+        top: calc(100% + 2px);
+        left: 0; right: 0;
+        background: #fff;
+        border: 1px solid #d0e8fb;
+        border-radius: 8px;
+        box-shadow: 0 6px 20px rgba(0,0,0,.12);
+        z-index: 1055;
+        max-height: 280px;
+        overflow-y: auto;
+    }
+    .bp-dropdown.show { display: block; }
+    .bp-dropdown-item {
+        display: flex;
+        align-items: center;
+        gap: .65rem;
+        padding: .55rem .85rem;
+        cursor: pointer;
+        border-bottom: 1px solid #f0f4f8;
+        transition: background .1s;
+    }
+    .bp-dropdown-item:last-child { border-bottom: none; }
+    .bp-dropdown-item:hover, .bp-dropdown-item.active { background: #e8f4ff; }
+    .bp-dropdown-res-no {
+        font-family: monospace;
+        font-weight: 700;
+        font-size: .8rem;
+        color: #1a4fa8;
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+    .bp-dropdown-meta {
+        font-size: .75rem;
+        color: #6c757d;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .bp-dropdown-status {
+        font-size: .68rem;
+        font-weight: 600;
+        padding: .1rem .4rem;
+        border-radius: 10px;
+        flex-shrink: 0;
+    }
+    .bp-dropdown-empty {
+        padding: .75rem 1rem;
+        color: #6c757d;
+        font-size: .82rem;
+        text-align: center;
+    }
+
     /* Tom Select sizing tweak for table rows */
     .item-row .ts-wrapper.form-select { padding: 0; }
     .item-row .ts-control { font-size: .8rem; min-height: 31px; padding: .25rem .5rem; }
@@ -314,7 +386,7 @@
 @if($importRows->isNotEmpty())
 @php
     $firstRow       = $importRows->first();
-    $totalAmount    = $importRows->sum('total_amount');
+    $totalAmount    = $importRows->sum(fn($r) => ($r->publish_rate ?: $r->unit_price) * $r->qty);
     $totalKomisi    = $importRows->sum('komisi_amount');
     $itemCount      = $importRows->count();
 @endphp
@@ -428,8 +500,9 @@
                 <span class="isc-item-meta">
                     <span class="badge bg-secondary bg-opacity-10 text-secondary border">{{ $r->qty }} pax</span>
                     <span class="text-muted">@</span>
-                    <span class="fw-semibold">Rp {{ number_format($r->unit_price, 0, ',', '.') }}</span>
-                    <span class="isc-item-total">= Rp {{ number_format($r->total_amount, 0, ',', '.') }}</span>
+                    @php $billingPrice = $r->publish_rate ?: $r->unit_price; @endphp
+                    <span class="fw-semibold">Rp {{ number_format($billingPrice, 0, ',', '.') }}</span>
+                    <span class="isc-item-total">= Rp {{ number_format($billingPrice * $r->qty, 0, ',', '.') }}</span>
                 </span>
             </div>
             @endforeach
@@ -515,6 +588,11 @@
     <div class="card-header bg-white border-bottom fw-semibold py-2">Info Invoice</div>
     <div class="card-body">
         {{-- Partner --}}
+        @php
+            $bpRes          = $bookingPassReservation ?? null;
+            $bpFoundOnLoad  = ($bookingPassStatus ?? null) === 'found';
+            $partnerIdValue = old('partner_id', $invoice?->partner_id ?? $bpRes?->partner_id ?? '');
+        @endphp
         <div class="mb-3">
             <label class="form-label fw-semibold">Partner <span class="text-danger">*</span></label>
             <select name="partner_id" id="partner_id" class="form-select @error('partner_id') is-invalid @enderror" required>
@@ -523,11 +601,14 @@
                     <option value="{{ $p->id }}"
                             data-due="{{ $p->payment_due_days }}"
                             data-type="{{ $p->partner_type }}"
-                            @selected(old('partner_id', $invoice?->partner_id ?? '') == $p->id)>
+                            @selected($partnerIdValue == $p->id)>
                         {{ $p->nama_partner }} ({{ $p->partner_type }})
                     </option>
                 @endforeach
             </select>
+            @if($bpFoundOnLoad)
+                <div class="form-text text-muted"><i class="bi bi-lock-fill me-1"></i>Terisi otomatis dari Reservation</div>
+            @endif
             @error('partner_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
         </div>
 
@@ -535,15 +616,62 @@
             {{-- Guest Name --}}
             <div class="col-12 col-md-4">
                 <label class="form-label fw-semibold">Nama Tamu <span class="text-danger">*</span></label>
-                <input type="text" name="guest_name" class="form-control @error('guest_name') is-invalid @enderror"
-                       value="{{ old('guest_name', $invoice?->guest_name ?? '') }}" maxlength="200" required>
+                <input type="text" id="guestNameInput" name="guest_name"
+                       class="form-control @error('guest_name') is-invalid @enderror"
+                       value="{{ old('guest_name', $invoice?->guest_name ?? $bpRes?->guest_name ?? '') }}"
+                       maxlength="200" required
+                       {{ $bpFoundOnLoad ? 'readonly' : '' }}>
+                @if($bpFoundOnLoad)
+                    <div class="form-text text-muted"><i class="bi bi-lock-fill me-1"></i>Terisi otomatis dari Reservation</div>
+                @endif
                 @error('guest_name')<div class="invalid-feedback">{{ $message }}</div>@enderror
             </div>
             {{-- Booking Pass --}}
+            @php
+                $bpStatus  = $bookingPassStatus ?? null;
+                $bpNoValue = old('booking_pass_no',
+                    $invoice?->booking_pass_no
+                    ?? $bookingPassNo
+                    ?? ''
+                );
+            @endphp
             <div class="col-12 col-md-4">
-                <label class="form-label fw-semibold">Booking Pass No <span class="text-danger">*</span></label>
-                <input type="text" name="booking_pass_no" class="form-control @error('booking_pass_no') is-invalid @enderror"
-                       value="{{ old('booking_pass_no', $invoice?->booking_pass_no ?? '') }}" maxlength="100" required>
+                <div class="d-flex align-items-center gap-2 mb-1">
+                    <label class="form-label fw-semibold mb-0">Booking Pass No <span class="text-danger">*</span></label>
+                    @php
+                        $initBadgeClass = match($bpStatus) {
+                            'found'     => 'found',
+                            'not_found' => 'not-found',
+                            'empty'     => 'empty',
+                            default     => 'empty',
+                        };
+                        $initBadgeHtml = match($bpStatus) {
+                            'found'     => '<i class="bi bi-check-circle-fill"></i> Reservation ditemukan',
+                            'not_found' => '<i class="bi bi-x-circle-fill"></i> Reservation tidak ditemukan',
+                            'empty'     => '<i class="bi bi-circle"></i> Belum ada No. Reservation',
+                            default     => '',
+                        };
+                    @endphp
+                    <span id="bpStatusBadge"
+                          class="bp-status-badge {{ $initBadgeClass }}"
+                          style="{{ !$bpStatus ? 'display:none' : '' }}">
+                        {!! $initBadgeHtml !!}
+                    </span>
+                </div>
+                <div class="bp-autocomplete-wrap">
+                    <input type="text" id="bookingPassInput" name="booking_pass_no"
+                           class="form-control @error('booking_pass_no') is-invalid @enderror"
+                           value="{{ $bpNoValue }}" maxlength="100" required
+                           autocomplete="off"
+                           {{ $bpStatus === 'found' ? 'readonly' : '' }}>
+                    <div id="bpDropdown" class="bp-dropdown" role="listbox"></div>
+                </div>
+                <div id="bpFoundHint" class="form-text text-muted" style="{{ $bpStatus === 'found' ? '' : 'display:none' }}">
+                    <i class="bi bi-lock-fill me-1"></i>Reservation cocok &mdash;
+                    <button type="button" id="bpUnlockBtn" class="btn btn-link btn-sm p-0 text-danger" style="font-size:.78rem;vertical-align:baseline">
+                        Ubah
+                    </button>
+                </div>
                 @error('booking_pass_no')<div class="invalid-feedback">{{ $message }}</div>@enderror
             </div>
             {{-- DSI --}}
@@ -979,14 +1107,18 @@ if (!old('items')) {
             'product_id'   => $r->matched_product_id,
             'product_name' => $r->ticket_name,
             'pax'          => (int) $r->qty,
-            'price'        => (float) $r->unit_price,
+            'publish_rate' => (float) ($r->publish_rate ?: $r->unit_price),
+            'nett_price'   => (float) ($r->nett_price ?: $r->unit_price),
+            'unit_price'   => (float) $r->unit_price,
         ])->values()->all();
     } elseif ($importRow && $importRow->is_approved) {
         $importPrefillItems = [[
             'product_id'   => $importRow->matched_product_id,
             'product_name' => $importRow->ticket_name,
             'pax'          => (int) $importRow->qty,
-            'price'        => (float) $importRow->unit_price,
+            'publish_rate' => (float) ($importRow->publish_rate ?: $importRow->unit_price),
+            'nett_price'   => (float) ($importRow->nett_price ?: $importRow->unit_price),
+            'unit_price'   => (float) $importRow->unit_price,
         ]];
     }
 }
@@ -1075,7 +1207,7 @@ function pickProduct(row, value) {
                 }
                 tsName.setValue(prod.name, true); // silent — no loop
             }
-            row.querySelector('.item-price').value = fmtCurrency(getPriceForProduct(prod));
+            row.querySelector('.item-price').value = fmtCurrency(getPriceForProduct(prod, row));
             recalcRow(row.querySelector('.item-pax'));
             checkCategoryMismatch();
             return;
@@ -1099,7 +1231,7 @@ function pickProductByName(row, value) {
     if (prod) {
         const tsDsi = row._tsDsi;
         if (tsDsi) tsDsi.setValue(String(prod.id), true); // silent — no loop
-        row.querySelector('.item-price').value = fmtCurrency(getPriceForProduct(prod));
+        row.querySelector('.item-price').value = fmtCurrency(getPriceForProduct(prod, row));
         recalcRow(row.querySelector('.item-pax'));
     } else {
         // Custom name — clear DSI
@@ -1123,7 +1255,20 @@ function isGrossMode(pm) {
 }
 
 // Price to use based on payment method
-function getPriceForProduct(prod) {
+function getPriceForProduct(prod, row = null) {
+    // Priority 1: Specific payment mode adjustments from import row
+    if (row) {
+        if (isGrossMode(currentPaymentMethod) && row.dataset.priceGross) return parseFloat(row.dataset.priceGross);
+        if (isNettMode(currentPaymentMethod) && row.dataset.priceNett) return parseFloat(row.dataset.priceNett);
+        
+        // Priority 2: Fallback to adjustments if no payment method is selected yet
+        if (!currentPaymentMethod) {
+            if (row.dataset.priceNett) return parseFloat(row.dataset.priceNett);
+            if (row.dataset.priceGross) return parseFloat(row.dataset.priceGross);
+        }
+    }
+
+    // Priority 3: Standard product rates
     if (isGrossMode(currentPaymentMethod)) return prod.publish_rate;
     return prod.nett_price; // default: nett
 }
@@ -1307,6 +1452,10 @@ function makePartnerPicker() {
     });
     if (sel.classList.contains('is-invalid')) {
         ts.wrapper.classList.add('is-invalid');
+    }
+    // Lock partner if booking pass already confirmed on page load
+    if ({{ ($bookingPassStatus ?? null) === 'found' ? 'true' : 'false' }}) {
+        ts.lock();
     }
 }
 
@@ -1576,7 +1725,7 @@ document.getElementById('invoice_date')?.addEventListener('change', function() {
 });
 
 // ── Row management ─────────────────────────────────────────────────────────
-function addRow(name = '', productId = '', pax = 1, price = 0, lockPicker = false) {
+function addRow(name = '', productId = '', pax = 1, price = 0, lockPicker = false, importData = null) {
     const i = rowIdx++;
     
     // Use filtered products if category is set, then by payment method
@@ -1617,6 +1766,10 @@ function addRow(name = '', productId = '', pax = 1, price = 0, lockPicker = fals
     const tr     = document.createElement('tr');
     tr.className = 'item-row';
     tr.dataset.productId = productId;
+    if (importData) {
+        tr.dataset.priceGross = importData.publish_rate;
+        tr.dataset.priceNett  = importData.nett_price;
+    }
     tr.innerHTML = `
         <td class="ps-3" data-label="Produk">
             <select name="items[${i}][product_name]" class="form-select form-select-sm product-name-picker" required>
@@ -1742,14 +1895,24 @@ function refreshFinance() {
         if (!prod) return;
 
         hasProduct = true;
-        const tPub  = prod.publish_rate * pax;
-        const tKom  = prod.komisi * pax;
-        const tNett = prod.nett_price * pax;
-        const pct   = prod.publish_rate > 0 ? (prod.komisi / prod.publish_rate * 100) : null;
-
+        
+        // Use adjusted prices if available, else product defaults
+        const pRate = row.dataset.priceGross ? parseFloat(row.dataset.priceGross) : prod.publish_rate;
+        const nRate = row.dataset.priceNett  ? parseFloat(row.dataset.priceNett)  : prod.nett_price;
+        
+        // Komisi is usually specific to the row if adjusted
+        // However, we don't store adjusted komisi in dataset yet.
+        // Let's assume for now adjusted price means komisi might change, 
+        // but for display purposes, showing the adjusted Nett/Gross is the priority.
+        
+        const tPub  = pRate * pax;
+        const tNett = nRate * pax;
+        const tKom  = Math.max(0, tPub - tNett); // Derived commission from Gross - Nett if adjusted
+        
         totalPub  += tPub;
         totalKom  += tKom;
         totalNett += tNett;
+        const pct   = pRate > 0 ? (tKom / tPub * 100) : null;
 
         const tr = document.createElement('tr');
         tr.innerHTML = `
@@ -1757,7 +1920,7 @@ function refreshFinance() {
             <td><span class="badge bg-secondary font-monospace">${prod.dsi_code || '—'}</span></td>
             <td class="text-truncate" style="max-width:160px" title="${prod.name}">${prod.name}</td>
             <td class="text-center">${pax}</td>
-            <td class="text-end text-muted">Rp ${fmt(prod.publish_rate)}</td>
+            <td class="text-end text-muted">Rp ${fmt(pRate)}</td>
             <td class="text-end fw-semibold">Rp ${fmt(tPub)}</td>
             <td class="text-end">Rp ${fmt(tKom)}</td>
             <td class="text-end">Rp ${fmt(tNett)}</td>
@@ -1817,7 +1980,16 @@ document.addEventListener('DOMContentLoaded', function() {
         if (importPrefillItems && importPrefillItems.length > 0) {
             // Pre-fill semua item dari transaksi yang sama
             importPrefillItems.forEach(item => {
-                addRow(item.product_name, item.product_id || '', item.pax, item.price, true);
+                let initialPrice = item.publish_rate; // Default to gross
+                if (isNettMode(currentPaymentMethod)) {
+                    initialPrice = item.nett_price;
+                } else if (isGrossMode(currentPaymentMethod)) {
+                    initialPrice = item.publish_rate;
+                }
+                addRow(item.product_name, item.product_id || '', item.pax, initialPrice, true, {
+                    publish_rate: item.publish_rate,
+                    nett_price: item.nett_price
+                });
             });
         } else {
             addRow();
@@ -1910,7 +2082,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (productId) {
                     const prod = products.find(p => p.id == productId);
                     if (prod) {
-                        row.querySelector('.item-price').value = fmtCurrency(getPriceForProduct(prod));
+                        row.querySelector('.item-price').value = fmtCurrency(getPriceForProduct(prod, row));
                         recalcRow(row.querySelector('.item-pax'));
                     }
                 }
@@ -1918,5 +2090,219 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+</script>
+@endpush
+
+@push('scripts')
+<script>
+(function () {
+    const input      = document.getElementById('bookingPassInput');
+    const dropdown   = document.getElementById('bpDropdown');
+    const badge      = document.getElementById('bpStatusBadge');
+    const foundHint  = document.getElementById('bpFoundHint');
+    const unlockBtn  = document.getElementById('bpUnlockBtn');
+    if (!input) return;
+
+    const searchUrl = '{{ route("api.reservations.search") }}';
+    let activeIdx   = -1;
+    let debounceTimer;
+    let verifyTimer;
+
+    const statusLabel = {
+        CONFIRMED : { text: 'Confirmed',  cls: 'bg-success text-white' },
+        PENDING   : { text: 'Pending',    cls: 'bg-warning text-dark'  },
+        COMPLETED : { text: 'Completed',  cls: 'bg-primary text-white' },
+        CANCELLED : { text: 'Cancelled',  cls: 'bg-secondary text-white' },
+        NO_SHOW   : { text: 'No Show',    cls: 'bg-danger text-white'  },
+    };
+
+    const guestInput  = document.getElementById('guestNameInput');
+    const partnerSel  = document.getElementById('partner_id');
+
+    function getPartnerTs() {
+        return (partnerSel && partnerSel.tomselect) ? partnerSel.tomselect : null;
+    }
+
+    /* ── State helpers ── */
+    function markFound(guestName, partnerId) {
+        input.readOnly = true;
+        if (badge) {
+            badge.className = 'bp-status-badge found';
+            badge.innerHTML = '<i class="bi bi-check-circle-fill"></i> Reservation ditemukan';
+            badge.style.display = '';
+        }
+        if (foundHint) foundHint.style.display = '';
+
+        // Auto-fill & lock guest name
+        if (guestInput && guestName) {
+            guestInput.value    = guestName;
+            guestInput.readOnly = true;
+        }
+
+        // Auto-fill & lock partner via Tom Select
+        const ts = getPartnerTs();
+        if (ts && partnerId) {
+            ts.setValue(String(partnerId), true); // silent=true: skip onChange to avoid side-effects
+            ts.lock();
+        }
+
+        hideDropdown();
+    }
+
+    function markNotFound() {
+        input.readOnly = false;
+        if (badge) {
+            badge.className = 'bp-status-badge not-found';
+            badge.innerHTML = '<i class="bi bi-x-circle-fill"></i> Reservation tidak ditemukan';
+            badge.style.display = '';
+        }
+        if (foundHint) foundHint.style.display = 'none';
+    }
+
+    function markEmpty() {
+        input.readOnly = false;
+        if (badge) {
+            badge.className = 'bp-status-badge empty';
+            badge.innerHTML = '<i class="bi bi-circle"></i> Belum ada No. Reservation';
+            badge.style.display = '';
+        }
+        if (foundHint) foundHint.style.display = 'none';
+    }
+
+    function unlockPartnerGuest() {
+        if (guestInput) guestInput.readOnly = false;
+        const ts = getPartnerTs();
+        if (ts) ts.unlock();
+    }
+
+    /* ── Dropdown rendering ── */
+    function renderItems(items) {
+        if (!dropdown) return;
+        activeIdx = -1;
+        if (!items.length) {
+            dropdown.innerHTML = '<div class="bp-dropdown-empty"><i class="bi bi-search me-1"></i>Tidak ada reservation yang cocok</div>';
+            dropdown.classList.add('show');
+            return;
+        }
+
+        dropdown.innerHTML = items.map(function (r, i) {
+            const st   = statusLabel[r.status] ?? { text: r.status, cls: 'bg-secondary text-white' };
+            const date = r.visit_date
+                ? new Date(r.visit_date).toLocaleDateString('id-ID', { day:'2-digit', month:'short', year:'numeric' })
+                : '—';
+            const partnerLabel = r.partner_name ? ' &middot; ' + r.partner_name : '';
+            return '<div class="bp-dropdown-item" role="option"'
+                + ' data-idx="' + i + '"'
+                + ' data-value="' + r.reservation_no + '"'
+                + ' data-guest-name="' + (r.guest_name ?? '').replace(/"/g, '&quot;') + '"'
+                + ' data-partner-id="' + (r.partner_id ?? '') + '"'
+                + '>'
+                + '<span class="bp-dropdown-res-no">' + r.reservation_no + '</span>'
+                + '<span class="bp-dropdown-meta">' + (r.guest_name ?? '') + partnerLabel + ' &middot; ' + date + '</span>'
+                + '<span class="bp-dropdown-status ' + st.cls + '">' + st.text + '</span>'
+                + '</div>';
+        }).join('');
+
+        dropdown.classList.add('show');
+
+        dropdown.querySelectorAll('.bp-dropdown-item').forEach(function (el) {
+            el.addEventListener('mousedown', function (e) {
+                e.preventDefault();
+                selectItem(this.dataset.value, this.dataset.guestName, this.dataset.partnerId);
+            });
+        });
+    }
+
+    function hideDropdown() {
+        if (!dropdown) return;
+        dropdown.classList.remove('show');
+        activeIdx = -1;
+    }
+
+    /* ── Select from dropdown — immediately mark found + fill partner/guest ── */
+    function selectItem(value, guestName, partnerId) {
+        input.value = value;
+        markFound(guestName || '', partnerId || null);
+    }
+
+    /* ── Verify exact match against API (on blur / after typing) ── */
+    function verifyExact(value) {
+        if (!value) { markEmpty(); return; }
+        fetch(searchUrl + '?q=' + encodeURIComponent(value), {
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(function (r) { return r.json(); })
+        .then(function (items) {
+            const exact = items.find(function (i) { return i.reservation_no === value; });
+            if (exact) markFound(exact.guest_name || '', exact.partner_id || null);
+            else markNotFound();
+        })
+        .catch(function () { /* network error — leave as-is */ });
+    }
+
+    /* ── Keyboard navigation ── */
+    function navigate(dir) {
+        if (!dropdown) return;
+        const items = dropdown.querySelectorAll('.bp-dropdown-item');
+        if (!items.length) return;
+        items[activeIdx]?.classList.remove('active');
+        activeIdx = Math.max(0, Math.min(items.length - 1, activeIdx + dir));
+        items[activeIdx].classList.add('active');
+        items[activeIdx].scrollIntoView({ block: 'nearest' });
+    }
+
+    /* ── Input events ── */
+    input.addEventListener('input', function () {
+        clearTimeout(debounceTimer);
+        clearTimeout(verifyTimer);
+        const q = this.value.trim();
+        if (q.length < 2) { hideDropdown(); return; }
+
+        debounceTimer = setTimeout(function () {
+            fetch(searchUrl + '?q=' + encodeURIComponent(q), {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            })
+            .then(function (r) { return r.json(); })
+            .then(renderItems)
+            .catch(function () { hideDropdown(); });
+        }, 250);
+    });
+
+    input.addEventListener('blur', function () {
+        /* Delay so mousedown on dropdown item fires first */
+        verifyTimer = setTimeout(function () {
+            hideDropdown();
+            const val = input.value.trim();
+            if (!input.readOnly) verifyExact(val);
+        }, 180);
+    });
+
+    input.addEventListener('keydown', function (e) {
+        if (!dropdown || !dropdown.classList.contains('show')) return;
+        if (e.key === 'ArrowDown') { e.preventDefault(); navigate(1); }
+        if (e.key === 'ArrowUp')   { e.preventDefault(); navigate(-1); }
+        if (e.key === 'Enter' && activeIdx >= 0) {
+            e.preventDefault();
+            const active = dropdown.querySelector('.bp-dropdown-item.active');
+            if (active) selectItem(active.dataset.value);
+        }
+        if (e.key === 'Escape') hideDropdown();
+    });
+
+    document.addEventListener('click', function (e) {
+        if (input.contains(e.target) || (dropdown && dropdown.contains(e.target))) return;
+        hideDropdown();
+    });
+
+    /* ── Unlock button ── */
+    if (unlockBtn) {
+        unlockBtn.addEventListener('click', function () {
+            input.value = '';
+            unlockPartnerGuest();
+            markEmpty();
+            input.focus();
+        });
+    }
+})();
 </script>
 @endpush

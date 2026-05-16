@@ -23,6 +23,7 @@ use App\Http\Controllers\ReservationController;
 use App\Http\Controllers\PartnerReservationController;
 use App\Http\Controllers\SelfServiceController;
 use App\Http\Controllers\BookingPassController;
+use App\Http\Controllers\AdmissionController;
 use App\Http\Controllers\ReservationAnomalyController;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
@@ -191,9 +192,20 @@ Route::middleware('auth')->group(function () {
     Route::get('reports/export-credit-csv', [ReportController::class, 'exportCreditCsv'])->name('reports.export-credit-csv');
     Route::get('reports/export-credit-pdf', [ReportController::class, 'exportCreditPdf'])->name('reports.export-credit-pdf');
 
+    // ── Phase 12: Admission + Redeem ──────────────────────────────────────────
+    Route::middleware('role:ADMISSION,ADMIN')->prefix('admission')->group(function () {
+        Route::get('/',        [AdmissionController::class, 'dashboard'])->name('admission.dashboard');
+        Route::get('/scan',    [AdmissionController::class, 'scanPage'])->name('admission.scan');
+        Route::post('/lookup', [AdmissionController::class, 'lookup'])->name('admission.lookup');
+        Route::post('/redeem', [AdmissionController::class, 'redeem'])->name('admission.redeem');
+        Route::get('/history', [AdmissionController::class, 'history'])->name('admission.history');
+        Route::get('/qr',      [AdmissionController::class, 'qrDisplay'])->name('admission.qr');
+    });
+
     // ── Phase 10: Reservation System ──────────────────────────────────────────
 
     // Internal reservations (authenticated)
+    Route::get('/api/reservations/search', [ReservationController::class, 'search'])->name('api.reservations.search');
     Route::resource('reservations', ReservationController::class)->except(['destroy']);
     Route::post('reservations/{reservation}/cancel', [ReservationController::class, 'cancel'])->name('reservations.cancel');
     Route::get('reservations/{reservation}/booking-pass', [ReservationController::class, 'bookingPassDownload'])->name('reservations.booking-pass');
@@ -216,7 +228,7 @@ Route::middleware('auth')->group(function () {
 
     // Self-Service QR Admin
     Route::get('self-service-qr', [SelfServiceController::class, 'qrIndex'])->name('self-service.qr-admin');
-    Route::post('self-service-qr/generate', [SelfServiceController::class, 'generateQr'])->name('self-service.generate-qr')->middleware('role:ADMIN,SALES');
+    Route::post('self-service-qr/generate', [SelfServiceController::class, 'generateQr'])->name('self-service.generate-qr')->middleware('role:ADMIN,SALES,ADMISSION');
 
     // Employee-Partner Checks (admin)
     Route::get('admin/employee-partner-checks', [ReservationAnomalyController::class, 'employeeCheckIndex'])->name('admin.employee-partner-checks.index')->middleware('role:ADMIN');

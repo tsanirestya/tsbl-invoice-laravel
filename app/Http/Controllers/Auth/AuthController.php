@@ -27,6 +27,11 @@ class AuthController extends Controller
             }
 
             $request->session()->regenerate();
+
+            if (Auth::user()->isAdmission()) {
+                return redirect()->route('admission.dashboard');
+            }
+
             return redirect()->intended('/dashboard');
         }
 

@@ -45,7 +45,7 @@
     <div class="col-md-6">
         <label class="form-label fw-semibold">Role <span class="text-danger">*</span></label>
         <select name="user_status" class="form-select @error('user_status') is-invalid @enderror" required>
-            @foreach(['ADMIN','FINANCE','SALES','VIEWER'] as $role)
+            @foreach(['ADMIN','FINANCE','SALES','VIEWER','ADMISSION'] as $role)
                 <option value="{{ $role }}" @selected(old('user_status', $user->user_status ?? '') === $role)>{{ $role }}</option>
             @endforeach
         </select>

@@ -24,9 +24,10 @@ class User extends Authenticatable
         ];
     }
 
-    public function isAdmin(): bool    { return $this->user_status === 'ADMIN'; }
-    public function isFinance(): bool  { return $this->user_status === 'FINANCE'; }
-    public function isSales(): bool    { return $this->user_status === 'SALES'; }
+    public function isAdmin(): bool      { return $this->user_status === 'ADMIN'; }
+    public function isFinance(): bool    { return $this->user_status === 'FINANCE'; }
+    public function isSales(): bool      { return $this->user_status === 'SALES'; }
+    public function isAdmission(): bool  { return $this->user_status === 'ADMISSION'; }
 
     public function invoices()
     {
