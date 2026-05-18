@@ -72,37 +72,62 @@ if ($hasZipArchive) {
         echo "ERROR: Failed to open zip file $target at $zipFile. Code: $openResult";
     }
 } else {
-    // Fallback to shell unzip
-    $command = "unzip -o " . escapeshellarg($zipFile) . " -d " . escapeshellarg($extractTo) . " 2>&1";
-    $output = shell_exec($command);
-    if ($output === null) {
-        file_put_contents(__DIR__ . '/deploy_log.txt', date('[Y-m-d H:i:s]') . " ZipArchive and shell_exec missing. Using SimpleZipExtractor.\n", FILE_APPEND);
-        require_once 'simple_unzip.php';
-        try {
-            if (SimpleZipExtractor::extract($zipFile, $extractTo)) {
-                unlink($zipFile);
-                file_put_contents(__DIR__ . '/deploy_log.txt', date('[Y-m-d H:i:s]') . " SUCCESS: $target extracted via SimpleZipExtractor.\n", FILE_APPEND);
-                echo "SUCCESS: $target extracted via SimpleZipExtractor.";
-            } else {
-                file_put_contents(__DIR__ . '/deploy_log.txt', date('[Y-m-d H:i:s]') . " ERROR: SimpleZipExtractor failed for $target.\n", FILE_APPEND);
-                header('HTTP/1.0 500 Internal Server Error');
-                echo "ERROR: SimpleZipExtractor failed.";
+    // Fallback to shell unzip (safely check if available and not disabled)
+    $output = null;
+    $shellSuccess = false;
+    try {
+        if (function_exists('shell_exec') && !in_array('shell_exec', array_map('trim', explode(',', ini_get('disable_functions'))))) {
+            $command = "unzip -o " . escapeshellarg($zipFile) . " -d " . escapeshellarg($extractTo) . " 2>&1";
+            $output = @shell_exec($command);
+            if ($output !== null && (strpos($output, 'inflating') !== false || strpos($output, 'extracting') !== false)) {
+                $shellSuccess = true;
             }
-        } catch (Exception $e) {
-            file_put_contents(__DIR__ . '/deploy_log.txt', date('[Y-m-d H:i:s]') . " ERROR: Exception in SimpleZipExtractor: " . $e->getMessage() . "\n", FILE_APPEND);
-            header('HTTP/1.0 500 Internal Server Error');
-            echo "ERROR: " . $e->getMessage();
         }
+    } catch (Throwable $e) {
+        file_put_contents(__DIR__ . '/deploy_log.txt', date('[Y-m-d H:i:s]') . " Shell unzip exception: " . $e->getMessage() . "\n", FILE_APPEND);
+    }
+
+    if ($shellSuccess) {
+        unlink($zipFile);
+        file_put_contents(__DIR__ . '/deploy_log.txt', date('[Y-m-d H:i:s]') . " SUCCESS: $target extracted via shell.\n", FILE_APPEND);
+        echo "SUCCESS: $target extracted via shell.";
     } else {
-        file_put_contents(__DIR__ . '/deploy_log.txt', date('[Y-m-d H:i:s]') . " Shell unzip triggered for $target. Output length: " . strlen($output) . "\n", FILE_APPEND);
-        if (strpos($output, 'inflating') !== false || strpos($output, 'extracting') !== false) {
-            unlink($zipFile);
-            file_put_contents(__DIR__ . '/deploy_log.txt', date('[Y-m-d H:i:s]') . " SUCCESS: $target extracted via shell.\n", FILE_APPEND);
-            echo "SUCCESS: $target extracted via shell.";
+        // Fallback to PclZip
+        $pclZipPath = file_exists(__DIR__ . '/pclzip.lib.php') ? __DIR__ . '/pclzip.lib.php' : __DIR__ . '/../tsbl-invoice-laravel/pclzip.lib.php';
+        if (file_exists($pclZipPath)) {
+            file_put_contents(__DIR__ . '/deploy_log.txt', date('[Y-m-d H:i:s]') . " Attempting PclZip extraction for $target.\n", FILE_APPEND);
+            require_once $pclZipPath;
+            $archive = new PclZip($zipFile);
+            if ($archive->extract(PCLZIP_OPT_PATH, $extractTo) != 0) {
+                unlink($zipFile);
+                file_put_contents(__DIR__ . '/deploy_log.txt', date('[Y-m-d H:i:s]') . " SUCCESS: $target extracted via PclZip.\n", FILE_APPEND);
+                echo "SUCCESS: $target extracted via PclZip.";
+            } else {
+                file_put_contents(__DIR__ . '/deploy_log.txt', date('[Y-m-d H:i:s]') . " ERROR: PclZip failed for $target: " . $archive->errorInfo(true) . "\n", FILE_APPEND);
+                $fallbackToSimple = true;
+            }
         } else {
-            file_put_contents(__DIR__ . '/deploy_log.txt', date('[Y-m-d H:i:s]') . " ERROR: Shell unzip failed for $target. Output: $output\n", FILE_APPEND);
-            header('HTTP/1.0 500 Internal Server Error');
-            echo "ERROR: Shell unzip failed.";
+            $fallbackToSimple = true;
+        }
+
+        if (isset($fallbackToSimple) && $fallbackToSimple) {
+            file_put_contents(__DIR__ . '/deploy_log.txt', date('[Y-m-d H:i:s]') . " Fallback to SimpleZipExtractor for $target.\n", FILE_APPEND);
+            require_once 'simple_unzip.php';
+            try {
+                if (SimpleZipExtractor::extract($zipFile, $extractTo)) {
+                    unlink($zipFile);
+                    file_put_contents(__DIR__ . '/deploy_log.txt', date('[Y-m-d H:i:s]') . " SUCCESS: $target extracted via SimpleZipExtractor.\n", FILE_APPEND);
+                    echo "SUCCESS: $target extracted via SimpleZipExtractor.";
+                } else {
+                    file_put_contents(__DIR__ . '/deploy_log.txt', date('[Y-m-d H:i:s]') . " ERROR: SimpleZipExtractor failed for $target.\n", FILE_APPEND);
+                    header('HTTP/1.0 500 Internal Server Error');
+                    echo "ERROR: SimpleZipExtractor failed.";
+                }
+            } catch (Exception $e) {
+                file_put_contents(__DIR__ . '/deploy_log.txt', date('[Y-m-d H:i:s]') . " ERROR: Exception in SimpleZipExtractor: " . $e->getMessage() . "\n", FILE_APPEND);
+                header('HTTP/1.0 500 Internal Server Error');
+                echo "ERROR: " . $e->getMessage();
+            }
         }
     }
 }
