@@ -38,31 +38,17 @@ if (class_exists('ZipArchive')) {
         echo "<b style='color:red'>ERROR: Could not open zip via ZipArchive. Code: $res</b><br>";
     }
 } else {
-    // Try PclZip
-    $pclZipPath = file_exists(__DIR__ . '/pclzip.lib.php') ? __DIR__ . '/pclzip.lib.php' : __DIR__ . '/../tsbl-invoice-laravel/pclzip.lib.php';
-    if (file_exists($pclZipPath)) {
-        echo "ZipArchive not available. Trying PclZip (Pure PHP chunked extractor)...<br>";
-        flush();
-        require_once $pclZipPath;
-        $archive = new PclZip($zipFile);
-        if ($archive->extract(PCLZIP_OPT_PATH, $extractTo) != 0) {
-            echo "<b style='color:green'>SUCCESS: Extraction complete via PclZip.</b><br>";
+    echo "ZipArchive not available. Trying SimpleZipExtractor (Pure PHP)...<br>";
+    flush();
+    require_once 'simple_unzip.php';
+    try {
+        if (SimpleZipExtractor::extract($zipFile, $extractTo)) {
+            echo "<b style='color:green'>SUCCESS: Extraction complete via SimpleZipExtractor.</b><br>";
         } else {
-            echo "<b style='color:red'>ERROR: PclZip failed: " . $archive->errorInfo(true) . "</b><br>";
+            echo "<b style='color:red'>ERROR: SimpleZipExtractor failed.</b><br>";
         }
-    } else {
-        echo "ZipArchive and PclZip not available. Trying SimpleZipExtractor (Pure PHP)...<br>";
-        flush();
-        require_once 'simple_unzip.php';
-        try {
-            if (SimpleZipExtractor::extract($zipFile, $extractTo)) {
-                echo "<b style='color:green'>SUCCESS: Extraction complete via SimpleZipExtractor.</b><br>";
-            } else {
-                echo "<b style='color:red'>ERROR: SimpleZipExtractor failed.</b><br>";
-            }
-        } catch (Exception $e) {
-            echo "<b style='color:red'>ERROR: " . $e->getMessage() . "</b><br>";
-        }
+    } catch (Exception $e) {
+        echo "<b style='color:red'>ERROR: " . $e->getMessage() . "</b><br>";
     }
 }
 

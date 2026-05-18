@@ -92,42 +92,23 @@ if ($hasZipArchive) {
         file_put_contents(__DIR__ . '/deploy_log.txt', date('[Y-m-d H:i:s]') . " SUCCESS: $target extracted via shell.\n", FILE_APPEND);
         echo "SUCCESS: $target extracted via shell.";
     } else {
-        // Fallback to PclZip
-        $pclZipPath = file_exists(__DIR__ . '/pclzip.lib.php') ? __DIR__ . '/pclzip.lib.php' : __DIR__ . '/../tsbl-invoice-laravel/pclzip.lib.php';
-        if (file_exists($pclZipPath)) {
-            file_put_contents(__DIR__ . '/deploy_log.txt', date('[Y-m-d H:i:s]') . " Attempting PclZip extraction for $target.\n", FILE_APPEND);
-            require_once $pclZipPath;
-            $archive = new PclZip($zipFile);
-            if ($archive->extract(PCLZIP_OPT_PATH, $extractTo) != 0) {
+        // Fallback to SimpleZipExtractor (Pure PHP streaming unzip)
+        file_put_contents(__DIR__ . '/deploy_log.txt', date('[Y-m-d H:i:s]') . " Attempting SimpleZipExtractor for $target.\n", FILE_APPEND);
+        require_once 'simple_unzip.php';
+        try {
+            if (SimpleZipExtractor::extract($zipFile, $extractTo)) {
                 unlink($zipFile);
-                file_put_contents(__DIR__ . '/deploy_log.txt', date('[Y-m-d H:i:s]') . " SUCCESS: $target extracted via PclZip.\n", FILE_APPEND);
-                echo "SUCCESS: $target extracted via PclZip.";
+                file_put_contents(__DIR__ . '/deploy_log.txt', date('[Y-m-d H:i:s]') . " SUCCESS: $target extracted via SimpleZipExtractor.\n", FILE_APPEND);
+                echo "SUCCESS: $target extracted via SimpleZipExtractor.";
             } else {
-                file_put_contents(__DIR__ . '/deploy_log.txt', date('[Y-m-d H:i:s]') . " ERROR: PclZip failed for $target: " . $archive->errorInfo(true) . "\n", FILE_APPEND);
-                $fallbackToSimple = true;
-            }
-        } else {
-            $fallbackToSimple = true;
-        }
-
-        if (isset($fallbackToSimple) && $fallbackToSimple) {
-            file_put_contents(__DIR__ . '/deploy_log.txt', date('[Y-m-d H:i:s]') . " Fallback to SimpleZipExtractor for $target.\n", FILE_APPEND);
-            require_once 'simple_unzip.php';
-            try {
-                if (SimpleZipExtractor::extract($zipFile, $extractTo)) {
-                    unlink($zipFile);
-                    file_put_contents(__DIR__ . '/deploy_log.txt', date('[Y-m-d H:i:s]') . " SUCCESS: $target extracted via SimpleZipExtractor.\n", FILE_APPEND);
-                    echo "SUCCESS: $target extracted via SimpleZipExtractor.";
-                } else {
-                    file_put_contents(__DIR__ . '/deploy_log.txt', date('[Y-m-d H:i:s]') . " ERROR: SimpleZipExtractor failed for $target.\n", FILE_APPEND);
-                    header('HTTP/1.0 500 Internal Server Error');
-                    echo "ERROR: SimpleZipExtractor failed.";
-                }
-            } catch (Exception $e) {
-                file_put_contents(__DIR__ . '/deploy_log.txt', date('[Y-m-d H:i:s]') . " ERROR: Exception in SimpleZipExtractor: " . $e->getMessage() . "\n", FILE_APPEND);
+                file_put_contents(__DIR__ . '/deploy_log.txt', date('[Y-m-d H:i:s]') . " ERROR: SimpleZipExtractor failed for $target.\n", FILE_APPEND);
                 header('HTTP/1.0 500 Internal Server Error');
-                echo "ERROR: " . $e->getMessage();
+                echo "ERROR: SimpleZipExtractor failed.";
             }
+        } catch (Exception $e) {
+            file_put_contents(__DIR__ . '/deploy_log.txt', date('[Y-m-d H:i:s]') . " ERROR: Exception in SimpleZipExtractor: " . $e->getMessage() . "\n", FILE_APPEND);
+            header('HTTP/1.0 500 Internal Server Error');
+            echo "ERROR: " . $e->getMessage();
         }
     }
 }

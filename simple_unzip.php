@@ -13,9 +13,26 @@ class SimpleZipExtractor {
         $fh = fopen($zipFile, 'rb');
         if (!$fh) return false;
         
-        fseek($fh, -22, SEEK_END);
-        $endOfCentralDir = fread($fh, 22);
-        $data = unpack('vdisk/vdisk_start/vdisk_entries/ventries/Vsize/Voffset/vcomment_len', substr($endOfCentralDir, 4));
+        // Find EOCD signature backwards from the end of the file (robust against comments/extra bytes)
+        fseek($fh, 0, SEEK_END);
+        $fileSize = ftell($fh);
+        $searchRange = min($fileSize, 1024); // standard EOCD search range is 1024 bytes
+        fseek($fh, -$searchRange, SEEK_END);
+        $searchData = fread($fh, $searchRange);
+        
+        $eocdPos = strrpos($searchData, "\x50\x4b\x05\x06");
+        if ($eocdPos === false) {
+            fclose($fh);
+            throw new Exception("Invalid ZIP file: End of Central Directory signature not found.");
+        }
+        
+        $endOfCentralDir = substr($searchData, $eocdPos);
+        if (strlen($endOfCentralDir) < 22) {
+            fclose($fh);
+            throw new Exception("Invalid ZIP file: End of Central Directory record is incomplete.");
+        }
+        
+        $data = unpack('vdisk/vdisk_start/vdisk_entries/ventries/Vsize/Voffset/vcomment_len', substr($endOfCentralDir, 4, 18));
         
         fseek($fh, $data['offset']);
         for ($i = 0; $i < $data['entries']; $i++) {
@@ -28,6 +45,10 @@ class SimpleZipExtractor {
             $currentPos = ftell($fh);
             fseek($fh, $info['offset']);
             $localHeader = fread($fh, 30);
+            if (strlen($localHeader) < 30) {
+                fseek($fh, $currentPos);
+                continue;
+            }
             $localInfo = unpack('vlen/vextra', substr($localHeader, 26));
             fseek($fh, $localInfo['len'] + $localInfo['extra'], SEEK_CUR);
             
@@ -49,9 +70,9 @@ class SimpleZipExtractor {
                 }
             }
             fseek($fh, $currentPos);
-
         }
         fclose($fh);
         return true;
     }
 }
+
