@@ -15,19 +15,34 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet">
     <style>
+        /* ── Design Tokens ─────────────────────────────────── */
         :root {
-            --sidebar-width: 250px;
-            --topbar-height: 56px;
-            --sidebar-bg: #0f1729;
-            --sidebar-active-bg: rgba(59,130,246,.14);
-            --sidebar-active-bar: #3b82f6;
-            --sidebar-text: rgba(255,255,255,.6);
-            --page-bg: #f0f4fb;
-            --card-radius: 12px;
-            --color-paid: #059669;
-            --color-overdue: #dc2626;
-            --color-partial: #d97706;
-            --color-unpaid: #64748b;
+            --sidebar-w:     220px;
+            --topbar-h:      52px;
+            --accent:        #2563eb;
+            --accent-light:  #eff6ff;
+            --accent-dim:    #dbeafe;
+            --success:       #059669;
+            --success-light: #f0fdf4;
+            --warning:       #d97706;
+            --warning-light: #fffbeb;
+            --danger:        #dc2626;
+            --danger-light:  #fef2f2;
+            --purple:        #7c3aed;
+            --purple-light:  #f5f3ff;
+            --text:          #0f172a;
+            --text-2:        #334155;
+            --text-3:        #64748b;
+            --text-4:        #94a3b8;
+            --card-bg:       #ffffff;
+            --page-bg:       #f8fafc;
+            --border:        #f1f5f9;
+            --border-2:      #e2e8f0;
+            --radius:        8px;
+            --radius-sm:     5px;
+            --radius-lg:     12px;
+            --shadow:        0 1px 3px rgba(0,0,0,.04), 0 1px 2px rgba(0,0,0,.02);
+            --shadow-md:     0 4px 12px rgba(0,0,0,.06);
         }
 
         *, *::before, *::after { box-sizing: border-box; }
@@ -36,62 +51,56 @@
             background: var(--page-bg);
             font-family: 'Inter', sans-serif;
             font-size: 14px;
-            color: #1e293b;
+            color: var(--text-2);
         }
 
         /* ── Sidebar ─────────────────────────────────────────── */
         #sidebar {
-            width: var(--sidebar-width);
+            width: var(--sidebar-w);
             min-height: 100vh;
-            background: var(--sidebar-bg);
+            background: var(--card-bg);
+            border-right: 1px solid var(--border);
             position: fixed; top: 0; left: 0;
             z-index: 1030;
             transition: transform .26s cubic-bezier(.4,0,.2,1);
             display: flex; flex-direction: column; overflow: hidden;
         }
-        #sidebar::before {
-            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 180px;
-            background: linear-gradient(180deg, rgba(59,130,246,.08) 0%, transparent 100%);
-            pointer-events: none;
-        }
         .sidebar-brand {
-            height: var(--topbar-height);
+            height: var(--topbar-h);
             display: flex; align-items: center;
-            padding: 0 1.25rem;
-            border-bottom: 1px solid rgba(255,255,255,.05);
-            flex-shrink: 0; position: relative; z-index: 1;
+            padding: 0 1.1rem;
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
         }
         .sidebar-brand-icon {
-            width: 30px; height: 30px; border-radius: 8px;
-            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            width: 24px; height: 24px; border-radius: 6px;
+            background: var(--accent);
             display: flex; align-items: center; justify-content: center;
             flex-shrink: 0; margin-right: .6rem;
+            font-size: .62rem; color: #fff;
         }
-        .sidebar-brand-title { color: #fff; font-weight: 800; font-size: .95rem; letter-spacing: -.1px; }
-        .sidebar-brand-sub   { color: rgba(255,255,255,.35); font-size: .64rem; font-weight: 400; letter-spacing: .4px; text-transform: uppercase; }
+        .sidebar-brand-title { color: var(--text); font-weight: 800; font-size: .85rem; letter-spacing: -.1px; }
+        .sidebar-brand-sub   { color: var(--text-4); font-size: .57rem; text-transform: uppercase; letter-spacing: .6px; }
 
         .sidebar-scroll {
             flex: 1; overflow-y: auto; padding: .5rem 0 1rem;
-            position: relative; z-index: 1;
         }
         .sidebar-scroll::-webkit-scrollbar { width: 3px; }
-        .sidebar-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,.08); border-radius: 4px; }
+        .sidebar-scroll::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 4px; }
 
-        /* ── Sidebar accordion sections ──────────────────────── */
+        /* ── Sidebar sections (accordion kept, styled flat) ── */
         .nav-section {
             display: flex; align-items: center; justify-content: space-between;
-            color: rgba(255,255,255,.35); font-size: .6rem; font-weight: 700;
-            letter-spacing: 1.5px; text-transform: uppercase;
-            padding: .65rem 1.1rem .65rem 1.4rem;
-            margin: 2px 0 0;
+            font-size: .55rem; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 1.1px; color: var(--text-4);
+            padding: .7rem 1.1rem .2rem;
+            margin: 4px 0 0;
             cursor: pointer; user-select: none;
-            border-radius: 6px;
-            transition: background .15s, color .15s;
+            transition: color .12s;
         }
-        .nav-section:hover { background: rgba(255,255,255,.05); color: rgba(255,255,255,.6); }
-        .nav-section.open { color: rgba(255,255,255,.6); }
+        .nav-section:hover { color: var(--text-3); }
         .nav-section .nav-section-arrow {
-            font-size: .65rem; transition: transform .22s cubic-bezier(.4,0,.2,1);
+            font-size: .6rem; transition: transform .22s cubic-bezier(.4,0,.2,1);
             flex-shrink: 0;
         }
         .nav-section.open .nav-section-arrow { transform: rotate(180deg); }
@@ -100,34 +109,41 @@
             max-height: 0;
             transition: max-height .26s cubic-bezier(.4,0,.2,1);
         }
-        .nav-section-body.open { max-height: 500px; }
+        .nav-section-body.open { max-height: 600px; }
+
         #sidebar .nav-link {
-            color: var(--sidebar-text);
-            padding: .5rem 1rem .5rem 1.2rem;
-            border-radius: 9px; margin: 1px 8px;
-            font-size: .82rem; font-weight: 500;
-            transition: background .15s, color .15s;
-            display: flex; align-items: center; position: relative;
+            color: var(--text-3);
+            padding: .38rem .9rem;
+            margin: 1px .5rem;
+            border-radius: var(--radius-sm);
+            font-size: .78rem; font-weight: 500;
+            transition: background .12s, color .12s;
+            display: flex; align-items: center;
+            text-decoration: none;
+            position: relative;
         }
-        #sidebar .nav-link i { width: 24px; text-align: center; margin-right: 8px; font-size: .88rem; flex-shrink: 0; }
-        #sidebar .nav-link:hover { background: rgba(255,255,255,.07); color: #fff; }
-        #sidebar .nav-link.active {
-            background: var(--sidebar-active-bg); color: #60a5fa; font-weight: 600;
+        #sidebar .nav-link i { width: 16px; text-align: center; margin-right: .6rem; font-size: .8rem; flex-shrink: 0; }
+        #sidebar .nav-link:hover { background: #f8fafc; color: var(--text); }
+        #sidebar .nav-link.active { background: var(--accent-light); color: var(--accent); font-weight: 700; }
+
+        .sb-badge {
+            margin-left: auto;
+            background: var(--danger); color: #fff;
+            font-size: .57rem; font-weight: 700; border-radius: 10px;
+            padding: .1rem .38rem; line-height: 1.4; flex-shrink: 0;
         }
-        #sidebar .nav-link.active::before {
-            content: ''; position: absolute; left: 0; top: 50%; transform: translateY(-50%);
-            width: 3px; height: 55%; background: var(--sidebar-active-bar); border-radius: 0 3px 3px 0;
-        }
+        .sb-badge.warn { background: var(--warning); color: #fff; }
+
         .sidebar-footer {
-            border-top: 1px solid rgba(255,255,255,.05);
-            padding: .6rem 8px;
+            border-top: 1px solid var(--border);
+            padding: .6rem .5rem;
         }
-        .sidebar-footer .nav-link { color: rgba(255, 100, 100, .7); }
-        .sidebar-footer .nav-link:hover { background: rgba(220,38,38,.1); color: #f87171; }
+        .sidebar-footer .nav-link { color: #ef4444 !important; }
+        .sidebar-footer .nav-link:hover { background: #fff5f5 !important; color: #dc2626 !important; }
 
         /* ── Main ────────────────────────────────────────────── */
         #main-content {
-            margin-left: var(--sidebar-width);
+            margin-left: var(--sidebar-w);
             min-height: 100vh;
             display: flex; flex-direction: column;
             overflow-x: hidden;
@@ -135,142 +151,265 @@
 
         /* ── Topbar ──────────────────────────────────────────── */
         .topbar {
-            height: var(--topbar-height);
-            background: #fff;
-            border-bottom: 1px solid #e8edf5;
+            height: var(--topbar-h);
+            background: var(--card-bg);
+            border-bottom: 1px solid var(--border);
             display: flex; align-items: center;
-            padding: 0 1.25rem;
+            padding: 0 1.5rem;
             position: sticky; top: 0; z-index: 1020;
-            box-shadow: 0 1px 3px rgba(0,0,0,.04);
+            gap: 1rem;
         }
-        .topbar-title { font-size: .88rem; font-weight: 700; color: #0f1729; letter-spacing: -.1px; }
+        .topbar-title { font-size: .88rem; font-weight: 700; color: var(--text); letter-spacing: -.1px; }
         .topbar-user-pill {
             display: flex; align-items: center; gap: .45rem;
-            background: #f1f5fc; border-radius: 50px;
-            padding: .25rem .65rem .25rem .3rem;
-            border: 1px solid #e2e8f0;
+            background: #f8fafc; border: 1px solid var(--border-2);
+            border-radius: 50px;
+            padding: .22rem .65rem .22rem .22rem;
         }
         .topbar-avatar {
-            width: 28px; height: 28px; border-radius: 50%;
-            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            width: 26px; height: 26px; border-radius: 50%;
+            background: var(--accent);
             display: flex; align-items: center; justify-content: center;
-            font-size: .68rem; font-weight: 700; color: #fff; flex-shrink: 0;
+            font-size: .65rem; font-weight: 800; color: #fff; flex-shrink: 0;
         }
-        .topbar-uname { font-size: .78rem; font-weight: 600; color: #334155; line-height: 1.1; }
-        .topbar-urole { font-size: .65rem; color: #94a3b8; }
-        .topbar-clock { font-size: .72rem; color: #94a3b8; font-weight: 500; }
+        .topbar-uname { font-size: .75rem; font-weight: 600; color: var(--text-2); line-height: 1.1; }
+        .topbar-urole { font-size: .62rem; color: var(--text-4); }
+        .topbar-clock { font-size: .72rem; color: var(--text-4); font-weight: 500; }
 
         /* ── Content ─────────────────────────────────────────── */
-        .content-area { padding: 1.25rem 1.5rem; flex: 1; }
+        .content-area { padding: 1.5rem; flex: 1; }
 
-        /* ── Stat cards ──────────────────────────────────────── */
-        .stat-card {
-            border: none; border-radius: var(--card-radius);
-            box-shadow: 0 1px 3px rgba(15,23,41,.07), 0 3px 12px rgba(15,23,41,.04);
-            transition: transform .18s ease, box-shadow .18s ease; overflow: hidden;
+        /* ── Bootstrap overrides ──────────────────────────────── */
+        .card {
+            background: var(--card-bg) !important;
+            border: 1px solid var(--border) !important;
+            border-radius: var(--radius) !important;
+            box-shadow: var(--shadow) !important;
         }
-        .stat-card:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(15,23,41,.12); }
-        .stat-card .stat-icon {
-            width: 42px; height: 42px; border-radius: 11px;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 1.15rem; flex-shrink: 0;
+        .card-header {
+            background: var(--card-bg) !important;
+            border-bottom: 1px solid var(--border) !important;
+            padding: .7rem 1rem !important;
+            font-weight: 600 !important;
+            font-size: .85rem !important;
+        }
+        .card-body { padding: 1rem !important; }
+
+        .btn { border-radius: var(--radius) !important; font-size: .78rem !important; font-weight: 600 !important; }
+        .btn-sm { font-size: .72rem !important; }
+
+        .btn-primary { background: var(--accent) !important; border-color: var(--accent) !important; }
+        .btn-primary:hover, .btn-primary:focus { background: #1d4ed8 !important; border-color: #1d4ed8 !important; }
+        .btn-primary:focus { box-shadow: 0 0 0 .2rem rgba(37,99,235,.25) !important; }
+
+        .btn-outline-secondary { border-color: var(--border-2) !important; color: var(--text-3) !important; }
+        .btn-outline-secondary:hover { border-color: #cbd5e1 !important; color: var(--text) !important; background: #f8fafc !important; }
+
+        .badge {
+            font-size: .63rem !important; font-weight: 700 !important;
+            border-radius: var(--radius-sm) !important;
+            padding: .18rem .45rem !important;
+        }
+        .badge-paid    { background: var(--success-light) !important; color: #166534 !important; border: 1px solid #d1fae5 !important; }
+        .badge-unpaid  { background: #f1f5f9 !important; color: #475569 !important; border: 1px solid var(--border-2) !important; }
+        .badge-partial { background: var(--warning-light) !important; color: #92400e !important; border: 1px solid #fde68a !important; }
+        .badge-overdue { background: var(--danger-light) !important; color: #991b1b !important; border: 1px solid #fecaca !important; }
+        .badge-low     { background: var(--warning-light) !important; color: #92400e !important; border: 1px solid #fde68a !important; }
+        .badge-red     { background: var(--danger-light) !important; color: #991b1b !important; border: 1px solid #fecaca !important; }
+        .badge-blue    { background: var(--accent-light) !important; color: #1d4ed8 !important; border: 1px solid var(--accent-dim) !important; }
+        .badge-purple  { background: var(--purple-light) !important; color: #6d28d9 !important; border: 1px solid #ddd6fe !important; }
+
+        /* ── Page header ──────────────────────────────────────── */
+        .page-hdr { margin-bottom: 1.25rem; display: flex; align-items: flex-start; justify-content: space-between; }
+        .page-hdr h5, .page-hdr .page-title, .page-hdr-greeting { font-size: 1rem; font-weight: 800; color: var(--text); margin: 0; }
+        .page-hdr .page-sub, .page-hdr-sub { font-size: .72rem; color: var(--text-4); margin-top: 2px; }
+
+        /* ── Section label ────────────────────────────────────── */
+        .sect-lbl {
+            font-size: .6rem; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 1px; color: var(--text-4);
+            margin: 1.25rem 0 .6rem; display: flex; align-items: center; gap: .4rem;
+        }
+        .sect-lbl::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+        /* backward compat */
+        .sect-label { font-size: .6rem; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--text-4); margin-bottom: .5rem; }
+
+        /* ── Card header (design system) ──────────────────────── */
+        .card-hdr {
+            padding: .7rem 1rem;
+            border-bottom: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: space-between; gap: .5rem;
+        }
+        .card-hdr-title { font-size: .8rem; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: .45rem; }
+
+        /* ── KPI card ─────────────────────────────────────────── */
+        .kpi {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: .85rem 1rem;
+            box-shadow: var(--shadow);
+            height: 100%;
+        }
+        .kpi-label { font-size: .58rem; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: var(--text-4); margin-bottom: 4px; }
+        .kpi-val   { font-size: 1.5rem; font-weight: 800; line-height: 1; }
+        .kpi-bar   { height: 2px; background: var(--border); border-radius: 2px; margin-top: .5rem; overflow: hidden; }
+        .kpi-bar-fill { height: 100%; border-radius: 2px; }
+        .kpi-trend { font-size: .63rem; color: var(--text-4); margin-top: 4px; }
+
+        /* ── Revenue card ─────────────────────────────────────── */
+        .rev {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-left-width: 3px;
+            border-radius: var(--radius);
+            padding: .9rem 1rem;
+            box-shadow: var(--shadow);
+            position: relative; overflow: hidden;
+            height: 100%;
+        }
+        .rev-label { font-size: .6rem; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 3px; }
+        .rev-val   { font-size: 1.05rem; font-weight: 800; line-height: 1.15; }
+        .rev-sub   { font-size: .65rem; color: var(--text-4); margin-top: 3px; }
+        .rev-icon  { position: absolute; right: .75rem; top: 50%; transform: translateY(-50%); font-size: 1.5rem; opacity: .07; }
+
+        /* ── Alert (DS pattern, Bootstrap dismiss compatible) ─── */
+        .alert-ds {
+            border-radius: var(--radius) !important;
+            padding: .8rem 1rem !important;
+            display: flex !important;
+            align-items: flex-start !important;
+            gap: .75rem !important;
+            border: 1px solid transparent !important;
+        }
+        .alert-ds.alert-warn   { background: var(--warning-light) !important; border-left: 3px solid var(--warning) !important; border-color: #fde68a !important; }
+        .alert-ds.alert-danger { background: var(--danger-light)  !important; border-left: 3px solid var(--danger)  !important; border-color: #fecaca !important; }
+        .alert-ds-icon  { flex-shrink: 0; margin-top: 1px; font-size: .9rem; }
+        .alert-ds-title { font-weight: 700; font-size: .8rem; margin-bottom: 3px; display: block; }
+        .alert-ds-body  { font-size: .75rem; color: var(--text-2); flex: 1; min-width: 0; }
+        .alert-tag {
+            display: inline-flex; align-items: center; gap: .3rem;
+            font-size: .72rem; font-weight: 600; padding: .18rem .5rem;
+            border-radius: var(--radius-sm); text-decoration: none; border: 1px solid;
         }
 
-        /* Gradient variants */
-        .gc-blue   { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); }
-        .gc-slate  { background: linear-gradient(135deg, #64748b 0%, #475569 100%); }
-        .gc-amber  { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); }
-        .gc-green  { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
-        .gc-red    { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); }
-        .gc-cyan   { background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%); }
-        .gc-purple { background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); }
-
-        .stat-card .stat-label { font-size: .67rem; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: rgba(255,255,255,.78); margin-bottom: 3px; }
-        .stat-card .stat-value { font-size: 1.45rem; font-weight: 800; color: #fff; line-height: 1; }
-        .stat-card .stat-icon-wrap { background: rgba(255,255,255,.18); color: #fff; }
-        .stat-card .stat-bg-icon { position: absolute; right: -6px; bottom: -8px; font-size: 4rem; opacity: .09; color: #fff; pointer-events: none; }
-
-        /* ── Revenue cards ───────────────────────────────────── */
-        .rev-card {
-            border: none; border-radius: var(--card-radius);
-            box-shadow: 0 1px 3px rgba(15,23,41,.06);
-            transition: transform .18s; overflow: hidden;
+        /* Flash alerts from session */
+        .alert-flash {
+            border: none !important; border-radius: var(--radius) !important;
+            padding: .75rem 1rem !important; margin-bottom: .75rem;
+            display: flex !important; align-items: center !important; gap: .6rem !important;
         }
-        .rev-card:hover { transform: translateY(-2px); }
+        .alert-flash.success { background: var(--success-light) !important; border-left: 3px solid var(--success) !important; color: #166534 !important; }
+        .alert-flash.error   { background: var(--danger-light)  !important; border-left: 3px solid var(--danger)  !important; color: #991b1b !important; }
+        .alert-flash.warning { background: var(--warning-light) !important; border-left: 3px solid var(--warning) !important; color: #92400e !important; }
 
-        /* ── Table card ──────────────────────────────────────── */
-        .table-card { border: none; border-radius: var(--card-radius); box-shadow: 0 1px 3px rgba(15,23,41,.07); overflow: hidden; }
-        .table-card .card-header { background: #fff; border-bottom: 1px solid #f1f5f9; padding: .85rem 1.2rem; }
-        .table-card thead th { background: #f8fafc; font-size: .67rem; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; color: #64748b; border-bottom: 1px solid #f1f5f9; padding: .65rem 1rem; }
-        .table-card tbody td { padding: .65rem 1rem; font-size: .83rem; border-bottom: 1px solid #f8fafc; vertical-align: middle; }
-        .table-card tbody tr:last-child td { border-bottom: none; }
+        /* ── List items ───────────────────────────────────────── */
+        .list-item {
+            display: flex; align-items: center; gap: .75rem;
+            padding: .6rem 1rem;
+            border-bottom: 1px solid var(--border);
+            font-size: .78rem; color: var(--text-2);
+            transition: background .1s;
+        }
+        .list-item:last-child { border-bottom: none; }
+        .list-item:hover { background: #fafbff; }
+        .dot-mark  { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+        .line-mark { width: 3px; height: 22px; border-radius: 2px; flex-shrink: 0; }
+
+        /* ── Progress ─────────────────────────────────────────── */
+        .progress-ds  { height: 4px; background: var(--border); border-radius: 4px; overflow: hidden; }
+        .progress-fill { height: 100%; border-radius: 4px; }
+        /* backward compat */
+        .deposit-progress { height: 5px; border-radius: 10px; background: var(--border-2); overflow: hidden; }
+        .deposit-progress .bar { height: 100%; border-radius: 10px; transition: width .4s ease; }
+
+        /* ── Data table ───────────────────────────────────────── */
+        .data-table { width: 100%; border-collapse: collapse; font-size: .77rem; }
+        .data-table thead th {
+            background: #f8fafc; padding: .5rem .9rem;
+            font-size: .62rem; font-weight: 700; text-transform: uppercase;
+            letter-spacing: .5px; color: var(--text-3);
+            border-bottom: 1px solid var(--border-2);
+            text-align: left; white-space: nowrap;
+        }
+        .data-table tbody td {
+            padding: .55rem .9rem; border-bottom: 1px solid var(--border);
+            color: var(--text-2); vertical-align: middle;
+        }
+        .data-table tbody tr:last-child td { border-bottom: none; }
+        .data-table tbody tr:hover td { background: #fafbff; }
+
+        /* Table card (backward compat) */
+        .table-card { border: 1px solid var(--border) !important; border-radius: var(--radius) !important; box-shadow: var(--shadow) !important; overflow: hidden; }
+        .table-card .card-header { background: var(--card-bg) !important; border-bottom: 1px solid var(--border) !important; padding: .7rem 1rem !important; }
+        .table-card thead th { background: #f8fafc; font-size: .62rem; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; color: var(--text-3); border-bottom: 1px solid var(--border) !important; padding: .55rem 1rem; }
+        .table-card tbody td { padding: .55rem 1rem; font-size: .78rem; border-bottom: 1px solid var(--border) !important; vertical-align: middle; }
+        .table-card tbody tr:last-child td { border-bottom: none !important; }
         .table-card tbody tr:hover { background: #fafbff; }
 
-        /* ── Badges ──────────────────────────────────────────── */
-        .badge-paid    { background: #dcfce7 !important; color: #166534 !important; }
-        .badge-overdue { background: #fee2e2 !important; color: #991b1b !important; }
-        .badge-partial { background: #fef3c7 !important; color: #92400e !important; }
-        .badge-unpaid  { background: #f1f5f9 !important; color: #475569 !important; }
-        .badge { font-size: .7rem; font-weight: 600; padding: .26em .6em; border-radius: 6px; }
+        /* Card clean (backward compat) */
+        .card-clean { background: var(--card-bg) !important; border: 1px solid var(--border) !important; border-radius: var(--radius) !important; box-shadow: var(--shadow) !important; }
+        .card-clean .card-header { background: var(--card-bg) !important; border-bottom: 1px solid var(--border) !important; }
 
-        /* ── Section label ───────────────────────────────────── */
-        .sect-label { font-size: .7rem; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: #94a3b8; margin-bottom: .5rem; }
-
-        /* ── Alerts ──────────────────────────────────────────── */
-        .alert-modern { border: none; border-radius: var(--card-radius); padding: .9rem 1.1rem; }
-
-        /* ── Buttons ─────────────────────────────────────────── */
-        .btn { border-radius: 8px; font-size: .82rem; font-weight: 600; }
-
-        /* ── Page header utility ─────────────────────────────── */
-        .page-hdr { margin-bottom: 1.25rem; }
-        .page-hdr h5, .page-hdr .page-title { font-size: 1rem; font-weight: 700; margin: 0; letter-spacing: -.1px; }
-        .page-hdr .page-sub { font-size: .78rem; color: #94a3b8; margin: 1px 0 0; }
-
-        /* ── Card base ───────────────────────────────────────── */
-        .card-clean {
-            border: none;
-            border-radius: var(--card-radius);
-            box-shadow: 0 1px 3px rgba(15,23,41,.07);
+        /* ── Quick action buttons ─────────────────────────────── */
+        .qa-btn {
+            display: flex; align-items: center; gap: .6rem;
+            padding: .55rem .85rem; border-radius: var(--radius);
+            background: #f8fafc; border: 1px solid var(--border-2);
+            color: var(--text-2); font-size: .78rem; font-weight: 600;
+            text-decoration: none; cursor: pointer; transition: all .12s; width: 100%;
         }
-        .card-clean .card-header {
-            background: #fff;
-            border-bottom: 1px solid #f1f5f9;
-            padding: .8rem 1.2rem;
-            font-weight: 600;
-            font-size: .88rem;
-        }
+        .qa-btn:hover { background: var(--accent-light); border-color: var(--accent-dim); color: var(--accent); }
+        .qa-btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+        .qa-btn.primary:hover { background: #1d4ed8; color: #fff; }
+        .qa-btn i { font-size: .88rem; flex-shrink: 0; }
+        .qa-badge { margin-left: auto; background: var(--danger); color: #fff; font-size: .58rem; font-weight: 700; border-radius: 10px; padding: .1rem .38rem; }
+
+        /* ── Stat mini ────────────────────────────────────────── */
+        .stat-mini { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius); padding: .75rem .9rem; }
+        .stat-mini-val { font-size: 1.4rem; font-weight: 800; line-height: 1; }
+        .stat-mini-lbl { font-size: .63rem; color: var(--text-4); margin-top: 3px; }
+
+        /* ── Due badge ────────────────────────────────────────── */
+        .due-badge   { font-size: .65rem; font-weight: 700; border-radius: 5px; padding: .15rem .42rem; white-space: nowrap; }
+        .due-normal  { background: #f1f5f9; color: #475569; }
+        .due-warn3   { background: #fef3c7; color: #92400e; }
+        .due-warn1   { background: #ffedd5; color: #9a3412; }
+        .due-today   { background: var(--danger-light); color: #991b1b; }
+        .due-overdue { background: #991b1b; color: #fff; }
+
+        /* ── Reservation grid ────────────────────────────────── */
+        .res-grid { display: grid; grid-template-columns: repeat(4, 1fr); }
+        .res-cell { padding: .9rem .75rem; text-align: center; border-right: 1px solid var(--border); }
+        .res-cell:last-child { border-right: none; }
+        .res-val { font-size: 1.4rem; font-weight: 800; line-height: 1; }
+        .res-lbl { font-size: .63rem; color: var(--text-4); margin-top: 3px; }
 
         /* ── Mobile ──────────────────────────────────────────── */
         @media (max-width: 767.98px) {
             #sidebar { transform: translateX(-100%); }
             #sidebar.show { transform: translateX(0); }
             #main-content { margin-left: 0; }
-            .content-area { padding: .9rem .9rem; }
+            .content-area { padding: .9rem; }
             #bottom-nav {
                 display: flex !important; position: fixed;
                 bottom: 0; left: 0; right: 0;
-                background: #fff; border-top: 1px solid #e8edf5;
+                background: var(--card-bg);
+                border-top: 1px solid var(--border);
                 z-index: 1025; height: 58px;
-                box-shadow: 0 -3px 10px rgba(0,0,0,.06);
+                box-shadow: 0 -2px 8px rgba(0,0,0,.05);
             }
             #main-content { padding-bottom: 68px; }
+            .res-grid { grid-template-columns: repeat(2, 1fr); }
         }
         @media (min-width: 768px) {
             #bottom-nav { display: none !important; }
             .topbar .btn-sidebar-toggle { display: none; }
         }
 
-        /* ── Mobile list items (replaces tables) ─────────────── */
-        .mobile-list-item {
-            border-bottom: 1px solid #f1f5f9;
-            padding: .8rem 1rem;
-        }
-        .mobile-list-item:last-child { border-bottom: none; }
-
-        /* ── Deposit progress ─────────────────────────────────── */
-        .deposit-progress { height: 5px; border-radius: 10px; background: #e8edf5; overflow: hidden; }
-        .deposit-progress .bar { height: 100%; border-radius: 10px; transition: width .4s ease; }
+        /* ── Scrollbar ────────────────────────────────────────── */
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
     </style>
     @stack('styles')
 </head>
@@ -280,9 +419,9 @@
     <div class="sidebar-brand">
         @php $navbarLogo = \App\Models\Setting::get('navbar_logo_path'); @endphp
         @if($navbarLogo)
-            <img src="{{ asset($navbarLogo) }}" alt="Logo" style="max-height:32px;max-width:140px;object-fit:contain;">
+            <img src="{{ asset($navbarLogo) }}" alt="Logo" style="max-height:28px;max-width:130px;object-fit:contain;">
         @else
-            <div class="sidebar-brand-icon"><i class="bi bi-receipt-cutoff text-white" style="font-size:.82rem"></i></div>
+            <div class="sidebar-brand-icon"><i class="bi bi-receipt-cutoff"></i></div>
             <div>
                 <div class="sidebar-brand-title">TSBL Invoice</div>
                 <div class="sidebar-brand-sub">Management System</div>
@@ -301,7 +440,7 @@
             elseif (request()->routeIs('products.*') || request()->routeIs('users.*') || request()->routeIs('admin.password-requests.*') || request()->routeIs('credit-classes.*') || request()->routeIs('settings.*') || request()->routeIs('admin.audit-logs.*')) $activeSection = 'pengaturan';
         @endphp
 
-        {{-- ── ADMISSION: hanya admission menu ──────────────── --}}
+        {{-- ── ADMISSION ──────────────────────────────────────── --}}
         @if($user->isAdmission() || $user->isAdmin())
         <div class="nav-section {{ $activeSection === 'admission' ? 'open' : '' }}"
              onclick="toggleSection('admission')" id="hdr-admission">
@@ -324,7 +463,7 @@
         </div>
         @endif
 
-        {{-- ── IT: system management only ───────────────────── --}}
+        {{-- ── IT ────────────────────────────────────────────── --}}
         @if($user->isIT())
         <div class="nav-section {{ $activeSection === 'pengaturan' ? 'open' : '' }}"
              onclick="toggleSection('pengaturan')" id="hdr-pengaturan">
@@ -339,7 +478,7 @@
             <a href="{{ route('admin.password-requests.index') }}" class="nav-link {{ request()->routeIs('admin.password-requests.*') ? 'active' : '' }}">
                 <i class="bi bi-key"></i> Reset Password
                 @if($pendingResets > 0)
-                    <span class="badge bg-warning text-dark ms-1">{{ $pendingResets }}</span>
+                    <span class="sb-badge warn">{{ $pendingResets }}</span>
                 @endif
             </a>
             <a href="{{ route('settings.index') }}" class="nav-link {{ request()->routeIs('settings.*') ? 'active' : '' }}">
@@ -357,10 +496,10 @@
         </div>
         @endif
 
-        {{-- ── Non-admission, Non-IT sections ───────────────── --}}
+        {{-- ── Non-admission, Non-IT ──────────────────────────── --}}
         @if(!$user->isAdmission() && !$user->isIT())
 
-        {{-- ── Operasional (Finance, BPM, ResStaff, BusdevHO, Admin) ── --}}
+        {{-- ── Operasional ──────────────────────────────────── --}}
         <div class="nav-section {{ $activeSection === 'main' ? 'open' : '' }}"
              onclick="toggleSection('main')" id="hdr-main">
             <span>Operasional</span>
@@ -383,7 +522,7 @@
             <a href="{{ route('pending-invoices.index') }}" class="nav-link {{ request()->routeIs('pending-invoices.*') ? 'active' : '' }}">
                 <i class="bi bi-hourglass-split"></i> Antrian Invoice
                 @if($pendingCount > 0)
-                    <span class="badge ms-auto" style="background:#ef4444;font-size:.56rem;padding:.2em .48em;border-radius:5px;font-weight:700;">{{ $pendingCount }}</span>
+                    <span class="sb-badge">{{ $pendingCount }}</span>
                 @endif
             </a>
             <a href="{{ route('deposit-invoices.index') }}" class="nav-link {{ request()->routeIs('deposit-invoices.*') ? 'active' : '' }}">
@@ -393,19 +532,12 @@
                 <i class="bi bi-file-earmark-spreadsheet-fill"></i> Rekonsiliasi DSI
             </a>
             @endif
-            {{-- Partner: Finance (view), BPM (edit), BusdevHO (view), ResStaff (view), Admin --}}
-            @if(!$user->isReservationStaff() || $user->isAdmin())
             <a href="{{ route('partners.index') }}" class="nav-link {{ request()->routeIs('partners.*') ? 'active' : '' }}">
                 <i class="bi bi-people-fill"></i> Partner
             </a>
-            @elseif($user->isReservationStaff())
-            <a href="{{ route('partners.index') }}" class="nav-link {{ request()->routeIs('partners.*') ? 'active' : '' }}">
-                <i class="bi bi-people-fill"></i> Partner
-            </a>
-            @endif
         </div>
 
-        {{-- ── Reservasi (BPM, ResStaff, Finance, Admin) ──── --}}
+        {{-- ── Reservasi ────────────────────────────────────── --}}
         @if($user->isAdmin() || $user->isBPM() || $user->isReservationStaff() || $user->canAccessFinance())
         <div class="nav-section {{ $activeSection === 'reservasi' ? 'open' : '' }}"
              onclick="toggleSection('reservasi')" id="hdr-reservasi">
@@ -423,7 +555,7 @@
                 <i class="bi bi-shield-exclamation"></i> Anomali & Fraud
                 @php $pendingAnomalies = \App\Models\ReservationAnomaly::where('is_resolved', false)->count(); @endphp
                 @if($pendingAnomalies > 0)
-                    <span class="badge ms-auto" style="background:#ef4444;font-size:.56rem;padding:.2em .48em;border-radius:5px;font-weight:700;">{{ $pendingAnomalies }}</span>
+                    <span class="sb-badge">{{ $pendingAnomalies }}</span>
                 @endif
             </a>
             @endif
@@ -435,7 +567,7 @@
         </div>
         @endif
 
-        {{-- ── Keuangan (Finance, Admin, BusdevHO view) ──── --}}
+        {{-- ── Keuangan ────────────────────────────────────── --}}
         @if($user->isAdmin() || $user->canAccessFinance() || $user->isBusdevHO())
         <div class="nav-section {{ $activeSection === 'keuangan' ? 'open' : '' }}"
              onclick="toggleSection('keuangan')" id="hdr-keuangan">
@@ -460,7 +592,7 @@
         </div>
         @endif
 
-        {{-- ── Pengaturan (Admin, Finance for products) ──── --}}
+        {{-- ── Pengaturan ──────────────────────────────────── --}}
         @if($user->isAdmin() || $user->canAccessFinance())
         <div class="nav-section {{ $activeSection === 'pengaturan' ? 'open' : '' }}"
              onclick="toggleSection('pengaturan')" id="hdr-pengaturan">
@@ -479,7 +611,7 @@
             <a href="{{ route('admin.password-requests.index') }}" class="nav-link {{ request()->routeIs('admin.password-requests.*') ? 'active' : '' }}">
                 <i class="bi bi-key"></i> Reset Password
                 @if($pendingResets > 0)
-                    <span class="badge bg-warning text-dark ms-1">{{ $pendingResets }}</span>
+                    <span class="sb-badge warn">{{ $pendingResets }}</span>
                 @endif
             </a>
             <a href="{{ route('credit-classes.index') }}" class="nav-link {{ request()->routeIs('credit-classes.*') ? 'active' : '' }}">
@@ -509,12 +641,12 @@
 </nav>
 
 <div id="sidebar-backdrop" class="d-none position-fixed top-0 start-0 w-100 h-100"
-     style="background:rgba(0,0,0,.4);z-index:1025;" onclick="toggleSidebar()"></div>
+     style="background:rgba(0,0,0,.3);z-index:1025;" onclick="toggleSidebar()"></div>
 
 <div id="main-content">
     <div class="topbar">
         <button class="btn btn-sm btn-sidebar-toggle me-2" onclick="toggleSidebar()"
-                style="border:none;background:none;color:#64748b;padding:.2rem .4rem;">
+                style="border:none;background:none;color:var(--text-3);padding:.2rem .4rem;">
             <i class="bi bi-list fs-5"></i>
         </button>
         <span class="topbar-title">@yield('page-title', 'Dashboard')</span>
@@ -532,25 +664,22 @@
 
     <div class="content-area">
         @if(session('success'))
-            <div class="alert alert-dismissible fade show alert-modern mb-3 d-flex align-items-center gap-2" role="alert"
-                 style="background:#f0fdf4;border-left:4px solid #22c55e;color:#166534;">
-                <i class="bi bi-check-circle-fill flex-shrink-0" style="color:#22c55e;font-size:1rem"></i>
+            <div class="alert alert-flash success alert-dismissible fade show mb-3" role="alert">
+                <i class="bi bi-check-circle-fill flex-shrink-0" style="font-size:.95rem"></i>
                 <span>{{ session('success') }}</span>
                 <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"></button>
             </div>
         @endif
         @if(session('error'))
-            <div class="alert alert-dismissible fade show alert-modern mb-3 d-flex align-items-center gap-2" role="alert"
-                 style="background:#fef2f2;border-left:4px solid #ef4444;color:#991b1b;">
-                <i class="bi bi-exclamation-circle-fill flex-shrink-0" style="color:#ef4444;font-size:1rem"></i>
+            <div class="alert alert-flash error alert-dismissible fade show mb-3" role="alert">
+                <i class="bi bi-exclamation-circle-fill flex-shrink-0" style="font-size:.95rem"></i>
                 <span>{{ session('error') }}</span>
                 <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"></button>
             </div>
         @endif
         @if(session('warning'))
-            <div class="alert alert-dismissible fade show alert-modern mb-3 d-flex align-items-center gap-2" role="alert"
-                 style="background:#fffbeb;border-left:4px solid #f59e0b;color:#92400e;">
-                <i class="bi bi-exclamation-triangle-fill flex-shrink-0" style="color:#f59e0b;font-size:1rem"></i>
+            <div class="alert alert-flash warning alert-dismissible fade show mb-3" role="alert">
+                <i class="bi bi-exclamation-triangle-fill flex-shrink-0" style="font-size:.95rem"></i>
                 <span>{{ session('warning') }}</span>
                 <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"></button>
             </div>
@@ -563,46 +692,131 @@
 {{-- Bottom Nav (mobile only) --}}
 <div id="bottom-nav" style="display:none">
     @if(auth()->user()->isAdmission())
-        {{-- Admission bottom nav --}}
-        <a href="{{ route('admission.dashboard') }}" class="flex-fill d-flex flex-column align-items-center justify-content-center text-decoration-none {{ request()->routeIs('admission.dashboard') ? 'text-primary' : 'text-secondary' }}">
+        <a href="{{ route('admission.dashboard') }}" class="flex-fill d-flex flex-column align-items-center justify-content-center text-decoration-none {{ request()->routeIs('admission.dashboard') ? '' : '' }}"
+           style="color:{{ request()->routeIs('admission.dashboard') ? 'var(--accent)' : 'var(--text-4)' }}">
             <i class="bi bi-door-open-fill" style="font-size:1.2rem"></i>
             <span style="font-size:.58rem;font-weight:600;margin-top:2px">Dashboard</span>
         </a>
-        <a href="{{ route('admission.scan') }}" class="flex-fill d-flex flex-column align-items-center justify-content-center text-decoration-none {{ request()->routeIs('admission.scan') ? 'text-primary' : 'text-secondary' }}">
+        <a href="{{ route('admission.scan') }}" class="flex-fill d-flex flex-column align-items-center justify-content-center text-decoration-none"
+           style="color:{{ request()->routeIs('admission.scan') ? 'var(--accent)' : 'var(--text-4)' }}">
             <i class="bi bi-upc-scan" style="font-size:1.2rem"></i>
             <span style="font-size:.58rem;font-weight:600;margin-top:2px">Scan</span>
         </a>
         <a href="{{ route('admission.qr') }}" class="flex-fill d-flex flex-column align-items-center justify-content-center text-decoration-none text-white"
-           style="background:linear-gradient(135deg,#3b82f6,#2563eb);border-radius:50%;width:46px;height:46px;margin-top:-12px;box-shadow:0 4px 14px rgba(59,130,246,.4);flex-shrink:0;">
+           style="background:var(--accent);border-radius:50%;width:46px;height:46px;margin-top:-12px;box-shadow:0 4px 14px rgba(37,99,235,.35);flex-shrink:0;">
             <i class="bi bi-qr-code" style="font-size:1.2rem"></i>
         </a>
-        <a href="{{ route('admission.history') }}" class="flex-fill d-flex flex-column align-items-center justify-content-center text-decoration-none {{ request()->routeIs('admission.history') ? 'text-primary' : 'text-secondary' }}">
+        <a href="{{ route('admission.history') }}" class="flex-fill d-flex flex-column align-items-center justify-content-center text-decoration-none"
+           style="color:{{ request()->routeIs('admission.history') ? 'var(--accent)' : 'var(--text-4)' }}">
             <i class="bi bi-clock-history" style="font-size:1.2rem"></i>
             <span style="font-size:.58rem;font-weight:600;margin-top:2px">Riwayat</span>
         </a>
-        <a href="#" onclick="toggleSidebar()" class="flex-fill d-flex flex-column align-items-center justify-content-center text-decoration-none text-secondary">
+        <a href="#" onclick="toggleSidebar()" class="flex-fill d-flex flex-column align-items-center justify-content-center text-decoration-none" style="color:var(--text-4)">
+            <i class="bi bi-list" style="font-size:1.2rem"></i>
+            <span style="font-size:.58rem;font-weight:600;margin-top:2px">Menu</span>
+        </a>
+    @elseif(auth()->user()->isIT())
+        <a href="{{ route('users.index') }}" class="flex-fill d-flex flex-column align-items-center justify-content-center text-decoration-none"
+           style="color:{{ request()->routeIs('users.*') ? 'var(--accent)' : 'var(--text-4)' }}">
+            <i class="bi bi-person-gear" style="font-size:1.2rem"></i>
+            <span style="font-size:.58rem;font-weight:600;margin-top:2px">Pengguna</span>
+        </a>
+        <a href="{{ route('admin.password-requests.index') }}" class="flex-fill d-flex flex-column align-items-center justify-content-center text-decoration-none"
+           style="color:{{ request()->routeIs('admin.password-requests.*') ? 'var(--accent)' : 'var(--text-4)' }}">
+            <i class="bi bi-key-fill" style="font-size:1.2rem"></i>
+            <span style="font-size:.58rem;font-weight:600;margin-top:2px">Reset</span>
+        </a>
+        <a href="{{ route('users.create') }}" class="flex-fill d-flex flex-column align-items-center justify-content-center text-decoration-none text-white"
+           style="background:var(--accent);border-radius:50%;width:46px;height:46px;margin-top:-12px;box-shadow:0 4px 14px rgba(37,99,235,.35);flex-shrink:0;">
+            <i class="bi bi-plus-lg" style="font-size:1.2rem"></i>
+        </a>
+        <a href="{{ route('admin.audit-logs.index') }}" class="flex-fill d-flex flex-column align-items-center justify-content-center text-decoration-none"
+           style="color:{{ request()->routeIs('admin.audit-logs.*') ? 'var(--accent)' : 'var(--text-4)' }}">
+            <i class="bi bi-journal-text" style="font-size:1.2rem"></i>
+            <span style="font-size:.58rem;font-weight:600;margin-top:2px">Audit</span>
+        </a>
+        <a href="#" onclick="toggleSidebar()" class="flex-fill d-flex flex-column align-items-center justify-content-center text-decoration-none" style="color:var(--text-4)">
+            <i class="bi bi-list" style="font-size:1.2rem"></i>
+            <span style="font-size:.58rem;font-weight:600;margin-top:2px">Menu</span>
+        </a>
+    @elseif(auth()->user()->isBPM() || auth()->user()->isReservationStaff())
+        <a href="{{ route('dashboard') }}" class="flex-fill d-flex flex-column align-items-center justify-content-center text-decoration-none"
+           style="color:{{ request()->routeIs('dashboard') ? 'var(--accent)' : 'var(--text-4)' }}">
+            <i class="bi bi-grid-1x2-fill" style="font-size:1.2rem"></i>
+            <span style="font-size:.58rem;font-weight:600;margin-top:2px">Dashboard</span>
+        </a>
+        <a href="{{ route('reservations.index') }}" class="flex-fill d-flex flex-column align-items-center justify-content-center text-decoration-none"
+           style="color:{{ request()->routeIs('reservations.*') ? 'var(--accent)' : 'var(--text-4)' }}">
+            <i class="bi bi-ticket-detailed-fill" style="font-size:1.2rem"></i>
+            <span style="font-size:.58rem;font-weight:600;margin-top:2px">Reservasi</span>
+        </a>
+        <a href="{{ route('reservations.create') }}" class="flex-fill d-flex flex-column align-items-center justify-content-center text-decoration-none text-white"
+           style="background:var(--accent);border-radius:50%;width:46px;height:46px;margin-top:-12px;box-shadow:0 4px 14px rgba(37,99,235,.35);flex-shrink:0;">
+            <i class="bi bi-plus-lg" style="font-size:1.2rem"></i>
+        </a>
+        <a href="{{ route('partners.index') }}" class="flex-fill d-flex flex-column align-items-center justify-content-center text-decoration-none"
+           style="color:{{ request()->routeIs('partners.*') ? 'var(--accent)' : 'var(--text-4)' }}">
+            <i class="bi bi-people-fill" style="font-size:1.2rem"></i>
+            <span style="font-size:.58rem;font-weight:600;margin-top:2px">Partner</span>
+        </a>
+        <a href="#" onclick="toggleSidebar()" class="flex-fill d-flex flex-column align-items-center justify-content-center text-decoration-none" style="color:var(--text-4)">
+            <i class="bi bi-list" style="font-size:1.2rem"></i>
+            <span style="font-size:.58rem;font-weight:600;margin-top:2px">Menu</span>
+        </a>
+    @elseif(auth()->user()->isBusdevHO())
+        <a href="{{ route('dashboard') }}" class="flex-fill d-flex flex-column align-items-center justify-content-center text-decoration-none"
+           style="color:{{ request()->routeIs('dashboard') ? 'var(--accent)' : 'var(--text-4)' }}">
+            <i class="bi bi-grid-1x2-fill" style="font-size:1.2rem"></i>
+            <span style="font-size:.58rem;font-weight:600;margin-top:2px">Dashboard</span>
+        </a>
+        <a href="{{ route('invoices.index') }}" class="flex-fill d-flex flex-column align-items-center justify-content-center text-decoration-none"
+           style="color:{{ request()->routeIs('invoices.*') ? 'var(--accent)' : 'var(--text-4)' }}">
+            <i class="bi bi-file-earmark-text-fill" style="font-size:1.2rem"></i>
+            <span style="font-size:.58rem;font-weight:600;margin-top:2px">Invoice</span>
+        </a>
+        <a href="{{ route('reports.index') }}" class="flex-fill d-flex flex-column align-items-center justify-content-center text-decoration-none"
+           style="color:{{ request()->routeIs('reports.*') ? 'var(--accent)' : 'var(--text-4)' }}">
+            <i class="bi bi-graph-up" style="font-size:1.2rem"></i>
+            <span style="font-size:.58rem;font-weight:600;margin-top:2px">Laporan</span>
+        </a>
+        <a href="{{ route('partners.index') }}" class="flex-fill d-flex flex-column align-items-center justify-content-center text-decoration-none"
+           style="color:{{ request()->routeIs('partners.*') ? 'var(--accent)' : 'var(--text-4)' }}">
+            <i class="bi bi-people-fill" style="font-size:1.2rem"></i>
+            <span style="font-size:.58rem;font-weight:600;margin-top:2px">Partner</span>
+        </a>
+        <a href="#" onclick="toggleSidebar()" class="flex-fill d-flex flex-column align-items-center justify-content-center text-decoration-none" style="color:var(--text-4)">
             <i class="bi bi-list" style="font-size:1.2rem"></i>
             <span style="font-size:.58rem;font-weight:600;margin-top:2px">Menu</span>
         </a>
     @else
-        {{-- Default bottom nav for admin/finance/sales --}}
-        <a href="{{ route('dashboard') }}" class="flex-fill d-flex flex-column align-items-center justify-content-center text-decoration-none {{ request()->routeIs('dashboard') ? 'text-primary' : 'text-secondary' }}">
+        <a href="{{ route('dashboard') }}" class="flex-fill d-flex flex-column align-items-center justify-content-center text-decoration-none"
+           style="color:{{ request()->routeIs('dashboard') ? 'var(--accent)' : 'var(--text-4)' }}">
             <i class="bi bi-grid-1x2-fill" style="font-size:1.2rem"></i>
             <span style="font-size:.58rem;font-weight:600;margin-top:2px">Dashboard</span>
         </a>
-        <a href="{{ route('invoices.index') }}" class="flex-fill d-flex flex-column align-items-center justify-content-center text-decoration-none {{ request()->routeIs('invoices.*') ? 'text-primary' : 'text-secondary' }}">
+        <a href="{{ route('invoices.index') }}" class="flex-fill d-flex flex-column align-items-center justify-content-center text-decoration-none"
+           style="color:{{ request()->routeIs('invoices.*') ? 'var(--accent)' : 'var(--text-4)' }}">
             <i class="bi bi-file-earmark-text-fill" style="font-size:1.2rem"></i>
             <span style="font-size:.58rem;font-weight:600;margin-top:2px">Invoice</span>
         </a>
+        @if(auth()->user()->isAdmin() || auth()->user()->canAccessFinance())
         <a href="{{ route('invoices.create') }}" class="flex-fill d-flex flex-column align-items-center justify-content-center text-decoration-none text-white"
-           style="background:linear-gradient(135deg,#3b82f6,#2563eb);border-radius:50%;width:46px;height:46px;margin-top:-12px;box-shadow:0 4px 14px rgba(59,130,246,.4);flex-shrink:0;">
+           style="background:var(--accent);border-radius:50%;width:46px;height:46px;margin-top:-12px;box-shadow:0 4px 14px rgba(37,99,235,.35);flex-shrink:0;">
             <i class="bi bi-plus-lg" style="font-size:1.2rem"></i>
         </a>
-        <a href="{{ route('partners.index') }}" class="flex-fill d-flex flex-column align-items-center justify-content-center text-decoration-none {{ request()->routeIs('partners.*') ? 'text-primary' : 'text-secondary' }}">
+        @else
+        <a href="{{ route('reservations.index') }}" class="flex-fill d-flex flex-column align-items-center justify-content-center text-decoration-none"
+           style="color:{{ request()->routeIs('reservations.*') ? 'var(--accent)' : 'var(--text-4)' }}">
+            <i class="bi bi-ticket-detailed-fill" style="font-size:1.2rem"></i>
+            <span style="font-size:.58rem;font-weight:600;margin-top:2px">Reservasi</span>
+        </a>
+        @endif
+        <a href="{{ route('partners.index') }}" class="flex-fill d-flex flex-column align-items-center justify-content-center text-decoration-none"
+           style="color:{{ request()->routeIs('partners.*') ? 'var(--accent)' : 'var(--text-4)' }}">
             <i class="bi bi-people-fill" style="font-size:1.2rem"></i>
             <span style="font-size:.58rem;font-weight:600;margin-top:2px">Partner</span>
         </a>
-        <a href="#" onclick="toggleSidebar()" class="flex-fill d-flex flex-column align-items-center justify-content-center text-decoration-none text-secondary">
+        <a href="#" onclick="toggleSidebar()" class="flex-fill d-flex flex-column align-items-center justify-content-center text-decoration-none" style="color:var(--text-4)">
             <i class="bi bi-list" style="font-size:1.2rem"></i>
             <span style="font-size:.58rem;font-weight:600;margin-top:2px">Menu</span>
         </a>
@@ -612,7 +826,7 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
 <script>
-// ── Currency Input Formatter — Global Utility ────────────────────────────
+// ── Currency Input Formatter — Global ────────────────────────────────────
 function parseRaw(str) {
     return parseInt(String(str || '').replace(/\D/g, '')) || 0;
 }
@@ -671,7 +885,6 @@ function toggleSection(id) {
     if (!hdr || !sec) return;
     var isOpen = sec.classList.toggle('open');
     hdr.classList.toggle('open', isOpen);
-    // persist
     try {
         var state = JSON.parse(localStorage.getItem('sidebarSections') || '{}');
         state[id] = isOpen;
