@@ -37,6 +37,7 @@
 22. [Manajemen Reservasi & Proforma](#22-manajemen-reservasi--proforma)
 23. [Rekonsiliasi DSI & Invoice Final](#23-rekonsiliasi-dsi--invoice-final)
 24. [Alokasi Pembayaran & Saldo Kredit](#24-alokasi-pembayaran--saldo-kredit)
+25. [Fitur Tambahan & Otomatisasi Baru](#25-fitur-tambahan--otomatisasi-baru)
 
 
 ---
@@ -1159,11 +1160,101 @@ Sistem baru ini menggunakan alur:
 3. Isi nama tamu, partner, tanggal check-in, dan estimasi pax/harga.
 4. Klik **[Save]**. Status awal adalah **PENDING**.
 
-### Langkah 22.2 � Konfirmasi & Proforma
-1. Buka detail reservasi, klik **[Confirm]** jika sudah pasti.
-2. Klik **[Issue Proforma]** untuk menagih pembayaran di muka (Prepaid).
-3. Masukkan item yang akan ditagih.
-4. Kirim invoice Proforma ke partner.
+---
+
+Sistem Reservasi TSBL dirancang untuk mempermudah pendaftaran rencana kedatangan pengunjung dari berbagai pintu masuk dengan kontrol keamanan tinggi. Terdapat **3 jalur akses utama** untuk membuat reservasi:
+1. **INTERNAL:** Diinput langsung oleh Tim TSBL (Sales/Admin/Finance) melalui aplikasi utama.
+2. **PARTNER PORTAL:** Diinput mandiri oleh Partner melalui tautan token khusus tanpa harus login ke sistem.
+3. **SELF-SERVICE QR:** Diinput mandiri oleh pengunjung dengan memindai QR Code harian di area wahana/ticketing.
+
+---
+
+### Langkah 22.1 — Input Reservasi oleh Tim Internal
+Digunakan oleh tim internal TSBL saat menerima pesanan manual dari partner:
+1. Masuk ke sistem, klik menu **Reservations** di sidebar kiri.
+2. Klik tombol **[+ Create Reservation]** di pojok kanan atas.
+3. Isi data utama pada form:
+   - **Partner:** Pilih partner dari dropdown dinamis.
+   - **Guest Name:** Isi nama lengkap tamu utama.
+   - **Guest Country:** Isi asal negara tamu (kosongkan atau ketik "Indonesia" jika domestik).
+   - **Visit Date:** Pilih tanggal rencana kedatangan.
+   - **Pax Rincian:** Masukkan jumlah Dewasa (Adults), Anak (Kids), dan Bayi (Babies).
+4. Tambahkan produk/layanan yang dipesan pada tabel item.
+5. Tentukan **Payment Method** (Metode Pembayaran):
+   - **TRANSFER_GROSS:** Partner membayar harga penuh (dapat komisi).
+   - **TRANSFER_NETT:** Partner membayar harga nett setelah potongan komisi.
+   - **ON_THE_SPOT:** Tamu membayar langsung di lokasi wahana.
+6. Klik **[Save]**. Status awal reservasi adalah **PENDING**. Jika pembayaran Transfer terkonfirmasi atau status disetujui, klik **[Confirm]** untuk mengubahnya menjadi **CONFIRMED** dan otomatis menerbitkan **Booking Pass (PDF)**.
+
+---
+
+### Langkah 22.2 — Akses Portal Partner (Tautan Token Khusus)
+Partner tepercaya dapat menginput reservasi secara mandiri secara real-time tanpa perlu akun login penuh:
+1. **Mendapatkan Tautan Token:**
+   - Admin membuka halaman detail Partner terkait, lalu klik tombol **[Generate Reservation Token]**.
+   - Salin tautan unik yang dihasilkan (contoh: `http://localhost/tsbl-invoice-laravel/public/reserve/TOKEN_ANDA`).
+   - Kirimkan tautan ini kepada penanggung jawab Partner.
+2. **Pengisian oleh Partner:**
+   - Partner membuka tautan tersebut di browser (Mobile/Desktop).
+   - Layar akan menampilkan halaman khusus Partner yang menunjukkan nama instansi mereka.
+   - Partner menginput nama tamu, asal negara, tanggal kedatangan, rincian pax, dan produk yang diinginkan.
+   - Sistem akan meminta izin untuk mengakses lokasi perangkat (GPS). Partner **wajib menyetujui izin GPS** ini untuk melanjutkan penyimpanan.
+   - Setelah klik **[Save]**, status otomatis berubah menjadi **CONFIRMED** dan file PDF **Booking Pass** dengan QR Code dapat langsung di-download oleh Partner.
+3. **Fitur Riwayat (History Portal):**
+   - Pada halaman tautan token yang sama, Partner dapat melihat daftar riwayat pemesanan masa lalu mereka beserta statusnya (Confirmed, Redeemed, No-Show).
+
+> 🔒 **Keamanan Device Binding:**
+> Untuk mencegah penyalahgunaan tautan token oleh pihak luar, sistem membatasi tautan token tersebut untuk dibuka maksimal pada **3 perangkat terdaftar** per partner. Perangkat ke-4 yang mencoba membuka tautan akan diblokir otomatis dan harus di-reset oleh Admin TSBL melalui halaman detail partner.
+
+---
+
+### Langkah 22.3 — Layanan Mandiri Pengunjung (Self-Service via QR Code)
+Fitur ini memfasilitasi tamu hotel partner untuk langsung menukarkan hak masuk wahana secara instan di area kedatangan:
+1. **Pemasangan QR Code:**
+   - Tim internal (Sales/Admin) mencetak QR Code harian dinamis melalui menu **Daily QR Codes** di dashboard.
+   - Lembar QR Code ini ditempatkan secara fisik di meja registrasi/ticketing.
+2. **Pendaftaran oleh Pengunjung:**
+   - Pengunjung memindai QR Code tersebut menggunakan kamera smartphone mereka.
+   - Halaman pendaftaran publik yang responsif akan terbuka.
+   - Pengunjung menginput:
+     - Nama lengkap tamu utama.
+     - Negara asal.
+     - Nama partner/hotel asal (Dropdown/Free-Text).
+     - Jumlah pax.
+     - **Foto Bukti Kunci Kamar / Voucher Hotel:** Pengunjung wajib menekan tombol kamera dan mengunggah foto kunci kamar atau voucher hotel fisik mereka.
+   - Browser smartphone meminta akses lokasi (GPS) untuk validasi keberadaan fisik pengunjung di wahana.
+3. **Pemberian Booking Pass:**
+   - Setelah formulir dikirim, sistem akan memvalidasi data dan menampilkan **Booking Pass digital** langsung di layar smartphone pengunjung lengkap dengan **QR Code scannable**.
+   - Pengunjung dapat langsung menunjukkan QR Code ini di loket masuk untuk diverifikasi dan ditukarkan oleh staff loket (Admission).
+
+---
+
+### Langkah 22.4 — Sistem Geolocation & Deteksi Zona Bahaya (Danger Zone)
+Untuk melindungi sistem dari penipuan atau pemalsuan transaksi di luar wilayah wahana, sistem menerapkan validasi koordinat GPS:
+1. **Pengambilan Koordinat:**
+   - Setiap formulir reservasi (Partner Portal & Self-Service) secara otomatis menangkap data Latitude dan Longitude browser saat tombol Simpan ditekan.
+2. **Analisis "Danger Zone":**
+   - Sistem menguji jarak koordinat pengirim terhadap koordinat resmi wahana menggunakan rumus *Haversine*.
+   - Jika transaksi dikirimkan dari jarak yang tidak lazim (di luar jangkauan aman yang telah ditentukan, misalnya >500 meter dari koordinat resmi wahana partner), sistem akan secara otomatis menandai reservasi tersebut sebagai **DANGER_ZONE = True**.
+   - Transaksi akan diberi penanda merah di dashboard Admin dan tim Finance akan melakukan verifikasi manual / spot check sebelum komisi partner dapat dicairkan.
+
+---
+
+### Langkah 22.5 — Alur Status Reservasi
+Setiap reservasi berpindah status sesuai tahapan operasional berikut:
+- **PENDING:** Reservasi baru selesai dicatat (belum divalidasi pembayarannya atau datanya).
+- **CONFIRMED:** Reservasi telah disetujui, pembayaran aman (deposit partner mencukupi atau disetujui), dan Booking Pass diterbitkan.
+- **REDEEMED:** Pengunjung telah sampai di wahana dan staff Admission telah memindai QR Code pada Booking Pass.
+- **CANCELLED:** Reservasi dibatalkan secara manual oleh Admin/Finance atas permintaan partner.
+- **NO_SHOW:** Status otomatis yang ditetapkan oleh sistem jika hingga hari kunjungan berakhir, tamu tidak melakukan *Redeem* (Scan masuk).
+
+
+### Langkah 22.6 — Penerbitan Invoice Proforma & Alur Pembayaran
+Setelah reservasi selesai dibuat dan disetujui (status CONFIRMED):
+1. Buka detail reservasi yang bersangkutan, klik **[Confirm]** jika belum dilakukan.
+2. Klik tombol **[Issue Proforma]** untuk menagih pembayaran di muka (Prepaid) kepada partner.
+3. Masukkan item-item produk/tiket yang akan ditagih.
+4. Kirim Invoice Proforma ke partner untuk segera dilakukan pembayaran.
 
 ---
 
@@ -1198,3 +1289,42 @@ Setiap hari, import data dari sistem operasional (DSI) melalui menu **DSI Import
 Jika partner membayar lebih (Overpayment):
 1. Saldo sisa akan masuk ke **Credit Balance** partner.
 2. Saat membuat invoice berikutnya, gunakan tombol **[Apply Credit]** untuk memotong tagihan menggunakan saldo tersebut.
+
+---
+
+## 25. FITUR TAMBAHAN & OTOMATISASI BARU
+
+### Langkah 25.1 — Tipe Pelanggan Otomatis (DOMESTIC & FOREIGN)
+Untuk meningkatkan akurasi data kunjungan dan pelaporan, sistem kini secara otomatis menganalisis dan menetapkan tipe pelanggan (`customer_type`) pada setiap **Reservation** saat disimpan:
+1. **Aturan Penentuan:**
+   - Jika kolom **Guest Country** kosong atau diisi dengan **"Indonesia"** (tidak sensitif huruf besar/kecil), sistem akan menyimpannya sebagai **DOMESTIC**.
+   - Jika kolom **Guest Country** diisi dengan negara lain (contoh: *Malaysia, Singapore, Australia*, dll.), sistem akan otomatis menyimpannya sebagai **FOREIGN**.
+2. **Implementasi:**
+   - Nilai tipe pelanggan ini akan otomatis tersimpan ke kolom `customer_type` di database.
+   - Ditampilkan dengan jelas pada halaman detail reservasi dan dikirimkan ke Booking Pass kustom.
+
+### Langkah 25.2 — Otomatisasi Status "No-Show" (Scheduler Harian)
+Sistem sekarang dilengkapi dengan scheduler otomatis untuk meminimalkan pemantauan manual terhadap reservasi yang kedaluwarsa:
+1. **Cara Kerja:**
+   - Setiap hari pukul **00:05** tengah malam, Laravel scheduler secara otomatis menjalankan perintah `reservations:mark-no-show`.
+   - Perintah ini memindai seluruh reservasi berstatus **CONFIRMED** yang tanggal kunjungannya (**Visit Date**) sudah terlewati (sebelum hari ini).
+   - Status reservasi tersebut secara otomatis diubah menjadi **NO_SHOW**.
+2. **Menjalankan Manual:**
+   - Jika diperlukan, Admin dapat memicu proses ini secara manual dari terminal server dengan menjalankan:
+     ```bash
+     php artisan reservations:mark-no-show
+     ```
+
+### Langkah 25.3 — Template Booking Pass Kustom & Ekspansi Kolom
+Modul **Booking Pass Templates** telah ditingkatkan untuk mendukung desain layout visual yang lebih fleksibel dan kaya informasi:
+1. **Dukungan QR Code Dinamis:**
+   - QR Code menggantikan barcode standar untuk keandalan dan kecepatan scan yang lebih baik di lapangan. QR Code ini otomatis dibuat dari nomor reservasi unik tamu.
+2. **Variabel Baru di Visual Editor:**
+   - Kamu sekarang dapat menambahkan kolom/variabel dinamis baru ke dalam visual template editor:
+     - `{customer_type}` : Tipe pelanggan (DOMESTIC/FOREIGN).
+     - `{pax_adults}`, `{pax_kids}`, `{pax_babies}` : Rincian detail jumlah pax dewasa, anak, dan bayi.
+     - `{customer_origin}` / `{customer_origin_detail}` : Asal kedatangan/partner (misal: OTA Traveloka, Direct Booking, dll.).
+     - `{key_number}` : Nomor kunci fisik / loker pengunjung.
+     - `{location_name}` : Lokasi / wahana wisata yang terdaftar (misal: Trans Studio Bandung).
+3. **Fleksibilitas Desain:**
+   - Melalui menu **Booking Pass Templates**, pengguna dengan hak akses template dapat mengedit layout, mengubah warna latar panel, dan menempatkan QR Code di posisi mana pun yang diinginkan partner.

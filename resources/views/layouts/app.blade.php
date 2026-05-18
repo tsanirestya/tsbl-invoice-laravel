@@ -77,11 +77,30 @@
         .sidebar-scroll::-webkit-scrollbar { width: 3px; }
         .sidebar-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,.08); border-radius: 4px; }
 
+        /* ── Sidebar accordion sections ──────────────────────── */
         .nav-section {
-            color: rgba(255,255,255,.22); font-size: .6rem; font-weight: 700;
+            display: flex; align-items: center; justify-content: space-between;
+            color: rgba(255,255,255,.35); font-size: .6rem; font-weight: 700;
             letter-spacing: 1.5px; text-transform: uppercase;
-            padding: .8rem 1.4rem .25rem;
+            padding: .65rem 1.1rem .65rem 1.4rem;
+            margin: 2px 0 0;
+            cursor: pointer; user-select: none;
+            border-radius: 6px;
+            transition: background .15s, color .15s;
         }
+        .nav-section:hover { background: rgba(255,255,255,.05); color: rgba(255,255,255,.6); }
+        .nav-section.open { color: rgba(255,255,255,.6); }
+        .nav-section .nav-section-arrow {
+            font-size: .65rem; transition: transform .22s cubic-bezier(.4,0,.2,1);
+            flex-shrink: 0;
+        }
+        .nav-section.open .nav-section-arrow { transform: rotate(180deg); }
+        .nav-section-body {
+            overflow: hidden;
+            max-height: 0;
+            transition: max-height .26s cubic-bezier(.4,0,.2,1);
+        }
+        .nav-section-body.open { max-height: 500px; }
         #sidebar .nav-link {
             color: var(--sidebar-text);
             padding: .5rem 1rem .5rem 1.2rem;
@@ -272,113 +291,159 @@
     </div>
 
     <div class="sidebar-scroll">
-        {{-- ── Admission-only menu ──────────────────────────── --}}
-        @if(auth()->user()->isAdmission() || auth()->user()->isAdmin())
-        <div class="nav-section">Admission</div>
-        <a href="{{ route('admission.dashboard') }}" class="nav-link {{ request()->routeIs('admission.dashboard') ? 'active' : '' }}">
-            <i class="bi bi-door-open-fill"></i> Dashboard Admission
-        </a>
-        <a href="{{ route('admission.scan') }}" class="nav-link {{ request()->routeIs('admission.scan') ? 'active' : '' }}">
-            <i class="bi bi-upc-scan"></i> Scan & Redeem
-        </a>
-        <a href="{{ route('admission.history') }}" class="nav-link {{ request()->routeIs('admission.history') ? 'active' : '' }}">
-            <i class="bi bi-clock-history"></i> History Hari Ini
-        </a>
-        <a href="{{ route('admission.qr') }}" class="nav-link {{ request()->routeIs('admission.qr') ? 'active' : '' }}">
-            <i class="bi bi-qr-code"></i> QR Self-Service
-        </a>
-        @endif
-
-        {{-- ── Non-admission menus ──────────────────────────── --}}
-        @unless(auth()->user()->isAdmission())
-        <div class="nav-section">Menu Utama</div>
-        <a href="{{ route('dashboard') }}" class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}">
-            <i class="bi bi-grid-1x2-fill"></i> Dashboard
-        </a>
-        <a href="{{ route('invoices.index') }}" class="nav-link {{ request()->routeIs('invoices.*') ? 'active' : '' }}">
-            <i class="bi bi-file-earmark-text-fill"></i> Invoice
-        </a>
         @php
-            $pendingCount = \App\Models\TransactionImportRow::whereIn('status', ['valid','anomaly'])
-                ->where('is_approved', true)
-                ->whereDoesntHave('invoice')
-                ->count();
+            // Detect active section for auto-open
+            $activeSection = '';
+            if (request()->routeIs('admission.*')) $activeSection = 'admission';
+            elseif (request()->routeIs('dashboard') || request()->routeIs('invoices.*') || request()->routeIs('pending-invoices.*') || request()->routeIs('deposit-invoices.*') || request()->routeIs('partners.*') || request()->routeIs('imports.*')) $activeSection = 'main';
+            elseif (request()->routeIs('reservations.*') || request()->routeIs('anomalies.*') || request()->routeIs('commission-review.*') || request()->routeIs('self-service.*') || request()->routeIs('booking-pass-templates.*')) $activeSection = 'reservasi';
+            elseif (request()->routeIs('payments.*') || request()->routeIs('payment-memos.*') || request()->routeIs('credit-payments.*') || request()->routeIs('reports.*')) $activeSection = 'keuangan';
+            elseif (request()->routeIs('products.*') || request()->routeIs('users.*') || request()->routeIs('admin.password-requests.*') || request()->routeIs('credit-classes.*') || request()->routeIs('settings.*') || request()->routeIs('admin.audit-logs.*')) $activeSection = 'pengaturan';
         @endphp
-        <a href="{{ route('pending-invoices.index') }}" class="nav-link {{ request()->routeIs('pending-invoices.*') ? 'active' : '' }}">
-            <i class="bi bi-hourglass-split"></i> Antrian Invoice
-            @if($pendingCount > 0)
-                <span class="badge ms-auto" style="background:#ef4444;font-size:.56rem;padding:.2em .48em;border-radius:5px;font-weight:700;">{{ $pendingCount }}</span>
-            @endif
-        </a>
-        <a href="{{ route('deposit-invoices.index') }}" class="nav-link {{ request()->routeIs('deposit-invoices.*') ? 'active' : '' }}">
-            <i class="bi bi-wallet2"></i> Invoice Deposit
-        </a>
-        <a href="{{ route('partners.index') }}" class="nav-link {{ request()->routeIs('partners.*') ? 'active' : '' }}">
-            <i class="bi bi-people-fill"></i> Partner
-        </a>
-        <a href="{{ route('imports.index') }}" class="nav-link {{ request()->routeIs('imports.*') ? 'active' : '' }}">
-            <i class="bi bi-file-earmark-spreadsheet-fill"></i> Import Transaksi
-        </a>
 
-        <div class="nav-section">Reservasi</div>
-        <a href="{{ route('reservations.index') }}" class="nav-link {{ request()->routeIs('reservations.*') ? 'active' : '' }}">
-            <i class="bi bi-calendar-check-fill"></i> Reservasi
-        </a>
-        <a href="{{ route('anomalies.index') }}" class="nav-link {{ request()->routeIs('anomalies.*') || request()->routeIs('commission-review.*') ? 'active' : '' }}">
-            <i class="bi bi-shield-exclamation"></i> Anomali & Fraud
-            @php $pendingAnomalies = \App\Models\ReservationAnomaly::where('is_resolved', false)->count(); @endphp
-            @if($pendingAnomalies > 0)
-                <span class="badge ms-auto" style="background:#ef4444;font-size:.56rem;padding:.2em .48em;border-radius:5px;font-weight:700;">{{ $pendingAnomalies }}</span>
-            @endif
-        </a>
-        @if(auth()->user()->isAdmin())
-        <a href="{{ route('self-service.qr-admin') }}" class="nav-link {{ request()->routeIs('self-service.*') ? 'active' : '' }}">
-            <i class="bi bi-qr-code"></i> QR Self-Service
-        </a>
-        <a href="{{ route('booking-pass-templates.index') }}" class="nav-link {{ request()->routeIs('booking-pass-templates.*') ? 'active' : '' }}">
-            <i class="bi bi-file-earmark-image"></i> Booking Pass Templates
-        </a>
+        {{-- ── Admission section ───────────────────────────── --}}
+        @if(auth()->user()->isAdmission() || auth()->user()->isAdmin())
+        <div class="nav-section {{ $activeSection === 'admission' ? 'open' : '' }}"
+             onclick="toggleSection('admission')" id="hdr-admission">
+            <span>Admission</span>
+            <i class="bi bi-chevron-down nav-section-arrow"></i>
+        </div>
+        <div class="nav-section-body {{ $activeSection === 'admission' ? 'open' : '' }}" id="sec-admission">
+            <a href="{{ route('admission.dashboard') }}" class="nav-link {{ request()->routeIs('admission.dashboard') ? 'active' : '' }}">
+                <i class="bi bi-door-open-fill"></i> Dashboard
+            </a>
+            <a href="{{ route('admission.scan') }}" class="nav-link {{ request()->routeIs('admission.scan') ? 'active' : '' }}">
+                <i class="bi bi-upc-scan"></i> Scan & Redeem
+            </a>
+            <a href="{{ route('admission.history') }}" class="nav-link {{ request()->routeIs('admission.history') ? 'active' : '' }}">
+                <i class="bi bi-clock-history"></i> Riwayat Hari Ini
+            </a>
+            <a href="{{ route('admission.qr') }}" class="nav-link {{ request()->routeIs('admission.qr') ? 'active' : '' }}">
+                <i class="bi bi-qr-code"></i> QR Self-Service
+            </a>
+        </div>
         @endif
 
-        <div class="nav-section">Keuangan</div>
-        <a href="{{ route('payments.index') }}" class="nav-link {{ request()->routeIs('payments.*') ? 'active' : '' }}">
-            <i class="bi bi-cash-stack"></i> Pembayaran
-        </a>
-        <a href="{{ route('payment-memos.index') }}" class="nav-link {{ request()->routeIs('payment-memos.*') ? 'active' : '' }}">
-            <i class="bi bi-file-earmark-medical-fill"></i> Memo Tagihan
-        </a>
-        <a href="{{ route('credit-payments.index') }}" class="nav-link {{ request()->routeIs('credit-payments.*') ? 'active' : '' }}">
-            <i class="bi bi-credit-card-2-front-fill"></i> Pembayaran Credit
-        </a>
-        <a href="{{ route('reports.index') }}" class="nav-link {{ request()->routeIs('reports.*') ? 'active' : '' }}">
-            <i class="bi bi-bar-chart-line-fill"></i> Laporan
-        </a>
+        {{-- ── Non-admission sections ───────────────────────── --}}
+        @unless(auth()->user()->isAdmission())
 
-        <div class="nav-section">Pengaturan</div>
-        <a href="{{ route('products.index') }}" class="nav-link {{ request()->routeIs('products.*') ? 'active' : '' }}">
-            <i class="bi bi-box-seam-fill"></i> Produk
-        </a>
-        @if(auth()->user()->isAdmin())
-        <a href="{{ route('users.index') }}" class="nav-link {{ request()->routeIs('users.*') ? 'active' : '' }}">
-            <i class="bi bi-person-gear"></i> Pengguna
-        </a>
-        @php $pendingResets = \App\Models\User::whereNotNull('reset_requested_at')->count(); @endphp
-        <a href="{{ route('admin.password-requests.index') }}" class="nav-link {{ request()->routeIs('admin.password-requests.*') ? 'active' : '' }}">
-            <i class="bi bi-key"></i> Reset Password
-            @if($pendingResets > 0)
-                <span class="badge bg-warning text-dark ms-1">{{ $pendingResets }}</span>
+        {{-- Menu Utama --}}
+        <div class="nav-section {{ $activeSection === 'main' ? 'open' : '' }}"
+             onclick="toggleSection('main')" id="hdr-main">
+            <span>Operasional</span>
+            <i class="bi bi-chevron-down nav-section-arrow"></i>
+        </div>
+        <div class="nav-section-body {{ $activeSection === 'main' ? 'open' : '' }}" id="sec-main">
+            <a href="{{ route('dashboard') }}" class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}">
+                <i class="bi bi-grid-1x2-fill"></i> Dashboard
+            </a>
+            <a href="{{ route('invoices.index') }}" class="nav-link {{ request()->routeIs('invoices.*') ? 'active' : '' }}">
+                <i class="bi bi-file-earmark-text-fill"></i> Invoice
+            </a>
+            @php
+                $pendingCount = \App\Models\TransactionImportRow::whereIn('status', ['valid','anomaly'])
+                    ->where('is_approved', true)
+                    ->whereDoesntHave('invoice')
+                    ->count();
+            @endphp
+            <a href="{{ route('pending-invoices.index') }}" class="nav-link {{ request()->routeIs('pending-invoices.*') ? 'active' : '' }}">
+                <i class="bi bi-hourglass-split"></i> Antrian Invoice
+                @if($pendingCount > 0)
+                    <span class="badge ms-auto" style="background:#ef4444;font-size:.56rem;padding:.2em .48em;border-radius:5px;font-weight:700;">{{ $pendingCount }}</span>
+                @endif
+            </a>
+            <a href="{{ route('deposit-invoices.index') }}" class="nav-link {{ request()->routeIs('deposit-invoices.*') ? 'active' : '' }}">
+                <i class="bi bi-wallet2"></i> Invoice Deposit
+            </a>
+            <a href="{{ route('imports.index') }}" class="nav-link {{ request()->routeIs('imports.*') ? 'active' : '' }}">
+                <i class="bi bi-file-earmark-spreadsheet-fill"></i> Rekonsiliasi DSI
+            </a>
+            <a href="{{ route('partners.index') }}" class="nav-link {{ request()->routeIs('partners.*') ? 'active' : '' }}">
+                <i class="bi bi-people-fill"></i> Partner
+            </a>
+        </div>
+
+        {{-- Reservasi --}}
+        <div class="nav-section {{ $activeSection === 'reservasi' ? 'open' : '' }}"
+             onclick="toggleSection('reservasi')" id="hdr-reservasi">
+            <span>Reservasi</span>
+            <i class="bi bi-chevron-down nav-section-arrow"></i>
+        </div>
+        <div class="nav-section-body {{ $activeSection === 'reservasi' ? 'open' : '' }}" id="sec-reservasi">
+            <a href="{{ route('reservations.index') }}" class="nav-link {{ request()->routeIs('reservations.*') ? 'active' : '' }}">
+                <i class="bi bi-calendar-check-fill"></i> Daftar Reservasi
+            </a>
+            <a href="{{ route('anomalies.index') }}" class="nav-link {{ request()->routeIs('anomalies.*') || request()->routeIs('commission-review.*') ? 'active' : '' }}">
+                <i class="bi bi-shield-exclamation"></i> Anomali & Fraud
+                @php $pendingAnomalies = \App\Models\ReservationAnomaly::where('is_resolved', false)->count(); @endphp
+                @if($pendingAnomalies > 0)
+                    <span class="badge ms-auto" style="background:#ef4444;font-size:.56rem;padding:.2em .48em;border-radius:5px;font-weight:700;">{{ $pendingAnomalies }}</span>
+                @endif
+            </a>
+            @if(auth()->user()->isAdmin())
+            <a href="{{ route('self-service.qr-admin') }}" class="nav-link {{ request()->routeIs('self-service.*') ? 'active' : '' }}">
+                <i class="bi bi-qr-code"></i> Kelola QR
+            </a>
+            <a href="{{ route('booking-pass-templates.index') }}" class="nav-link {{ request()->routeIs('booking-pass-templates.*') ? 'active' : '' }}">
+                <i class="bi bi-file-earmark-image"></i> Template Booking Pass
+            </a>
             @endif
-        </a>
-        <a href="{{ route('credit-classes.index') }}" class="nav-link {{ request()->routeIs('credit-classes.*') ? 'active' : '' }}">
-            <i class="bi bi-award-fill"></i> Credit Classes
-        </a>
-        <a href="{{ route('settings.index') }}" class="nav-link {{ request()->routeIs('settings.*') ? 'active' : '' }}">
-            <i class="bi bi-gear-fill"></i> Pengaturan
-        </a>
-        <a href="{{ route('admin.audit-logs.index') }}" class="nav-link {{ request()->routeIs('admin.audit-logs.*') ? 'active' : '' }}">
-            <i class="bi bi-journal-text"></i> Audit Trail
-        </a>
-        @endif
+        </div>
+
+        {{-- Keuangan --}}
+        <div class="nav-section {{ $activeSection === 'keuangan' ? 'open' : '' }}"
+             onclick="toggleSection('keuangan')" id="hdr-keuangan">
+            <span>Keuangan</span>
+            <i class="bi bi-chevron-down nav-section-arrow"></i>
+        </div>
+        <div class="nav-section-body {{ $activeSection === 'keuangan' ? 'open' : '' }}" id="sec-keuangan">
+            <a href="{{ route('payments.index') }}" class="nav-link {{ request()->routeIs('payments.*') ? 'active' : '' }}">
+                <i class="bi bi-cash-stack"></i> Pembayaran
+            </a>
+            <a href="{{ route('payment-memos.index') }}" class="nav-link {{ request()->routeIs('payment-memos.*') ? 'active' : '' }}">
+                <i class="bi bi-file-earmark-medical-fill"></i> Memo Tagihan
+            </a>
+            <a href="{{ route('credit-payments.index') }}" class="nav-link {{ request()->routeIs('credit-payments.*') ? 'active' : '' }}">
+                <i class="bi bi-credit-card-2-front-fill"></i> Pembayaran Credit
+            </a>
+            <a href="{{ route('reports.index') }}" class="nav-link {{ request()->routeIs('reports.*') ? 'active' : '' }}">
+                <i class="bi bi-bar-chart-line-fill"></i> Laporan
+            </a>
+        </div>
+
+        {{-- Pengaturan --}}
+        <div class="nav-section {{ $activeSection === 'pengaturan' ? 'open' : '' }}"
+             onclick="toggleSection('pengaturan')" id="hdr-pengaturan">
+            <span>Pengaturan</span>
+            <i class="bi bi-chevron-down nav-section-arrow"></i>
+        </div>
+        <div class="nav-section-body {{ $activeSection === 'pengaturan' ? 'open' : '' }}" id="sec-pengaturan">
+            <a href="{{ route('products.index') }}" class="nav-link {{ request()->routeIs('products.*') ? 'active' : '' }}">
+                <i class="bi bi-box-seam-fill"></i> Produk
+            </a>
+            @if(auth()->user()->isAdmin())
+            <a href="{{ route('users.index') }}" class="nav-link {{ request()->routeIs('users.*') ? 'active' : '' }}">
+                <i class="bi bi-person-gear"></i> Pengguna
+            </a>
+            @php $pendingResets = \App\Models\User::whereNotNull('reset_requested_at')->count(); @endphp
+            <a href="{{ route('admin.password-requests.index') }}" class="nav-link {{ request()->routeIs('admin.password-requests.*') ? 'active' : '' }}">
+                <i class="bi bi-key"></i> Reset Password
+                @if($pendingResets > 0)
+                    <span class="badge bg-warning text-dark ms-1">{{ $pendingResets }}</span>
+                @endif
+            </a>
+            <a href="{{ route('credit-classes.index') }}" class="nav-link {{ request()->routeIs('credit-classes.*') ? 'active' : '' }}">
+                <i class="bi bi-award-fill"></i> Credit Classes
+            </a>
+            <a href="{{ route('settings.index') }}" class="nav-link {{ request()->routeIs('settings.*') ? 'active' : '' }}">
+                <i class="bi bi-gear-fill"></i> Konfigurasi
+            </a>
+            <a href="{{ route('admin.audit-logs.index') }}" class="nav-link {{ request()->routeIs('admin.audit-logs.*') ? 'active' : '' }}">
+                <i class="bi bi-journal-text"></i> Audit Trail
+            </a>
+            @endif
+        </div>
+
         @endunless
     </div>
 
@@ -523,6 +588,19 @@ document.addEventListener('DOMContentLoaded', function() {
 function toggleSidebar() {
     document.getElementById('sidebar').classList.toggle('show');
     document.getElementById('sidebar-backdrop').classList.toggle('d-none');
+}
+function toggleSection(id) {
+    var hdr = document.getElementById('hdr-' + id);
+    var sec = document.getElementById('sec-' + id);
+    if (!hdr || !sec) return;
+    var isOpen = sec.classList.toggle('open');
+    hdr.classList.toggle('open', isOpen);
+    // persist
+    try {
+        var state = JSON.parse(localStorage.getItem('sidebarSections') || '{}');
+        state[id] = isOpen;
+        localStorage.setItem('sidebarSections', JSON.stringify(state));
+    } catch(e) {}
 }
 (function tick() {
     var el = document.getElementById('topbar-clock');
