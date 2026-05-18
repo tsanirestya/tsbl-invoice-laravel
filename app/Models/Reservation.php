@@ -11,7 +11,7 @@ class Reservation extends Model
     use Auditable;
 
     protected $fillable = [
-        'reservation_no', 'partner_id', 'guest_name', 'guest_country',
+        'reservation_no', 'partner_id', 'guest_name', 'guest_country', 'customer_type',
         'pax_adults', 'pax_kids', 'pax_babies',
         'visit_date', 'status', 'reservation_type', 'payment_method',
         'payment_channel', 'booking_pass_type', 'booking_pass_template_id',
@@ -22,6 +22,18 @@ class Reservation extends Model
         'ip_address', 'user_agent', 'device_fingerprint', 'qr_token', 'created_by',
         'redeemed_at', 'redeemed_by', 'transaction_match', 'transaction_notes', 'actual_items',
     ];
+
+    protected static function booted()
+    {
+        static::saving(function ($reservation) {
+            $country = trim($reservation->guest_country ?? '');
+            if (empty($country) || strcasecmp($country, 'Indonesia') === 0) {
+                $reservation->customer_type = 'DOMESTIC';
+            } else {
+                $reservation->customer_type = 'FOREIGN';
+            }
+        });
+    }
 
     protected function casts(): array
     {

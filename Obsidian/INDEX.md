@@ -44,7 +44,7 @@
 | Phase 10f — Fraud Detection     | [[TODO-PHASE-10-RESERVATION]]     | ✅ Done (2026-05-13) |
 | Phase 11 — Product Classification | [[PHASE-11-PRODUCT-CLASSIFICATION]] | ✅ Done (2026-05-15) |
 | Revisi Reservation Form (Pax)   | [[TODO-REVISI-RESERVATION-FORM-PAX]] | ✅ Done (2026-05-15)      |
-| Phase 12 — Admission + Redeem   | [[FEATURE-ADMISSION-REDEEM]]         | 📋 Planning               |
+| Phase 12 — Admission + Redeem   | [[FEATURE-ADMISSION-REDEEM]]         | ✅ Done (2026-05-16)       |
 
 ## 📦 Features (akan dibuat per feature selesai)
 → Folder: `Features/`

@@ -353,20 +353,30 @@
 
             @php
             $coreVars = [
-                ['key' => 'reservation_no',  'label' => 'No. Reservasi',      'icon' => 'bi-hash'],
-                ['key' => 'guest_name',      'label' => 'Nama Tamu',          'icon' => 'bi-person'],
-                ['key' => 'guest_country',   'label' => 'Negara Asal',        'icon' => 'bi-globe'],
-                ['key' => 'visit_date',      'label' => 'Tanggal Kunjungan',  'icon' => 'bi-calendar-event'],
-                ['key' => 'partner_name',    'label' => 'Nama Partner',       'icon' => 'bi-building'],
-                ['key' => 'product_name',    'label' => 'Nama Produk',        'icon' => 'bi-box-seam'],
-                ['key' => 'payment_method',  'label' => 'Metode Pembayaran',  'icon' => 'bi-credit-card'],
-                ['key' => 'payment_channel', 'label' => 'Channel Pembayaran', 'icon' => 'bi-bank'],
-                ['key' => 'total_amount',    'label' => 'Total Amount',       'icon' => 'bi-cash-stack'],
-                ['key' => 'status',          'label' => 'Status',             'icon' => 'bi-check-circle'],
-                ['key' => 'notes',           'label' => 'Catatan',            'icon' => 'bi-sticky'],
-                ['key' => 'created_at',      'label' => 'Tanggal Dibuat',     'icon' => 'bi-clock'],
+                ['key' => 'reservation_no',         'label' => 'No. Reservasi',         'icon' => 'bi-hash'],
+                ['key' => 'guest_name',             'label' => 'Nama Tamu',             'icon' => 'bi-person'],
+                ['key' => 'guest_country',          'label' => 'Negara Asal',           'icon' => 'bi-globe'],
+                ['key' => 'customer_type',          'label' => 'Tipe Customer',         'icon' => 'bi-person-badge'],
+                ['key' => 'pax_adults',             'label' => 'Dewasa',                'icon' => 'bi-people'],
+                ['key' => 'pax_kids',               'label' => 'Anak-anak',             'icon' => 'bi-person-circle'],
+                ['key' => 'pax_babies',             'label' => 'Bayi',                  'icon' => 'bi-emoji-smile'],
+                ['key' => 'visit_date',             'label' => 'Tanggal Kunjungan',     'icon' => 'bi-calendar-event'],
+                ['key' => 'partner_name',           'label' => 'Nama Partner',          'icon' => 'bi-building'],
+                ['key' => 'product_name',           'label' => 'Nama Produk',           'icon' => 'bi-box-seam'],
+                ['key' => 'payment_method',         'label' => 'Metode Pembayaran',     'icon' => 'bi-credit-card'],
+                ['key' => 'payment_channel',        'label' => 'Channel Pembayaran',    'icon' => 'bi-bank'],
+                ['key' => 'total_amount',           'label' => 'Total Amount',          'icon' => 'bi-cash-stack'],
+                ['key' => 'status',                 'label' => 'Status',                'icon' => 'bi-check-circle'],
+                ['key' => 'notes',                  'label' => 'Catatan',               'icon' => 'bi-sticky'],
+                ['key' => 'created_at',             'label' => 'Tanggal Dibuat',        'icon' => 'bi-clock'],
+                ['key' => 'reservation_type',       'label' => 'Tipe Reservasi',        'icon' => 'bi-info-square'],
+                ['key' => 'customer_origin',        'label' => 'Asal Customer',         'icon' => 'bi-signpost-split'],
+                ['key' => 'customer_origin_detail', 'label' => 'Detail Asal Customer',  'icon' => 'bi-card-text'],
+                ['key' => 'key_number',             'label' => 'No Kunci/Kamar',        'icon' => 'bi-key'],
+                ['key' => 'location_name',          'label' => 'Nama Lokasi',           'icon' => 'bi-geo-alt'],
             ];
             $specialVars = [
+                ['key' => 'static_text', 'label' => 'Teks Statis',    'icon' => 'bi-type'],
                 ['key' => 'items_table', 'label' => 'Tabel Produk',   'icon' => 'bi-table'],
                 ['key' => 'items_list',  'label' => 'List Produk',    'icon' => 'bi-list-ul'],
                 ['key' => 'qr_code',     'label' => 'QR Code',        'icon' => 'bi-qr-code'],
@@ -533,6 +543,20 @@
                 <option value="qr">QR Code</option>
                 <option value="barcode">Barcode</option>
             </select>
+        </div>
+        <div id="sp-static-text-wrap" style="display:none;">
+            <label>Isi Teks Statis</label>
+            <input type="text" id="sp-static-text" class="form-control form-control-sm" placeholder="Teks statis...">
+        </div>
+        <div>
+            <label>Background Fill</label>
+            <select id="sp-bg-type" class="form-select form-select-sm mb-1">
+                <option value="transparent">Transparan</option>
+                <option value="color">Warna Solid</option>
+            </select>
+            <div id="sp-bg-color-wrap" style="display:none;">
+                <input type="color" id="sp-bg-color" class="form-control form-control-sm form-control-color" value="#ffffff">
+            </div>
         </div>
         <hr class="my-2">
         <div>

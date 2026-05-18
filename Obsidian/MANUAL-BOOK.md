@@ -1153,13 +1153,13 @@ Sistem baru ini menggunakan alur:
 
 ## 22. MANAJEMEN RESERVASI & PROFORMA
 
-### Langkah 22.1 — Mencatat Reservasi
+### Langkah 22.1 ï¿½ Mencatat Reservasi
 1. Klik menu **Reservations** di sidebar.
 2. Klik **[+ Create Reservation]**.
 3. Isi nama tamu, partner, tanggal check-in, dan estimasi pax/harga.
 4. Klik **[Save]**. Status awal adalah **PENDING**.
 
-### Langkah 22.2 — Konfirmasi & Proforma
+### Langkah 22.2 ï¿½ Konfirmasi & Proforma
 1. Buka detail reservasi, klik **[Confirm]** jika sudah pasti.
 2. Klik **[Issue Proforma]** untuk menagih pembayaran di muka (Prepaid).
 3. Masukkan item yang akan ditagih.
@@ -1169,10 +1169,10 @@ Sistem baru ini menggunakan alur:
 
 ## 23. REKONSILIASI DSI & INVOICE FINAL
 
-### Langkah 23.1 — Import Transaksi DSI
+### Langkah 23.1 ï¿½ Import Transaksi DSI
 Setiap hari, import data dari sistem operasional (DSI) melalui menu **DSI Import**. Sistem akan otomatis mencocokkan transaksi dengan reservasi yang ada.
 
-### Langkah 23.2 — Melakukan Rekonsiliasi
+### Langkah 23.2 ï¿½ Melakukan Rekonsiliasi
 1. Klik menu **Reconciliations**.
 2. Pilih baris yang berstatus **PENDING_REVIEW**.
 3. Bandingkan data Proforma (rencana) dengan data DSI (kenyataan).
@@ -1184,17 +1184,17 @@ Setiap hari, import data dari sistem operasional (DSI) melalui menu **DSI Import
 
 ## 24. ALOKASI PEMBAYARAN & SALDO KREDIT
 
-### Langkah 24.1 — Verifikasi Pembayaran
+### Langkah 24.1 ï¿½ Verifikasi Pembayaran
 1. Klik menu **Billing Payments**.
 2. Klik **[Verify]** pada pembayaran yang masuk (setelah cek bank).
 3. Status pembayaran berubah menjadi **VERIFIED** dan terkunci.
 
-### Langkah 24.2 — Alokasi ke Invoice
+### Langkah 24.2 ï¿½ Alokasi ke Invoice
 1. Buka detail pembayaran yang sudah Verified.
 2. Klik **[Allocate]**, pilih invoice mana yang ingin dilunasi dengan uang ini.
 3. Satu uang bisa melunasi banyak invoice (Batch Pay).
 
-### Langkah 24.3 — Manajemen Saldo Kredit
+### Langkah 24.3 ï¿½ Manajemen Saldo Kredit
 Jika partner membayar lebih (Overpayment):
 1. Saldo sisa akan masuk ke **Credit Balance** partner.
 2. Saat membuat invoice berikutnya, gunakan tombol **[Apply Credit]** untuk memotong tagihan menggunakan saldo tersebut.

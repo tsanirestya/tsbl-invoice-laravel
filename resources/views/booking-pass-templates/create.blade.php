@@ -59,8 +59,8 @@
                 </div>
             </div>
             <div class="mb-3">
-                <label class="form-label">File Template (background gambar/PDF) <small class="text-muted">opsional, maks 5MB</small></label>
-                <input type="file" name="template_file" class="form-control" accept=".jpg,.jpeg,.png,.pdf">
+                <label class="form-label">File Template (background gambar) <small class="text-muted">opsional, JPG/PNG, maks 5MB</small></label>
+                <input type="file" name="template_file" class="form-control" accept=".jpg,.jpeg,.png">
             </div>
             <div class="mb-3 form-check">
                 <input type="hidden" name="is_active" value="0">

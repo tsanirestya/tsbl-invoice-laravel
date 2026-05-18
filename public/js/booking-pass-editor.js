@@ -41,6 +41,15 @@
         reservation_no:   'RES-20260513-0001',
         guest_name:       'John Doe',
         guest_country:    'Indonesia',
+        customer_type:    'DOMESTIC',
+        pax_adults:       '2',
+        pax_kids:         '1',
+        pax_babies:       '0',
+        reservation_type: 'self_service',
+        customer_origin:  'OTA',
+        customer_origin_detail: 'Traveloka',
+        key_number:       'A-102',
+        location_name:    'Trans Studio Bandung',
         visit_date:       '13 May 2026',
         partner_name:     'Hotel ABC',
         product_name:     'Trans Studio Theme Park',
@@ -63,6 +72,9 @@
         try {
             const data       = JSON.parse(raw.textContent);
             const allFields  = [...(data.fields || []), ...(data.custom_fields || [])];
+            allFields.forEach(f => {
+                f.base_key = f.base_key || f.key;
+            });
             state.fields     = allFields;
             state.customFields = (data.custom_fields || []).map(f => ({ key: f.key, label: f.label }));
 
@@ -111,8 +123,15 @@
     // ── Preview value helper ──────────────────────────────────────────────────
     function getPreviewValue(fieldDef) {
         const key        = fieldDef.key;
+        const baseKey    = fieldDef.base_key || key;
         const outputType = fieldDef.output_type || 'text';
-        const rawText    = PREVIEW_VALUES[key] ?? (key.startsWith('booking_pass_data.') ? '[' + fieldDef.label + ']' : fieldDef.label);
+        
+        let rawText = '';
+        if (baseKey.startsWith('static_text')) {
+            rawText = fieldDef.static_text || 'Teks Statis';
+        } else {
+            rawText = PREVIEW_VALUES[baseKey] ?? (baseKey.startsWith('booking_pass_data.') ? '[' + fieldDef.label + ']' : fieldDef.label);
+        }
 
         if (outputType === 'qr') {
             return rawText;
@@ -173,6 +192,12 @@
         box.style.fontWeight = fieldDef.font_weight || 'normal';
         box.style.color      = fieldDef.color || '#000000';
         box.style.textAlign  = fieldDef.align || 'left';
+
+        // Background color & padding
+        const bgType = fieldDef.bg_type || 'transparent';
+        const bgColor = fieldDef.bg_color || '#ffffff';
+        box.style.backgroundColor = bgType === 'transparent' ? 'transparent' : bgColor;
+        box.style.padding = bgType === 'transparent' ? '4px 8px' : '6px 10px';
 
         // Visual cue for qr/barcode output type
         const outputType = fieldDef.output_type || 'text';
@@ -242,10 +267,9 @@
 
     // ── Sidebar state ─────────────────────────────────────────────────────────
     function refreshSidebarState() {
-        const onCanvas = new Set(state.fields.map(f => f.key));
         document.querySelectorAll('.bp-var-item').forEach(el => {
-            el.classList.toggle('on-canvas', onCanvas.has(el.dataset.key));
-            el.draggable = !onCanvas.has(el.dataset.key);
+            el.classList.remove('on-canvas');
+            el.draggable = true;
         });
     }
 
@@ -271,10 +295,6 @@
     // ── Drag from sidebar ─────────────────────────────────────────────────────
     function onSidebarDragStart(e) {
         const item = e.currentTarget;
-        if (!item.draggable || item.classList.contains('on-canvas')) {
-            e.preventDefault();
-            return;
-        }
         state.draggingSidebar = { key: item.dataset.key, label: item.dataset.label };
         e.dataTransfer.effectAllowed = 'copy';
         e.dataTransfer.setData('text/plain', item.dataset.key);
@@ -300,9 +320,16 @@
         const xPct = clamp((xPx / CANVAS_W) * 100, 0, 90);
         const yPct = clamp((yPx / CANVAS_H) * 100, 0, 95);
 
+        const baseKey = state.draggingSidebar.key;
+        const uniqueKey = baseKey + '_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+
         const fieldDef = {
-            key:              state.draggingSidebar.key,
+            key:              uniqueKey,
+            base_key:         baseKey,
             label:            state.draggingSidebar.label,
+            static_text:      baseKey.startsWith('static_text') ? 'Teks Statis' : '',
+            bg_type:          'transparent',
+            bg_color:         '#ffffff',
             x_pct:            round2(xPct),
             y_pct:            round2(yPct),
             width_pct:        30,
@@ -425,6 +452,26 @@
         document.getElementById('sp-label-color').value             = field.label_color      || '#64748b';
         document.getElementById('sp-output-type').value             = field.output_type      || 'text';
 
+        // Background type & color
+        const bgType = field.bg_type || 'transparent';
+        const bgColor = field.bg_color || '#ffffff';
+        const bgTypeSelect = document.getElementById('sp-bg-type');
+        const bgColorWrap = document.getElementById('sp-bg-color-wrap');
+        const bgColorInput = document.getElementById('sp-bg-color');
+        
+        if (bgTypeSelect) bgTypeSelect.value = bgType;
+        if (bgColorInput) bgColorInput.value = bgColor;
+        if (bgColorWrap) bgColorWrap.style.display = bgType === 'color' ? 'block' : 'none';
+
+        // Static text input
+        const baseKey = field.base_key || field.key;
+        const isStaticText = baseKey.startsWith('static_text');
+        const staticTextWrap = document.getElementById('sp-static-text-wrap');
+        const staticTextInput = document.getElementById('sp-static-text');
+        
+        if (staticTextWrap) staticTextWrap.style.display = isStaticText ? 'block' : 'none';
+        if (staticTextInput) staticTextInput.value = field.static_text || '';
+
         setActiveAlignBtn(field.align || 'left');
         stylePanel.classList.add('visible');
     }
@@ -452,7 +499,14 @@
         const labelFontSize  = parseInt(document.getElementById('sp-label-font-size').value) || 9;
         const labelColor     = document.getElementById('sp-label-color').value;
         const outputType     = document.getElementById('sp-output-type').value;
+        const bgType         = document.getElementById('sp-bg-type')?.value || 'transparent';
+        const bgColor        = document.getElementById('sp-bg-color')?.value || '#ffffff';
+        const staticText     = document.getElementById('sp-static-text')?.value || '';
         const align          = document.querySelector('.align-btn.active')?.dataset.align    || 'left';
+
+        // Toggle background color display in UI
+        const bgColorWrap = document.getElementById('sp-bg-color-wrap');
+        if (bgColorWrap) bgColorWrap.style.display = bgType === 'color' ? 'block' : 'none';
 
         upsertField(key, {
             font_size:       fontSize,
@@ -465,6 +519,9 @@
             label_font_size: labelFontSize,
             label_color:     labelColor,
             output_type:     outputType,
+            bg_type:         bgType,
+            bg_color:        bgColor,
+            static_text:     staticText,
             align,
         });
 
@@ -477,9 +534,13 @@
         'sp-font-size', 'sp-font-weight', 'sp-color',
         'sp-width', 'sp-x', 'sp-y',
         'sp-show-label', 'sp-label-font-size', 'sp-label-color', 'sp-output-type',
+        'sp-bg-type', 'sp-bg-color', 'sp-static-text'
     ].forEach(id => {
         const el = document.getElementById(id);
-        if (el) el.addEventListener('input', stylePanelChanged);
+        if (el) {
+            el.addEventListener('input', stylePanelChanged);
+            el.addEventListener('change', stylePanelChanged);
+        }
     });
 
     document.querySelectorAll('.align-btn').forEach(btn => {

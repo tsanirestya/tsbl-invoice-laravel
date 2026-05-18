@@ -233,6 +233,36 @@
             </div>
         </div>
         @endif
+
+        {{-- Admission Redeem Info --}}
+        @if($reservation->status === 'REDEEMED')
+        <div class="card mb-3 border-info">
+            <div class="card-header fw-semibold text-info d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-check2-circle me-2"></i>Admission — Sudah Masuk</span>
+                <span class="badge bg-{{ $reservation->transaction_match === 'MATCH' ? 'success' : ($reservation->transaction_match === 'MISMATCH' ? 'warning text-dark' : 'secondary') }}">
+                    {{ $reservation->transaction_match ?? 'PENDING_CHECK' }}
+                </span>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-sm-6">
+                        <div class="text-muted small">Waktu Redeem</div>
+                        <div class="fw-semibold">{{ $reservation->redeemed_at?->format('d M Y H:i') ?? '—' }}</div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="text-muted small">Petugas</div>
+                        <div>{{ $reservation->redeemer?->full_name ?? '—' }}</div>
+                    </div>
+                    @if($reservation->transaction_notes)
+                    <div class="col-12">
+                        <div class="text-muted small">Catatan Mismatch</div>
+                        <div class="alert alert-warning py-2 small mb-0">{{ $reservation->transaction_notes }}</div>
+                    </div>
+                    @endif
+                </div>
+            </div>
+        </div>
+        @endif
     </div>
 
     {{-- Right column: Location & metadata --}}

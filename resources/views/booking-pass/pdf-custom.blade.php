@@ -22,11 +22,11 @@
             position: absolute;
             box-sizing: border-box;
             word-break: break-word;
-            line-height: 1.35;
+            line-height: 1.3;
         }
         .bp-field .field-label {
             display: block;
-            font-size: 7pt;
+            font-size: 9px;
             color: #64748b;
             text-transform: uppercase;
             letter-spacing: .4px;
@@ -73,7 +73,12 @@
         @endif
         @php
             $key            = $field['key'];
-            $rawValue       = $fieldValues[$key] ?? '';
+            $baseKey        = $field['base_key'] ?? $key;
+            if (str_starts_with($baseKey, 'static_text')) {
+                $rawValue = $field['static_text'] ?? '';
+            } else {
+                $rawValue = $fieldValues[$baseKey] ?? '';
+            }
             $xPct           = $field['x_pct'] ?? 0;
             $yPct           = $field['y_pct'] ?? 0;
             $wPct           = $field['width_pct'] ?? 30;
@@ -82,9 +87,14 @@
             $color          = $field['color'] ?? '#000000';
             $align          = $field['align'] ?? 'left';
             $showLabel      = ($field['show_label'] ?? true) !== false;
-            $labelFs        = $field['label_font_size'] ?? 7;
+            $labelFs        = $field['label_font_size'] ?? 9;
             $labelColor     = $field['label_color'] ?? '#64748b';
             $outputType     = $field['output_type'] ?? 'text';
+
+            $bgType         = $field['bg_type'] ?? 'transparent';
+            $bgColor        = $field['bg_color'] ?? '#ffffff';
+            $bgCss          = $bgType === 'transparent' ? 'transparent' : $bgColor;
+            $paddingCss     = $bgType === 'transparent' ? '4px 8px' : '6px 10px';
 
             $leftMm  = $xPct * 2.1;
             $topMm   = $yPct * 2.97;
@@ -125,7 +135,7 @@
                 $plainText    = strip_tags($rawValue);
                 $displayValue = BarcodeRenderer::code39($plainText, 2, 55, true, true);
                 $isHtml = true;
-            } elseif (in_array($key, ['items_table', 'qr_code', 'logo'])) {
+            } elseif (in_array($baseKey, ['items_table', 'qr_code', 'logo'])) {
                 $displayValue = $rawValue;
                 $isHtml       = true;
             } else {
@@ -136,13 +146,15 @@
             left: {{ $leftMm }}mm;
             top: {{ $topMm }}mm;
             width: {{ $widthMm }}mm;
-            font-size: {{ $fs }}pt;
+            font-size: {{ $fs }}px;
             font-weight: {{ $fw }};
             color: {{ $color }};
             text-align: {{ $align }};
+            background-color: {{ $bgCss }};
+            padding: {{ $paddingCss }};
         ">
             @if($showLabel)
-                <span class="field-label" style="font-size:{{ $labelFs }}pt;color:{{ $labelColor }};">{{ $field['label'] ?? $key }}</span>
+                <span class="field-label" style="font-size:{{ $labelFs }}px;color:{{ $labelColor }};">{{ $field['label'] ?? $key }}</span>
             @endif
             @if($isHtml)
                 {!! $displayValue !!}

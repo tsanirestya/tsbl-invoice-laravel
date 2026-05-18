@@ -58,22 +58,31 @@ class BookingPassService
         $partner = $reservation->partner;
 
         $values = [
-            'reservation_no'   => e($reservation->reservation_no),
-            'guest_name'       => e($reservation->guest_name),
-            'guest_country'    => e($reservation->guest_country ?? '—'),
-            'visit_date'       => $reservation->visit_date?->format('d F Y') ?? '—',
-            'partner_name'     => e($partner?->nama_partner ?? $reservation->partner_name_input ?? '—'),
-            'product_name'     => e($items->first()?->product_name ?? '—'),
-            'payment_method'   => e($reservation->payment_method ?? '—'),
-            'payment_channel'  => e($reservation->payment_channel ?? '—'),
-            'total_amount'     => 'Rp ' . number_format($reservation->total_amount ?? 0, 0, ',', '.'),
-            'status'           => e($reservation->status ?? '—'),
-            'notes'            => e($reservation->notes ?? '—'),
-            'created_at'       => $reservation->created_at?->format('d/m/Y H:i') ?? '—',
-            'items_table'      => $this->renderItemsTable($items),
-            'items_list'       => $this->renderItemsList($items),
-            'qr_code'          => $this->renderQrOrBarcode($reservation->reservation_no, $qrType),
-            'logo'             => $this->renderLogo(),
+            'reservation_no'         => e($reservation->reservation_no),
+            'guest_name'             => e($reservation->guest_name),
+            'guest_country'          => e($reservation->guest_country ?? '—'),
+            'customer_type'          => e($reservation->customer_type ?? '—'),
+            'pax_adults'             => (int) ($reservation->pax_adults ?? 0),
+            'pax_kids'               => (int) ($reservation->pax_kids ?? 0),
+            'pax_babies'             => (int) ($reservation->pax_babies ?? 0),
+            'reservation_type'       => e($reservation->reservation_type ?? '—'),
+            'customer_origin'        => e($reservation->customer_origin ?? '—'),
+            'customer_origin_detail' => e($reservation->customer_origin_detail ?? '—'),
+            'key_number'             => e($reservation->key_number ?? '—'),
+            'location_name'          => e($reservation->location_name ?? '—'),
+            'visit_date'             => $reservation->visit_date?->format('d F Y') ?? '—',
+            'partner_name'           => e($partner?->nama_partner ?? $reservation->partner_name_input ?? '—'),
+            'product_name'           => e($items->first()?->product_name ?? '—'),
+            'payment_method'         => e($reservation->payment_method ?? '—'),
+            'payment_channel'        => e($reservation->payment_channel ?? '—'),
+            'total_amount'           => 'Rp ' . number_format($reservation->total_amount ?? 0, 0, ',', '.'),
+            'status'                 => e($reservation->status ?? '—'),
+            'notes'                  => e($reservation->notes ?? '—'),
+            'created_at'             => $reservation->created_at?->format('d/m/Y H:i') ?? '—',
+            'items_table'            => $this->renderItemsTable($items),
+            'items_list'             => $this->renderItemsList($items),
+            'qr_code'                => $this->renderQrOrBarcode($reservation->reservation_no, $qrType),
+            'logo'                   => $this->renderLogo(),
         ];
 
         // Flatten booking_pass_data into prefixed keys
@@ -88,19 +97,28 @@ class BookingPassService
     public function renderDummyValues(string $qrType = 'qr'): array
     {
         return [
-            'reservation_no'  => 'RES-20260513-0099',
-            'guest_name'      => 'John Doe',
-            'guest_country'   => 'Indonesia',
-            'visit_date'      => '13 May 2026',
-            'partner_name'    => 'Hotel ABC',
-            'product_name'    => 'Trans Studio Theme Park',
-            'payment_method'  => 'DEPOSIT',
-            'payment_channel' => 'Transfer',
-            'total_amount'    => 'Rp 500.000',
-            'status'          => 'CONFIRMED',
-            'notes'           => 'VIP Guest',
-            'created_at'      => '13/05/2026 10:00',
-            'items_table'     => '<table style="width:100%;border-collapse:collapse;font-size:10pt;">'
+            'reservation_no'         => 'RES-20260513-0099',
+            'guest_name'             => 'John Doe',
+            'guest_country'          => 'Indonesia',
+            'customer_type'          => 'DOMESTIC',
+            'pax_adults'             => 2,
+            'pax_kids'               => 1,
+            'pax_babies'             => 0,
+            'reservation_type'       => 'self_service',
+            'customer_origin'        => 'OTA',
+            'customer_origin_detail' => 'Traveloka',
+            'key_number'             => 'A-102',
+            'location_name'          => 'Trans Studio Bandung',
+            'visit_date'             => '13 May 2026',
+            'partner_name'           => 'Hotel ABC',
+            'product_name'           => 'Trans Studio Theme Park',
+            'payment_method'         => 'DEPOSIT',
+            'payment_channel'        => 'Transfer',
+            'total_amount'           => 'Rp 500.000',
+            'status'                 => 'CONFIRMED',
+            'notes'                  => 'VIP Guest',
+            'created_at'             => '13/05/2026 10:00',
+            'items_table'            => '<table style="width:100%;border-collapse:collapse;font-size:10pt;">'
                 . '<thead><tr style="background:#0f1729;color:#fff;">'
                 . '<th style="padding:4px 6px;">No.</th><th style="padding:4px 6px;">Produk</th>'
                 . '<th style="padding:4px 6px;">Qty</th><th style="padding:4px 6px;">Subtotal</th></tr></thead>'
@@ -108,9 +126,9 @@ class BookingPassService
                 . '<td style="padding:3px 6px;text-align:center;">2</td><td style="padding:3px 6px;">Rp 500.000</td></tr></tbody>'
                 . '<tfoot><tr><td colspan="3" style="padding:3px 6px;text-align:right;">Total</td>'
                 . '<td style="padding:3px 6px;font-weight:bold;">Rp 500.000</td></tr></tfoot></table>',
-            'items_list'      => '• Trans Studio Theme Park x2',
-            'qr_code'         => $this->renderQrOrBarcode('RES-20260513-0099', $qrType),
-            'logo'            => $this->renderLogo(),
+            'items_list'             => '• Trans Studio Theme Park x2',
+            'qr_code'                => $this->renderQrOrBarcode('RES-20260513-0099', $qrType),
+            'logo'                   => $this->renderLogo(),
             'booking_pass_data.voucher_code' => 'HOTEL-PROMO-2026',
             'booking_pass_data.room_no'      => '205',
         ];
