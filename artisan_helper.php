@@ -30,8 +30,24 @@ if (isset($_GET['show_log'])) {
     $logPath = __DIR__ . '/../tsbl-invoice-laravel/storage/logs/laravel.log';
     if (file_exists($logPath)) {
         $content = file_get_contents($logPath);
-        echo "<h3>Laravel Log (Last 8000 characters):</h3>";
-        echo "<pre>" . htmlspecialchars(substr($content, -8000)) . "</pre>";
+        // Split by "[20" (the beginning of log timestamps)
+        $parts = explode("\n[20", $content);
+        $lastParts = array_slice($parts, -3);
+        echo "<h3>Latest 3 Laravel Errors:</h3>";
+        foreach ($lastParts as $part) {
+            $formattedPart = trim($part);
+            if (!str_starts_with($formattedPart, '[')) {
+                $formattedPart = "[20" . $formattedPart;
+            }
+            // Show only the first 25 lines of stack trace for each error so it doesn't clutter the page
+            $lines = explode("\n", $formattedPart);
+            $shortLines = array_slice($lines, 0, 30);
+            $shortContent = implode("\n", $shortLines);
+            if (count($lines) > 30) {
+                $shortContent .= "\n... (truncated " . (count($lines) - 30) . " lines)";
+            }
+            echo "<pre style='background:#f8f9fa; border:1px solid #ccc; padding:10px; margin-bottom:15px; max-height: 400px; overflow: auto;'>" . htmlspecialchars($shortContent) . "</pre>";
+        }
     } else {
         echo "Log file not found at: " . $logPath;
     }
