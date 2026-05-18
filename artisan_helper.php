@@ -26,7 +26,16 @@ function runArtisan($command) {
 }
 
 $cmd = $_GET['cmd'] ?? '';
-if ($cmd) {
+if (isset($_GET['show_log'])) {
+    $logPath = __DIR__ . '/../tsbl-invoice-laravel/storage/logs/laravel.log';
+    if (file_exists($logPath)) {
+        $content = file_get_contents($logPath);
+        echo "<h3>Laravel Log (Last 8000 characters):</h3>";
+        echo "<pre>" . htmlspecialchars(substr($content, -8000)) . "</pre>";
+    } else {
+        echo "Log file not found at: " . $logPath;
+    }
+} elseif ($cmd) {
     runArtisan($cmd);
 } else {
     echo "Usage: artisan_helper.php?cmd=migrate<br>";
@@ -37,5 +46,6 @@ if ($cmd) {
     echo "<li><a href='?cmd=cache:clear'>cache:clear</a></li>";
     echo "<li><a href='?cmd=route:clear'>route:clear</a></li>";
     echo "<li><a href='?cmd=config:clear'>config:clear</a></li>";
+    echo "<li><a href='?show_log=1'>show_log</a></li>";
 }
 
