@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\Setting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -10,7 +11,8 @@ class AuthController extends Controller
 {
     public function showLogin()
     {
-        return view('auth.login');
+        $devMode = Setting::get('dev_mode_enabled', '0') === '1';
+        return view('auth.login', compact('devMode'));
     }
 
     public function login(Request $request)

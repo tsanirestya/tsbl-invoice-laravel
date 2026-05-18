@@ -449,15 +449,17 @@ class InvoiceController extends Controller
         Storage::disk('public')->put($path, $pdf->output());
 
         $invoice->update([
-            'is_finalized' => true,
-            'pdf_path'     => $path,
-            'updated_by'   => auth()->id(),
+            'is_finalized'           => true,
+            'pdf_path'               => $path,
+            'finalized_by'           => auth()->id(),
+            'finalized_by_signature' => auth()->user()->signature_image,
+            'updated_by'             => auth()->id(),
         ]);
 
         InvoiceLog::create([
             'invoice_id'  => $invoice->id,
             'action'      => 'FINALIZED',
-            'description' => "Invoice {$invoice->invoice_no} difinalisasi dan PDF dibuat",
+            'description' => "Invoice {$invoice->invoice_no} difinalisasi oleh " . auth()->user()->full_name,
             'created_by'  => auth()->id(),
             'created_at'  => now(),
         ]);

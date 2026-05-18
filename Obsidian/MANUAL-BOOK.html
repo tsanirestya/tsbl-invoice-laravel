@@ -486,6 +486,11 @@
     <a href="#bab18" class="toc-item"><div class="toc-num">18</div><div class="toc-text">Pengaturan Sistem (Admin)</div></a>
     <a href="#bab19" class="toc-item"><div class="toc-num">19</div><div class="toc-text">Lupa / Reset Password</div></a>
     <a href="#bab20" class="toc-item"><div class="toc-num">20</div><div class="toc-text">Troubleshooting & Masalah Umum</div></a>
+    <a href="#bab21" class="toc-item"><div class="toc-num">21</div><div class="toc-text">Alur Billing Baru (Redesign)</div></a>
+    <a href="#bab22" class="toc-item"><div class="toc-num">22</div><div class="toc-text">Manajemen Reservasi & Proforma</div></a>
+    <a href="#bab23" class="toc-item"><div class="toc-num">23</div><div class="toc-text">Rekonsiliasi DSI & Invoice Final</div></a>
+    <a href="#bab24" class="toc-item"><div class="toc-num">24</div><div class="toc-text">Alokasi Pembayaran & Saldo Kredit</div></a>
+    <a href="#bab25" class="toc-item"><div class="toc-num">25</div><div class="toc-text">Fitur Tambahan & Otomatisasi Baru</div></a>
   </div>
 </div>
 
@@ -1672,6 +1677,271 @@ Pojok kanan atas:  [ <span class="btn-mock">B</span>  Budi Santoso ]
       </div>
     </div>
 
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     BAB 21 — ALUR BILLING BARU
+══════════════════════════════════════════════ -->
+<div class="chapter" id="bab21">
+  <div class="chapter-header">
+    <div class="chapter-num">21</div>
+    <div>
+      <div class="chapter-title">Alur Billing Baru (Redesign)</div>
+      <div class="chapter-goal">🎯 Tujuan: Memahami alur integrasi dari reservasi hingga invoice final</div>
+    </div>
+  </div>
+  <div class="chapter-body">
+    <div class="step">
+      <div class="step-title"><div class="step-num">1</div> Alur Proses Siklus Baru</div>
+      <p>Untuk meningkatkan akurasi, transparansi, dan mencegah kebocoran data pembayaran, sistem billing baru menggunakan alur terintegrasi:</p>
+      <div class="mockup" style="text-align: center; font-size: 14px;">
+        <span class="highlight">Reservasi</span> ➔ <span class="label-mock">Invoice Proforma</span> ➔ <span class="highlight">Kunjungan (DSI)</span> ➔ <span class="label-mock">Rekonsiliasi</span> ➔ <span class="highlight">Invoice Final</span>
+      </div>
+      <div class="callout info">
+        <div class="callout-icon">💡</div>
+        <div class="callout-body">Alur ini memastikan bahwa setiap tagihan didasarkan pada data kunjungan riil yang telah divalidasi dan direkonsiliasi.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     BAB 22 — SISTEM RESERVASI TERPADU & PORTAL PARTNER
+══════════════════════════════════════════════ -->
+<div class="chapter" id="bab22">
+  <div class="chapter-header">
+    <div class="chapter-num">22</div>
+    <div>
+      <div class="chapter-title">Sistem Reservasi Terpadu & Portal Partner</div>
+      <div class="chapter-goal">🎯 Tujuan: Mengelola rencana kedatangan pengunjung secara terpadu melalui berbagai jalur masuk dan kontrol keamanan</div>
+    </div>
+  </div>
+  <div class="chapter-body">
+    <div class="step">
+      <div class="step-title"><div class="step-num">1</div> Jalur Akses Pembuatan Reservasi</div>
+      <p>Sistem Reservasi TSBL dirancang untuk mempermudah pendaftaran rencana kedatangan pengunjung dari berbagai pintu masuk dengan kontrol keamanan tinggi. Terdapat <strong>3 jalur akses utama</strong>:</p>
+      <ul>
+        <li><strong>INTERNAL:</strong> Diinput langsung oleh Tim TSBL (Sales/Admin/Finance) melalui aplikasi utama.</li>
+        <li><strong>PARTNER PORTAL:</strong> Diinput mandiri oleh Partner melalui tautan token khusus tanpa harus login ke sistem.</li>
+        <li><strong>SELF-SERVICE QR:</strong> Diinput mandiri oleh pengunjung dengan memindai QR Code harian di area wahana/ticketing.</li>
+      </ul>
+    </div>
+
+    <div class="step">
+      <div class="step-title"><div class="step-num">2</div> Input Reservasi oleh Tim Internal</div>
+      <ol>
+        <li>Masuk ke sistem, klik menu <strong>Reservations</strong> di sidebar kiri.</li>
+        <li>Klik tombol <span class="action">+ Create Reservation</span> di pojok kanan atas.</li>
+        <li>Isi data utama pada form:
+          <ul>
+            <li><strong>Partner:</strong> Pilih partner dari dropdown dinamis.</li>
+            <li><strong>Guest Name:</strong> Isi nama lengkap tamu utama.</li>
+            <li><strong>Guest Country:</strong> Isi asal negara tamu (kosongkan atau ketik "Indonesia" jika domestik).</li>
+            <li><strong>Visit Date:</strong> Pilih tanggal rencana kedatangan.</li>
+            <li><strong>Pax Rincian:</strong> Masukkan jumlah Dewasa (Adults), Anak (Kids), dan Bayi (Babies).</li>
+          </ul>
+        </li>
+        <li>Tambahkan produk/layanan yang dipesan pada tabel item.</li>
+        <li>Tentukan <strong>Payment Method</strong> (Metode Pembayaran):
+          <ul>
+            <li><strong>TRANSFER_GROSS:</strong> Partner membayar harga penuh (dapat komisi).</li>
+            <li><strong>TRANSFER_NETT:</strong> Partner membayar harga nett setelah potongan komisi.</li>
+            <li><strong>ON_THE_SPOT:</strong> Tamu membayar langsung di lokasi wahana.</li>
+          </ul>
+        </li>
+        <li>Klik <span class="action">Save</span>. Status awal reservasi adalah <strong>PENDING</strong>. Jika pembayaran Transfer terkonfirmasi atau status disetujui, klik <span class="action green">Confirm</span> untuk mengubahnya menjadi <strong>CONFIRMED</strong> dan otomatis menerbitkan <strong>Booking Pass (PDF)</strong>.</li>
+      </ol>
+    </div>
+
+    <div class="step">
+      <div class="step-title"><div class="step-num">3</div> Akses Portal Partner (Tautan Token Khusus)</div>
+      <p>Partner tepercaya dapat menginput reservasi secara mandiri secara real-time tanpa perlu akun login penuh:</p>
+      <ol>
+        <li><strong>Mendapatkan Tautan Token:</strong> Admin membuka halaman detail Partner terkait, klik tombol <span class="action">Generate Reservation Token</span>, lalu kirimkan tautan unik tersebut ke partner.</li>
+        <li><strong>Pengisian oleh Partner:</strong> Partner membuka tautan di browser, mengisi data reservasi, dan menyetujui izin akses lokasi perangkat (GPS).</li>
+        <li><strong>Hasil:</strong> Setelah klik <span class="action">Save</span>, status otomatis menjadi <strong>CONFIRMED</strong> dan file PDF <strong>Booking Pass</strong> dengan QR Code dapat langsung di-download.</li>
+      </ol>
+      <div class="callout info">
+        <div class="callout-icon">🔒</div>
+        <div class="callout-body">
+          <strong>Keamanan Device Binding:</strong><br>
+          Untuk mencegah penyalahgunaan tautan, sistem membatasi tautan token tersebut untuk dibuka maksimal pada <strong>3 perangkat terdaftar</strong> per partner. Perangkat ke-4 yang mencoba membuka akan diblokir otomatis dan harus di-reset oleh Admin TSBL.
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-title"><div class="step-num">4</div> Layanan Mandiri Pengunjung (Self-Service via QR Code)</div>
+      <p>Tamu hotel partner dapat langsung menukarkan hak masuk wahana secara instan di area ticketing:</p>
+      <ol>
+        <li><strong>Pemasangan QR Code:</strong> Tim internal mencetak QR Code harian dinamis via menu <strong>Daily QR Codes</strong> di dashboard dan meletakkannya di loket.</li>
+        <li><strong>Pendaftaran Tamu:</strong> Pengunjung memindai QR Code, mengisi data, mengunggah <strong>Foto Bukti Kunci Kamar / Voucher Hotel</strong> fisik, dan menyetujui akses lokasi (GPS).</li>
+        <li><strong>Penerbitan:</strong> Setelah dikirim, sistem menampilkan <strong>Booking Pass digital</strong> dengan QR Code langsung di layar smartphone pengunjung untuk ditunjukkan ke Admission.</li>
+      </ol>
+    </div>
+
+    <div class="step">
+      <div class="step-title"><div class="step-num">5</div> Sistem Geolocation & Deteksi Zona Bahaya (Danger Zone)</div>
+      <p>Untuk melindungi sistem dari penipuan atau pemalsuan transaksi di luar wilayah wahana:</p>
+      <ol>
+        <li><strong>Pengambilan Koordinat:</strong> Sistem menangkap data Latitude dan Longitude browser saat tombol Simpan ditekan pada formulir publik.</li>
+        <li><strong>Analisis Danger Zone:</strong> Menguji koordinat pengirim terhadap koordinat resmi wahana menggunakan rumus <em>Haversine</em>.</li>
+        <li><strong>Hasil Penandaan:</strong> Jika jarak pengiriman >500 meter dari wahana, sistem menandai reservasi sebagai <span class="action red">DANGER_ZONE = True</span> untuk ditinjau manual oleh Finance.</li>
+      </ol>
+    </div>
+
+    <div class="step">
+      <div class="step-title"><div class="step-num">6</div> Alur Status Reservasi</div>
+      <p>Setiap reservasi berpindah status sesuai tahapan operasional berikut:</p>
+      <ul>
+        <li><strong>PENDING:</strong> Reservasi baru selesai dicatat (belum divalidasi pembayarannya atau datanya).</li>
+        <li><strong>CONFIRMED:</strong> Reservasi telah disetujui, pembayaran aman (deposit partner mencukupi atau disetujui), dan Booking Pass diterbitkan.</li>
+        <li><strong>REDEEMED:</strong> Tamu telah sampai di wahana dan staff Admission telah memindai QR Code pada Booking Pass.</li>
+        <li><strong>CANCELLED:</strong> Reservasi dibatalkan secara manual oleh Admin/Finance.</li>
+        <li><strong>NO_SHOW:</strong> Status otomatis jika hingga hari kunjungan berakhir tamu tidak melakukan *Redeem* (Scan masuk).</li>
+      </ul>
+    </div>
+
+    <div class="step">
+      <div class="step-title"><div class="step-num">7</div> Penerbitan Invoice Proforma & Alur Pembayaran</div>
+      <ol>
+        <li>Buka detail reservasi yang bersangkutan, klik <span class="action green">Confirm</span> jika belum dilakukan.</li>
+        <li>Klik tombol <span class="action">Issue Proforma</span> untuk menagih pembayaran di muka (Prepaid) kepada partner.</li>
+        <li>Masukkan item-item produk/tiket yang akan ditagih.</li>
+        <li>Kirim Invoice Proforma ke partner untuk segera dilakukan pembayaran.</li>
+      </ol>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     BAB 23 — REKONSILIASI & INVOICE FINAL
+══════════════════════════════════════════════ -->
+<div class="chapter" id="bab23">
+  <div class="chapter-header">
+    <div class="chapter-num">23</div>
+    <div>
+      <div class="chapter-title">Rekonsiliasi DSI & Invoice Final</div>
+      <div class="chapter-goal">🎯 Tujuan: Mencocokkan rencana kedatangan dengan kunjungan riil</div>
+    </div>
+  </div>
+  <div class="chapter-body">
+    <div class="step">
+      <div class="step-title"><div class="step-num">1</div> Import Transaksi DSI</div>
+      <p>Setiap hari, lakukan import data kunjungan dari sistem operasional wahana (DSI) melalui menu <strong>DSI Import</strong>. Sistem secara cerdas akan mencocokkan transaksi DSI dengan data reservasi terdaftar.</p>
+    </div>
+    <div class="step">
+      <div class="step-title"><div class="step-num">2</div> Melakukan Proses Rekonsiliasi</div>
+      <ol>
+        <li>Klik menu <strong>Reconciliations</strong> di sidebar</li>
+        <li>Pilih baris transaksi yang berstatus <span class="action">PENDING_REVIEW</span></li>
+        <li>Bandingkan data rencana di Proforma dengan data kunjungan riil di DSI</li>
+        <li>Jika semua sudah sesuai, klik tombol <span class="action green">Approve</span></li>
+      </ol>
+      <div class="callout success">
+        <div class="callout-icon">✅</div>
+        <div class="callout-body">
+          <strong>Hasil Otomatisasi:</strong>
+          Sistem akan langsung membuat <strong>Invoice FINAL</strong>. Jika terdapat pembayaran yang sudah diverifikasi di Invoice Proforma sebelumnya, saldo pembayaran tersebut otomatis dialokasikan ke Invoice Final ini.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     BAB 24 — ALOKASI PEMBAYARAN & SALDO KREDIT
+══════════════════════════════════════════════ -->
+<div class="chapter" id="bab24">
+  <div class="chapter-header">
+    <div class="chapter-num">24</div>
+    <div>
+      <div class="chapter-title">Alokasi Pembayaran & Saldo Kredit</div>
+      <div class="chapter-goal">🎯 Tujuan: Mengelola pencatatan pembayaran masuk dan pemanfaatan kelebihan bayar</div>
+    </div>
+  </div>
+  <div class="chapter-body">
+    <div class="step">
+      <div class="step-title"><div class="step-num">1</div> Verifikasi Pembayaran Masuk</div>
+      <ol>
+        <li>Klik menu <strong>Billing Payments</strong> di sidebar kiri</li>
+        <li>Lakukan pencocokan dengan mutasi bank, lalu klik tombol <span class="action green">Verify</span> pada pembayaran terkait</li>
+        <li>Status pembayaran berubah menjadi <strong>VERIFIED</strong> dan datanya dikunci</li>
+      </ol>
+    </div>
+    <div class="step">
+      <div class="step-title"><div class="step-num">2</div> Alokasi ke Invoice</div>
+      <ol>
+        <li>Buka detail pembayaran yang sudah berstatus <strong>Verified</strong></li>
+        <li>Klik tombol <span class="action">Allocate</span>, lalu pilih invoice mana saja yang ingin dilunasi menggunakan pembayaran ini</li>
+        <li>Satu pembayaran dapat melunasi banyak invoice sekaligus (Batch Allocation)</li>
+      </ol>
+    </div>
+    <div class="step">
+      <div class="step-title"><div class="step-num">3</div> Manajemen Saldo Kredit Partner</div>
+      <p>Jika partner membayar lebih dari tagihan (Overpayment):</p>
+      <ol>
+        <li>Kelebihan saldo akan otomatis disimpan ke dalam <strong>Credit Balance</strong> partner</li>
+        <li>Saat membuat invoice baru di masa mendatang, cukup klik tombol <span class="action">Apply Credit</span> untuk memotong total tagihan menggunakan saldo kredit partner tersebut</li>
+      </ol>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     BAB 25 — FITUR TAMBAHAN & OTOMATISASI BARU
+══════════════════════════════════════════════ -->
+<div class="chapter" id="bab25">
+  <div class="chapter-header">
+    <div class="chapter-num">25</div>
+    <div>
+      <div class="chapter-title">Fitur Tambahan & Otomatisasi Baru</div>
+      <div class="chapter-goal">🎯 Tujuan: Meningkatkan efisiensi kerja dengan deteksi otomatis dan template dinamis</div>
+    </div>
+  </div>
+  <div class="chapter-body">
+    <div class="step">
+      <div class="step-title"><div class="step-num">1</div> Penentuan Tipe Pelanggan Otomatis</div>
+      <p>Sistem kini dapat menentukan kewarganegaraan / tipe pelanggan secara otomatis berdasarkan isian <strong>Guest Country</strong> pada model Reservasi:</p>
+      <ul>
+        <li>Jika kolom **Guest Country** dikosongkan atau diisi **"Indonesia"** (tidak sensitif huruf), sistem mengaturnya sebagai <span class="action">DOMESTIC</span>.</li>
+        <li>Jika diisi negara lain (misal: *Malaysia, Singapore, Australia*, dll.), diatur otomatis sebagai <span class="action red">FOREIGN</span>.</li>
+      </ul>
+      <p>Informasi ini ditampilkan di halaman detail reservasi dan dapat ditarik langsung ke Booking Pass.</p>
+    </div>
+    <div class="step">
+      <div class="step-title"><div class="step-num">2</div> Otomatisasi Status "No-Show" (Scheduler Harian)</div>
+      <p>Untuk menghindari penumpukan data kadaluwarsa, sistem menjalankan tugas terjadwal (scheduler cron) setiap pukul <strong>00:05</strong> tengah malam:</p>
+      <ul>
+        <li>Sistem memindai semua reservasi berstatus <strong>CONFIRMED</strong> yang tanggal kunjungannya (<strong>Visit Date</strong>) sebelum hari ini.</li>
+        <li>Sistem secara otomatis mengubah statusnya menjadi <span class="action red">NO_SHOW</span>.</li>
+      </ul>
+      <div class="callout info">
+        <div class="callout-icon">💻</div>
+        <div class="callout-body">
+          <strong>Perintah Server Manual:</strong><br>
+          Jika dibutuhkan pemicuan manual dari terminal/CLI, jalankan perintah:<br>
+          <code>php artisan reservations:mark-no-show</code>
+        </div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-title"><div class="step-num">3</div> Template Booking Pass Kustom & QR Code</div>
+      <p>Fitur baru pada visual editor dan renderer <strong>Booking Pass Templates</strong>:</p>
+      <ul>
+        <li><strong>Stabilitas QR Code:</strong> Menggunakan gambar QR Code dinamis berbasis nomor reservasi unik yang lebih mudah dipindai daripada barcode garis konvensional.</li>
+        <li><strong>Variabel Desain Baru:</strong> Anda kini dapat mendesain template Booking Pass dengan variabel baru:
+          <ul>
+            <li><code>{customer_type}</code> : Tipe pelanggan (DOMESTIC/FOREIGN)</li>
+            <li><code>{pax_adults}</code>, <code>{pax_kids}</code>, <code>{pax_babies}</code> : Detail jumlah pax</li>
+            <li><code>{customer_origin}</code> / <code>{customer_origin_detail}</code> : Asal kedatangan / nama OTA</li>
+            <li><code>{key_number}</code> : Nomor kunci loker / kunci fisik</li>
+            <li><code>{location_name}</code> : Nama destinasi wisata</li>
+          </ul>
+        </li>
+      </ul>
+    </div>
   </div>
 </div>
 

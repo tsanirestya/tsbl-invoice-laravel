@@ -89,6 +89,16 @@ class SettingsController extends Controller
             ->with('success', 'Pengaturan berhasil disimpan.');
     }
 
+    public function toggleDevMode()
+    {
+        $current = Setting::get('dev_mode_enabled', '0');
+        Setting::set('dev_mode_enabled', $current === '1' ? '0' : '1');
+
+        $state = $current === '1' ? 'dinonaktifkan' : 'diaktifkan';
+        return redirect()->route('settings.index')
+            ->with($current === '1' ? 'success' : 'warning', "Dev Mode {$state}.");
+    }
+
     private function saveFile(UploadedFile $file, ?string $old): string
     {
         // Delete old file from storage disk (strip leading 'storage/' prefix)

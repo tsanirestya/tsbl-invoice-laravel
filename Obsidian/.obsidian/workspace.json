@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "INDEX.md",
+                "file": "TODO/TODO-REVISI-RESERVATION-FORM-PAX.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "INDEX"
+              "title": "TODO-REVISI-RESERVATION-FORM-PAX"
             }
           }
         ]
@@ -185,19 +185,24 @@
   },
   "active": "f75570c9470dc731",
   "lastOpenFiles": [
-    "UI-UX/DESIGN-SYSTEM.md",
+    "TODO/TODO-PHASE-10-RESERVATION.md",
+    "TODO/TODO-PHASE-8-CREDIT-FACILITY.md",
+    "TODO/TODO-PHASE-6-PARTNER-DEPOSIT.md",
+    "TODO/TODO-PHASE-1-FOUNDATION.md",
+    "TODO/TODO-BILLING-REDESIGN.md",
+    "TODO/REVISI-RESERVASI.md",
+    "MANUAL-BOOK.md",
     "INDEX.md",
+    "UI-UX/DESIGN-SYSTEM.md",
     "Planning/FEATURE-ADMISSION-REDEEM.md",
     "TODO/TODO-REVISI-RESERVATION-FORM-PAX.md",
     "TODO/TODO-UX-OPTIMIZATIONS.md",
-    "TODO/TODO-PHASE-10-RESERVATION.md",
     "Planning/PLAN-BOOKING-PASS-VALIDATION.md",
     "Issues/ISSUE-004-INVOICE-PRICE-INCONSISTENCY.md",
     "Architecture/LARAVEL-STRUCTURE.md",
     "Architecture/BILLING-FLOW.md",
     "Development-Phases/PHASE-4-SUMMARY.md",
     "Planning/FEATURE-BOOKING-PASS-VISUAL-EDITOR.md",
-    "TODO/REVISI-RESERVASI.md",
     "Development-Phases/PHASE-10-SUMMARY.md",
     "Planning/FEATURE-BOOKING-PASS.md",
     "Planning/FEATURE-RESERVATION-SYSTEM.md",
@@ -210,13 +215,8 @@
     "AUDIT-REPORT-2026-05-08.md.tmp.29088.1778641409543",
     "TODO-AUDIT-2026-05-08.md",
     "TODO/TODO-PHASE-7-EXCEL-IMPORT.md",
-    "TODO/TODO-PHASE-8-CREDIT-FACILITY.md",
-    "TODO/TODO-BILLING-REDESIGN.md",
     "Issues/ISSUE-002-DYNAMIC-DROPDOWN-FILTERING.md",
-    "Issues/ISSUE-001-PARTIAL-ANOMALY-HANDLING.md",
     "Issues",
-    "Features/PARTIAL-ANOMALY-HANDLING.md",
-    "Development-Phases/PHASE-3-SUMMARY.md",
     "Untitled 5.canvas",
     "Untitled 4.canvas",
     "Untitled 3.canvas",

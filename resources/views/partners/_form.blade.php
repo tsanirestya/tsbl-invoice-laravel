@@ -85,8 +85,13 @@
 
             <div class="col-md-6">
                 <label class="form-label fw-semibold">NPWP</label>
-                <input type="text" name="npwp" class="form-control"
-                       value="{{ old('npwp', $partner->npwp ?? '') }}">
+                @if(auth()->user()->isBPM())
+                    <input type="text" class="form-control" value="{{ $partner->npwp ?? '-' }}" disabled>
+                    <div class="form-text text-muted"><i class="bi bi-lock-fill me-1"></i>Hanya Finance yang dapat mengubah field ini.</div>
+                @else
+                    <input type="text" name="npwp" class="form-control"
+                           value="{{ old('npwp', $partner->npwp ?? '') }}">
+                @endif
             </div>
 
             <div class="col-md-3">
@@ -119,68 +124,106 @@
 
     {{-- Tab: Bank --}}
     <div class="tab-pane fade" id="tab-bank">
-        <div class="row g-3">
-            <div class="col-md-6">
-                <label class="form-label fw-semibold">Nama Bank</label>
-                <input type="text" name="bank_name" class="form-control"
-                       value="{{ old('bank_name', $partner->bank_name ?? '') }}">
+        @if(auth()->user()->isBPM())
+            {{-- BPM: read-only view of financial fields --}}
+            <div class="alert alert-warning d-flex align-items-center gap-2 mb-3" role="alert">
+                <i class="bi bi-lock-fill"></i>
+                <span>Field finansial hanya dapat diubah oleh Finance. Anda hanya dapat melihat data ini.</span>
             </div>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold text-muted">Nama Bank</label>
+                    <input type="text" class="form-control" value="{{ $partner->bank_name ?? '-' }}" disabled>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold text-muted">No. Rekening</label>
+                    <input type="text" class="form-control" value="{{ $partner->bank_account_no ?? '-' }}" disabled>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold text-muted">Atas Nama</label>
+                    <input type="text" class="form-control" value="{{ $partner->bank_account_name ?? '-' }}" disabled>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold text-muted">Tipe Pembayaran</label>
+                    <input type="text" class="form-control" value="{{ $partner->payment_type ?? '-' }}" disabled>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold text-muted">Jatuh Tempo (hari)</label>
+                    <input type="text" class="form-control" value="{{ $partner->payment_due_days ?? '-' }}" disabled>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold text-muted">Limit Kredit (Rp)</label>
+                    <input type="text" class="form-control" value="{{ number_format($partner->limit_credit ?? 0, 0, ',', '.') }}" disabled>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold text-muted">Credit Class</label>
+                    <input type="text" class="form-control" value="{{ $partner->creditClass?->name ?? '-' }}" disabled>
+                </div>
+            </div>
+        @else
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Nama Bank</label>
+                    <input type="text" name="bank_name" class="form-control"
+                           value="{{ old('bank_name', $partner->bank_name ?? '') }}">
+                </div>
 
-            <div class="col-md-6">
-                <label class="form-label fw-semibold">No. Rekening</label>
-                <input type="text" name="bank_account_no" class="form-control"
-                       value="{{ old('bank_account_no', $partner->bank_account_no ?? '') }}">
-            </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">No. Rekening</label>
+                    <input type="text" name="bank_account_no" class="form-control"
+                           value="{{ old('bank_account_no', $partner->bank_account_no ?? '') }}">
+                </div>
 
-            <div class="col-md-6">
-                <label class="form-label fw-semibold">Atas Nama</label>
-                <input type="text" name="bank_account_name" class="form-control"
-                       value="{{ old('bank_account_name', $partner->bank_account_name ?? '') }}">
-            </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Atas Nama</label>
+                    <input type="text" name="bank_account_name" class="form-control"
+                           value="{{ old('bank_account_name', $partner->bank_account_name ?? '') }}">
+                </div>
 
-            <div class="col-md-6">
-                <label class="form-label fw-semibold">Tipe Pembayaran</label>
-                <input type="text" name="payment_type" class="form-control"
-                       placeholder="cth: Transfer, Tunai"
-                       value="{{ old('payment_type', $partner->payment_type ?? '') }}">
-            </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Tipe Pembayaran</label>
+                    <input type="text" name="payment_type" class="form-control"
+                           placeholder="cth: Transfer, Tunai"
+                           value="{{ old('payment_type', $partner->payment_type ?? '') }}">
+                </div>
 
-            <div class="col-md-4">
-                <label class="form-label fw-semibold">Jatuh Tempo (hari) <span class="text-danger">*</span></label>
-                <input type="number" name="payment_due_days" class="form-control @error('payment_due_days') is-invalid @enderror"
-                       value="{{ old('payment_due_days', $partner->payment_due_days ?? 14) }}" min="0" required>
-                @error('payment_due_days') <div class="invalid-feedback">{{ $message }}</div> @enderror
-            </div>
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold">Jatuh Tempo (hari) <span class="text-danger">*</span></label>
+                    <input type="number" name="payment_due_days" class="form-control @error('payment_due_days') is-invalid @enderror"
+                           value="{{ old('payment_due_days', $partner->payment_due_days ?? 14) }}" min="0" required>
+                    @error('payment_due_days') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                </div>
 
-            <div class="col-md-4">
-                <label class="form-label fw-semibold">Limit Kredit (Rp) <span class="text-danger">*</span></label>
-                <input type="text" inputmode="numeric" name="limit_credit" class="form-control currency-input @error('limit_credit') is-invalid @enderror"
-                       value="{{ old('limit_credit', $partner->limit_credit ?? 0) }}" required>
-                @error('limit_credit') <div class="invalid-feedback">{{ $message }}</div> @enderror
-            </div>
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold">Limit Kredit (Rp) <span class="text-danger">*</span></label>
+                    <input type="text" inputmode="numeric" name="limit_credit" class="form-control currency-input @error('limit_credit') is-invalid @enderror"
+                           value="{{ old('limit_credit', $partner->limit_credit ?? 0) }}" required>
+                    @error('limit_credit') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                </div>
 
-            <div class="col-md-4">
-                <label class="form-label fw-semibold">Credit Class</label>
-                <select name="credit_class_id" id="creditClassSelect" class="form-select @error('credit_class_id') is-invalid @enderror">
-                    <option value="">— Auto-assign berdasarkan limit —</option>
-                    @foreach($creditClasses as $cc)
-                        <option value="{{ $cc->id }}"
-                            data-color="{{ $cc->color }}"
-                            @selected(old('credit_class_id', $partner->credit_class_id ?? '') == $cc->id)>
-                            {{ $cc->name }}
-                            @if($cc->max_limit)
-                                (Rp {{ number_format($cc->min_limit, 0, ',', '.') }} – Rp {{ number_format($cc->max_limit, 0, ',', '.') }})
-                            @else
-                                (≥ Rp {{ number_format($cc->min_limit, 0, ',', '.') }})
-                            @endif
-                        </option>
-                    @endforeach
-                </select>
-                <div class="form-text text-muted">Kosongkan untuk auto-assign saat simpan.</div>
-                @error('credit_class_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                <div id="creditClassBadgePreview" class="mt-1"></div>
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold">Credit Class</label>
+                    <select name="credit_class_id" id="creditClassSelect" class="form-select @error('credit_class_id') is-invalid @enderror">
+                        <option value="">— Auto-assign berdasarkan limit —</option>
+                        @foreach($creditClasses as $cc)
+                            <option value="{{ $cc->id }}"
+                                data-color="{{ $cc->color }}"
+                                @selected(old('credit_class_id', $partner->credit_class_id ?? '') == $cc->id)>
+                                {{ $cc->name }}
+                                @if($cc->max_limit)
+                                    (Rp {{ number_format($cc->min_limit, 0, ',', '.') }} – Rp {{ number_format($cc->max_limit, 0, ',', '.') }})
+                                @else
+                                    (≥ Rp {{ number_format($cc->min_limit, 0, ',', '.') }})
+                                @endif
+                            </option>
+                        @endforeach
+                    </select>
+                    <div class="form-text text-muted">Kosongkan untuk auto-assign saat simpan.</div>
+                    @error('credit_class_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                    <div id="creditClassBadgePreview" class="mt-1"></div>
+                </div>
             </div>
-        </div>
+        @endif
     </div>
 
     @push('scripts')
@@ -221,6 +264,22 @@
                 ];
             @endphp
             @foreach($docLabels as $field => $label)
+            {{-- BPM cannot upload doc_npwp --}}
+            @if($field === 'doc_npwp' && auth()->user()->isBPM())
+            <div class="col-md-6">
+                <label class="form-label fw-semibold text-muted">{{ $label }}</label>
+                @if($editing && isset($partner) && $partner->$field)
+                    <div>
+                        <a href="{{ Storage::url($partner->$field) }}" target="_blank" class="small text-primary">
+                            <i class="bi bi-file-earmark me-1"></i>File saat ini
+                        </a>
+                    </div>
+                @else
+                    <p class="text-muted small mb-0">—</p>
+                @endif
+                <div class="form-text text-muted"><i class="bi bi-lock-fill me-1"></i>Hanya Finance yang dapat mengubah.</div>
+            </div>
+            @else
             <div class="col-md-6">
                 <label class="form-label fw-semibold">{{ $label }}</label>
                 <input type="file" name="{{ $field }}"
@@ -235,6 +294,7 @@
                     </div>
                 @endif
             </div>
+            @endif
             @endforeach
         </div>
     </div>

@@ -21,7 +21,7 @@ class Invoice extends Model
         'payment_status', 'payment_method', 'notes', 'credit_override_reason', 'pdf_path', 'is_finalized',
         'parent_invoice_id', 'replaces_invoice_id', 'delta_amount',
         'source_type', 'source_id', 'is_locked', 'lock_reason',
-        'created_by', 'updated_by',
+        'created_by', 'updated_by', 'finalized_by', 'finalized_by_signature',
     ];
 
     protected function casts(): array
@@ -62,6 +62,11 @@ class Invoice extends Model
     public function creator()
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function finalizedBy()
+    {
+        return $this->belongsTo(User::class, 'finalized_by');
     }
 
     public function depositTransaction()

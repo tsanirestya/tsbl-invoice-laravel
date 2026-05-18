@@ -43,4 +43,14 @@ class ReservationPayment extends Model
     {
         return $this->belongsTo(User::class, 'commission_released_by');
     }
+
+    public function commissionRequests()
+    {
+        return $this->hasMany(CommissionReleaseRequest::class);
+    }
+
+    public function pendingRequest()
+    {
+        return $this->hasOne(CommissionReleaseRequest::class)->where('status', 'pending');
+    }
 }

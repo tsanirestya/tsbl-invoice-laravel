@@ -45,8 +45,17 @@
     <div class="col-md-6">
         <label class="form-label fw-semibold">Role <span class="text-danger">*</span></label>
         <select name="user_status" class="form-select @error('user_status') is-invalid @enderror" required>
-            @foreach(['ADMIN','FINANCE','SALES','VIEWER','ADMISSION'] as $role)
-                <option value="{{ $role }}" @selected(old('user_status', $user->user_status ?? '') === $role)>{{ $role }}</option>
+            @foreach([
+                'ADMIN'             => 'Admin — Full access',
+                'IT'                => 'IT — System & user management',
+                'BUSDEV_HO'         => 'Busdev HO — Monitor bisnis (read-only)',
+                'FINANCE_STAFF'     => 'Finance Staff — Operasional invoice & import',
+                'FINANCE_MANAGER'   => 'Finance Manager — Approval & tanda tangan',
+                'BPM'               => 'Business Partner Manager — Partner & reservasi',
+                'RESERVATION_STAFF' => 'Reservation Staff — Reservasi saja',
+                'ADMISSION'         => 'Admission — QR scan & redeem',
+            ] as $value => $label)
+                <option value="{{ $value }}" @selected(old('user_status', $user->user_status ?? '') === $value)>{{ $label }}</option>
             @endforeach
         </select>
         @error('user_status') <div class="invalid-feedback">{{ $message }}</div> @enderror

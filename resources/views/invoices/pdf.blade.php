@@ -249,16 +249,28 @@
     @endif
 
     {{-- Signature --}}
+    {{--
+        Priority:
+        1. finalized_by_signature — snapshot saat Finance Manager finalize (new system)
+        2. finalizedBy user signature — fallback jika snapshot belum ada tapi relasi ada
+        3. creator signature — fallback untuk invoice lama sebelum role restructure
+    --}}
     <div class="signature-section">
         <div class="signature-block">
             <p>{{ $settings['company_name'] ?? 'TSBL' }}</p>
-            @if($invoice->creator?->signature_image && Storage::disk('public')->exists($invoice->creator->signature_image))
+            @if($invoice->finalized_by_signature && Storage::disk('public')->exists($invoice->finalized_by_signature))
+                <img src="{{ Storage::disk('public')->path($invoice->finalized_by_signature) }}"
+                     style="height:50px;margin-top:4px" alt="ttd">
+            @elseif($invoice->finalizedBy?->signature_image && Storage::disk('public')->exists($invoice->finalizedBy->signature_image))
+                <img src="{{ Storage::disk('public')->path($invoice->finalizedBy->signature_image) }}"
+                     style="height:50px;margin-top:4px" alt="ttd">
+            @elseif($invoice->creator?->signature_image && Storage::disk('public')->exists($invoice->creator->signature_image))
                 <img src="{{ Storage::disk('public')->path($invoice->creator->signature_image) }}"
                      style="height:50px;margin-top:4px" alt="ttd">
             @endif
             <div class="sig-line"></div>
-            <p>{{ $invoice->creator?->full_name ?? '' }}</p>
-            <p style="color:#888">{{ $invoice->creator?->position_name ?? '' }}</p>
+            <p>{{ $invoice->finalizedBy?->full_name ?? $invoice->creator?->full_name ?? '' }}</p>
+            <p style="color:#888">{{ $invoice->finalizedBy?->position_name ?? $invoice->creator?->position_name ?? '' }}</p>
         </div>
     </div>
 

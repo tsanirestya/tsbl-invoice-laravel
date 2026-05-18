@@ -274,6 +274,48 @@
                 </button>
             </div>
         </form>
+
+        {{-- Dev Mode Toggle — ADMIN only, outside main form ────────────────── --}}
+        @php $devModeOn = \App\Models\Setting::get('dev_mode_enabled', '0') === '1'; @endphp
+        <div class="card mb-4 {{ $devModeOn ? 'border-warning' : 'border-0' }}">
+            <div class="card-header fw-semibold d-flex align-items-center gap-2
+                        {{ $devModeOn ? 'bg-warning-subtle' : '' }}">
+                <i class="bi bi-bug{{ $devModeOn ? '-fill text-warning' : ' text-secondary' }}"></i>
+                Development Mode
+                @if($devModeOn)
+                    <span class="badge bg-warning text-dark ms-1">AKTIF</span>
+                @endif
+            </div>
+            <div class="card-body">
+                @if($devModeOn)
+                    <div class="alert alert-warning d-flex gap-2 align-items-start mb-3 py-2">
+                        <i class="bi bi-exclamation-triangle-fill flex-shrink-0 mt-1"></i>
+                        <div>
+                            <strong>Dev Mode sedang AKTIF.</strong>
+                            Halaman login menampilkan tombol quick-login untuk semua role.
+                            <strong>Jangan biarkan aktif di production.</strong>
+                        </div>
+                    </div>
+                @else
+                    <p class="text-muted small mb-3">
+                        Ketika aktif, halaman login menampilkan tombol quick-login untuk setiap role.
+                        Berguna untuk testing — <strong>jangan aktifkan di production.</strong>
+                    </p>
+                @endif
+
+                <form method="POST" action="{{ route('settings.dev-mode') }}">
+                    @csrf
+                    <button type="submit"
+                            class="btn {{ $devModeOn ? 'btn-warning' : 'btn-outline-secondary' }} btn-sm"
+                            @if(!$devModeOn)
+                                onclick="return confirm('Aktifkan Dev Mode? Halaman login akan menampilkan tombol quick-login semua role.')"
+                            @endif>
+                        <i class="bi bi-{{ $devModeOn ? 'stop-circle' : 'play-circle' }} me-1"></i>
+                        {{ $devModeOn ? 'Nonaktifkan Dev Mode' : 'Aktifkan Dev Mode' }}
+                    </button>
+                </form>
+            </div>
+        </div>
     </div>
 </div>
 @endsection

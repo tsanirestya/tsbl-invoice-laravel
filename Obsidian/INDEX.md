@@ -45,6 +45,7 @@
 | Phase 11 — Product Classification | [[PHASE-11-PRODUCT-CLASSIFICATION]] | ✅ Done (2026-05-15) |
 | Revisi Reservation Form (Pax)   | [[TODO-REVISI-RESERVATION-FORM-PAX]] | ✅ Done (2026-05-15)      |
 | Phase 12 — Admission + Redeem   | [[FEATURE-ADMISSION-REDEEM]]         | ✅ Done (2026-05-16)       |
+| Role Restructure (8 Role)       | [[TODO-ROLE-RESTRUCTURE]]            | ✅ Done (2026-05-18)      |
 
 ## 📦 Features (akan dibuat per feature selesai)
 → Folder: `Features/`

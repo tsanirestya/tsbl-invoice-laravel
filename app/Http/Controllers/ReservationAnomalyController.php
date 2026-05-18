@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\CommissionReleaseRequest;
 use App\Models\EmployeePartnerCheck;
 use App\Models\Partner;
 use App\Models\Reservation;
@@ -105,11 +106,100 @@ class ReservationAnomalyController extends Controller
     {
         $held = ReservationPayment::where('is_commission_held', true)
             ->whereNull('commission_released_at')
-            ->with(['reservation.partner', 'reservation.items'])
+            ->with(['reservation.partner', 'reservation.items', 'pendingRequest'])
             ->latest()
             ->paginate(20);
 
-        return view('commission-review.index', compact('held'));
+        $pendingRequests = CommissionReleaseRequest::where('status', 'pending')
+            ->with(['reservationPayment.reservation.partner', 'requestedBy'])
+            ->latest()
+            ->get();
+
+        return view('commission-review.index', compact('held', 'pendingRequests'));
+    }
+
+    // Finance Staff submit request untuk release/revoke komisi
+    public function commissionRequestAction(Request $request, ReservationPayment $payment)
+    {
+        $request->validate([
+            'action' => 'required|in:release,revoke',
+            'reason' => 'required|string|max:500',
+        ]);
+
+        // Cek apakah sudah ada request pending untuk payment ini
+        $existing = CommissionReleaseRequest::where('reservation_payment_id', $payment->id)
+            ->where('status', 'pending')
+            ->exists();
+
+        if ($existing) {
+            return back()->with('error', 'Sudah ada request pending untuk komisi ini. Tunggu review dari Finance Manager.');
+        }
+
+        CommissionReleaseRequest::create([
+            'reservation_payment_id' => $payment->id,
+            'action'                 => $request->action,
+            'reason'                 => $request->reason,
+            'status'                 => 'pending',
+            'requested_by'           => auth()->id(),
+        ]);
+
+        return back()->with('success', 'Request ' . $request->action . ' komisi berhasil diajukan. Menunggu persetujuan Finance Manager.');
+    }
+
+    // Finance Manager approve request
+    public function commissionRequestApprove(Request $request, CommissionReleaseRequest $commissionRequest)
+    {
+        if (!$commissionRequest->isPending()) {
+            return back()->with('error', 'Request ini sudah diproses sebelumnya.');
+        }
+
+        $request->validate(['review_notes' => 'nullable|string|max:500']);
+
+        $payment = $commissionRequest->reservationPayment;
+
+        if ($commissionRequest->action === 'release') {
+            $payment->update([
+                'is_commission_held'     => false,
+                'commission_released_by' => auth()->id(),
+                'commission_released_at' => now(),
+            ]);
+        } else {
+            $payment->update([
+                'commission_amount'      => 0,
+                'is_commission_eligible' => false,
+                'is_commission_held'     => false,
+                'commission_released_by' => auth()->id(),
+                'commission_released_at' => now(),
+            ]);
+        }
+
+        $commissionRequest->update([
+            'status'       => 'approved',
+            'reviewed_by'  => auth()->id(),
+            'reviewed_at'  => now(),
+            'review_notes' => $request->review_notes,
+        ]);
+
+        return back()->with('success', 'Request komisi disetujui dan dieksekusi.');
+    }
+
+    // Finance Manager reject request
+    public function commissionRequestReject(Request $request, CommissionReleaseRequest $commissionRequest)
+    {
+        if (!$commissionRequest->isPending()) {
+            return back()->with('error', 'Request ini sudah diproses sebelumnya.');
+        }
+
+        $request->validate(['review_notes' => 'required|string|max:500']);
+
+        $commissionRequest->update([
+            'status'       => 'rejected',
+            'reviewed_by'  => auth()->id(),
+            'reviewed_at'  => now(),
+            'review_notes' => $request->review_notes,
+        ]);
+
+        return back()->with('success', 'Request komisi ditolak.');
     }
 
     public function commissionRelease(Request $request, ReservationPayment $payment)

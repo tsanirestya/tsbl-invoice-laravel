@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Auth\AuthController;
+use App\Http\Controllers\Auth\DevLoginController;
 use App\Http\Controllers\Auth\PasswordResetController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DepositInvoiceController;
@@ -66,6 +67,7 @@ Route::get('/storage/{path}', function (string $path) {
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
     Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:5,1');
+    Route::get('/dev-login/{role}', [DevLoginController::class, 'login'])->name('dev.login');
 
     // F-009: Password reset request (no email needed — admin mediates)
     Route::get('/forgot-password', [PasswordResetController::class, 'showRequestForm'])->name('password.request');
@@ -75,6 +77,13 @@ Route::middleware('guest')->group(function () {
 // Authenticated routes
 Route::middleware('auth')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+    // Emergency GET logout — for when user is stuck on 403 with no nav
+    Route::get('/logout', function () {
+        \Illuminate\Support\Facades\Auth::logout();
+        request()->session()->invalidate();
+        request()->session()->regenerateToken();
+        return redirect('/login');
+    })->name('logout.get');
 
     // Geocode proxy — server-side reverse geocoding agar User-Agent bisa dikirim
     Route::get('/api/geocode/reverse', function (\Illuminate\Http\Request $request) {
@@ -96,115 +105,153 @@ Route::middleware('auth')->group(function () {
     Route::get('/change-password', [PasswordResetController::class, 'showChangeForm'])->name('password.change.form');
     Route::post('/change-password', [PasswordResetController::class, 'changePassword'])->name('password.change');
 
-    // F-009: Admin — manage password reset requests
-    Route::middleware('role:ADMIN')->group(function () {
+    // ── IT + ADMIN: system & user management ─────────────────────────────────
+    Route::middleware('role:ADMIN,IT')->group(function () {
         Route::get('/admin/password-requests', [PasswordResetController::class, 'listRequests'])->name('admin.password-requests.index');
         Route::post('/admin/password-requests/{user}/resolve', [PasswordResetController::class, 'resolveRequest'])->name('admin.password-requests.resolve');
+        Route::resource('users', UserController::class)->except(['show']);
+        Route::get('settings', [SettingsController::class, 'index'])->name('settings.index');
+        Route::put('settings', [SettingsController::class, 'update'])->name('settings.update');
+        Route::get('audit-logs', [\App\Http\Controllers\Admin\AuditLogController::class, 'index'])->name('admin.audit-logs.index');
+        Route::get('audit-logs/{log}', [\App\Http\Controllers\Admin\AuditLogController::class, 'show'])->name('admin.audit-logs.show');
+        Route::resource('booking-pass-templates', BookingPassController::class)->except(['show']);
+        Route::post('booking-pass-templates/{bookingPassTemplate}/upload-bg', [BookingPassController::class, 'uploadBackground'])->name('booking-pass-templates.upload-bg');
+        Route::put('booking-pass-templates/{bookingPassTemplate}/field-mapping', [BookingPassController::class, 'updateFieldMapping'])->name('booking-pass-templates.update-mapping');
+        Route::get('booking-pass-templates/{bookingPassTemplate}/preview', [BookingPassController::class, 'previewPdf'])->name('booking-pass-templates.preview');
     });
 
-    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-    Route::get('/pending-invoices', [PendingInvoiceController::class, 'index'])->name('pending-invoices.index');
+    // ── ADMIN only ────────────────────────────────────────────────────────────
+    Route::middleware('role:ADMIN')->group(function () {
+        Route::post('settings/dev-mode', [SettingsController::class, 'toggleDevMode'])->name('settings.dev-mode');
+        Route::resource('credit-classes', CreditClassController::class)->except(['show']);
+        Route::post('commission-review/{payment}/release', [ReservationAnomalyController::class, 'commissionRelease'])->name('commission-review.release');
+        Route::post('commission-review/{payment}/revoke', [ReservationAnomalyController::class, 'commissionRevoke'])->name('commission-review.revoke');
+        Route::post('credit-payments/{creditPayment}/confirm-void', [CreditPaymentController::class, 'confirmVoid'])->name('credit-payments.confirm-void');
+        Route::post('credit-payments/{creditPayment}/reject-void', [CreditPaymentController::class, 'rejectVoid'])->name('credit-payments.reject-void');
+        Route::get('admin/employee-partner-checks', [ReservationAnomalyController::class, 'employeeCheckIndex'])->name('admin.employee-partner-checks.index');
+        Route::post('admin/employee-partner-checks/run', [ReservationAnomalyController::class, 'employeeCheckRun'])->name('admin.employee-partner-checks.run');
+        Route::post('admin/employee-partner-checks/{check}/review', [ReservationAnomalyController::class, 'employeeCheckReview'])->name('admin.employee-partner-checks.review');
+        Route::post('partners/{partner}/generate-token', [PartnerController::class, 'generateReservationToken'])->name('partners.generate-token');
+        Route::post('partners/{partner}/reset-devices', [PartnerController::class, 'resetDevices'])->name('partners.reset-devices');
+        Route::post('partners/{partner}/toggle-suspension', [PartnerController::class, 'toggleReservationSuspension'])->name('partners.toggle-suspension');
+    });
 
-    // Invoice management
-    Route::post('invoices/mark-overdue', [InvoiceController::class, 'markOverdue'])->name('invoices.mark-overdue');
-    Route::resource('invoices', InvoiceController::class);
-    Route::post('invoices/{invoice}/finalize', [InvoiceController::class, 'finalize'])->name('invoices.finalize')->middleware('role:FINANCE,ADMIN');
-    Route::post('invoices/{invoice}/auto-create-products', [InvoiceController::class, 'autoCreateProducts'])->name('invoices.auto-create-products');
-    Route::post('invoices/{invoice}/duplicate', [InvoiceController::class, 'duplicate'])->name('invoices.duplicate');
-    Route::get('invoices/{invoice}/pdf', [InvoiceController::class, 'pdf'])->name('invoices.pdf');
+    // ── Dashboard ─────────────────────────────────────────────────────────────
+    // IT excluded — murni system only
+    Route::get('/dashboard', [DashboardController::class, 'index'])
+        ->middleware('role:ADMIN,BUSDEV_HO,FINANCE_STAFF,FINANCE_MANAGER,BPM,RESERVATION_STAFF,ADMISSION')
+        ->name('dashboard');
 
-    // Deposit Invoice management (invoice permintaan deposit ke partner)
-    Route::resource('deposit-invoices', DepositInvoiceController::class);
-    Route::post('deposit-invoices/{depositInvoice}/finalize', [DepositInvoiceController::class, 'finalize'])->name('deposit-invoices.finalize');
-    Route::post('deposit-invoices/{depositInvoice}/mark-paid', [DepositInvoiceController::class, 'markPaid'])->name('deposit-invoices.mark-paid');
-    Route::post('deposit-invoices/{depositInvoice}/cancel', [DepositInvoiceController::class, 'cancel'])->name('deposit-invoices.cancel');
-    Route::get('deposit-invoices/{depositInvoice}/pdf', [DepositInvoiceController::class, 'pdf'])->name('deposit-invoices.pdf');
+    // ── Finance: Invoice, Payment, Import ─────────────────────────────────────
+    Route::middleware('role:ADMIN,FINANCE_STAFF,FINANCE_MANAGER')->group(function () {
+        Route::get('/pending-invoices', [PendingInvoiceController::class, 'index'])->name('pending-invoices.index');
+        Route::post('invoices/mark-overdue', [InvoiceController::class, 'markOverdue'])->name('invoices.mark-overdue');
+        Route::post('invoices/{invoice}/auto-create-products', [InvoiceController::class, 'autoCreateProducts'])->name('invoices.auto-create-products');
+        Route::post('invoices/{invoice}/duplicate', [InvoiceController::class, 'duplicate'])->name('invoices.duplicate');
+        Route::get('invoices/{invoice}/pdf', [InvoiceController::class, 'pdf'])->name('invoices.pdf');
+        Route::resource('invoices', InvoiceController::class)->except(['destroy']);
+        Route::resource('deposit-invoices', DepositInvoiceController::class)->except(['destroy']);
+        Route::get('deposit-invoices/{depositInvoice}/pdf', [DepositInvoiceController::class, 'pdf'])->name('deposit-invoices.pdf');
+        Route::get('payments', [PaymentController::class, 'index'])->name('payments.index');
+        Route::resource('payment-memos', PaymentMemoController::class)->except(['edit', 'update']);
+        Route::get('payment-memos/{paymentMemo}/pdf', [PaymentMemoController::class, 'pdf'])->name('payment-memos.pdf');
+        Route::get('/api/partners/{partner}/outstanding-invoices', [PaymentMemoController::class, 'outstandingInvoices'])->name('api.partner.outstanding-invoices');
+        Route::resource('credit-payments', CreditPaymentController::class)->except(['edit', 'update', 'destroy']);
+        Route::get('/api/partners/{partner}/outstanding-invoices-cp', [CreditPaymentController::class, 'outstandingInvoices'])->name('api.partner.outstanding-invoices-cp');
+        Route::resource('products', ProductController::class)->except(['show']);
+        Route::get('products/{product}/aliases', [ProductAliasController::class, 'index'])->name('product-aliases.index');
+        Route::post('products/{product}/aliases', [ProductAliasController::class, 'store'])->name('product-aliases.store');
+        Route::delete('products/{product}/aliases/{alias}', [ProductAliasController::class, 'destroy'])->name('product-aliases.destroy');
+    });
 
-    // Payment management
-    Route::get('payments', [PaymentController::class, 'index'])->name('payments.index');
-    Route::middleware('role:FINANCE,ADMIN')->group(function () {
+    // ── Reports: Finance + BusdevHO (read-only) ───────────────────────────────
+    Route::middleware('role:ADMIN,FINANCE_STAFF,FINANCE_MANAGER,BUSDEV_HO')->group(function () {
+        Route::get('reports', [ReportController::class, 'index'])->name('reports.index');
+        Route::get('reports/export-csv', [ReportController::class, 'exportCsv'])->name('reports.export-csv');
+        Route::get('reports/export-pdf', [ReportController::class, 'exportPdf'])->name('reports.export-pdf');
+        Route::get('reports/export-credit-csv', [ReportController::class, 'exportCreditCsv'])->name('reports.export-credit-csv');
+        Route::get('reports/export-credit-pdf', [ReportController::class, 'exportCreditPdf'])->name('reports.export-credit-pdf');
+    });
+
+    // ── Anomalies: Finance + BusdevHO + BPM (view) ───────────────────────────
+    Route::middleware('role:ADMIN,FINANCE_STAFF,FINANCE_MANAGER,BUSDEV_HO,BPM')->group(function () {
+        Route::get('anomalies', [ReservationAnomalyController::class, 'index'])->name('anomalies.index');
+        Route::get('anomalies/{anomaly}', [ReservationAnomalyController::class, 'show'])->name('anomalies.show');
+        Route::get('commission-review', [ReservationAnomalyController::class, 'commissionIndex'])->name('commission-review.index');
+    });
+
+    // ── Finance Manager only: approve actions ─────────────────────────────────
+    Route::middleware('role:ADMIN,FINANCE_MANAGER')->group(function () {
+        Route::post('invoices/{invoice}/finalize', [InvoiceController::class, 'finalize'])->name('invoices.finalize');
+        Route::delete('invoices/{invoice}', [InvoiceController::class, 'destroy'])->name('invoices.destroy');
+        Route::post('deposit-invoices/{depositInvoice}/finalize', [DepositInvoiceController::class, 'finalize'])->name('deposit-invoices.finalize');
+        Route::post('deposit-invoices/{depositInvoice}/mark-paid', [DepositInvoiceController::class, 'markPaid'])->name('deposit-invoices.mark-paid');
+        Route::post('deposit-invoices/{depositInvoice}/cancel', [DepositInvoiceController::class, 'cancel'])->name('deposit-invoices.cancel');
         Route::post('invoices/{invoice}/payments', [PaymentController::class, 'store'])->name('payments.store');
         Route::delete('invoices/{invoice}/payments/{payment}', [PaymentController::class, 'destroy'])->name('payments.destroy');
-    });
-
-    // Partner management
-    Route::get('partners/performance', [PartnerController::class, 'performance'])->name('partners.performance');
-    Route::resource('partners', PartnerController::class);
-
-    // Partner deposits
-    Route::prefix('partners/{partner}/deposits')->group(function () {
-        Route::get('/',       [PartnerDepositController::class, 'index'])->name('deposits.index');
-        Route::get('/topup',  [PartnerDepositController::class, 'create'])->name('deposits.create');
-        Route::middleware('role:FINANCE,ADMIN')->group(function () {
-            Route::post('/',           [PartnerDepositController::class, 'store'])->name('deposits.store');
+        Route::delete('credit-payments/{creditPayment}', [CreditPaymentController::class, 'destroy'])->name('credit-payments.destroy');
+        Route::post('anomalies/{anomaly}/resolve', [ReservationAnomalyController::class, 'resolve'])->name('anomalies.resolve');
+        Route::post('imports/{import}/approve-rows', [ImportReviewController::class, 'approveRows'])->name('import-review.approve');
+        Route::prefix('partners/{partner}/deposits')->group(function () {
+            Route::post('/', [PartnerDepositController::class, 'store'])->name('deposits.store');
             Route::post('/adjustment', [PartnerDepositController::class, 'adjustment'])->name('deposits.adjustment');
         });
     });
 
-    // AJAX — deposit balance for invoice form
-    Route::get('/api/partners/{partner}/deposit-balance', [PartnerDepositController::class, 'balance'])
-        ->name('api.deposit.balance');
-
-    // AJAX — credit info for invoice form
-    Route::get('/api/partners/{partner}/credit-info', [PartnerController::class, 'creditInfo'])
-        ->name('api.partner.credit-info');
-
-    // Product management
-    Route::resource('products', ProductController::class)->except(['show']);
-
-    // Product Aliases
-    Route::get('products/{product}/aliases', [ProductAliasController::class, 'index'])->name('product-aliases.index');
-    Route::post('products/{product}/aliases', [ProductAliasController::class, 'store'])->name('product-aliases.store');
-    Route::delete('products/{product}/aliases/{alias}', [ProductAliasController::class, 'destroy'])->name('product-aliases.destroy');
-
-    // Transaction Imports
-    Route::resource('imports', TransactionImportController::class)->only(['index', 'create', 'store', 'show', 'destroy']);
-
-    // Import Review actions
-    Route::post('imports/{import}/approve-rows',  [ImportReviewController::class, 'approveRows'])->name('import-review.approve')->middleware('role:FINANCE,ADMIN');
-    Route::post('imports/{import}/reject-rows',   [ImportReviewController::class, 'rejectRows'])->name('import-review.reject');
-    Route::post('imports/{import}/override-row',  [ImportReviewController::class, 'overrideRow'])->name('import-review.override');
-    Route::post('imports/{import}/override-group',[ImportReviewController::class, 'overrideGroup'])->name('import-review.override-group');
-    Route::post('imports/{import}/reject-group',    [ImportReviewController::class, 'rejectGroup'])->name('import-review.reject-group');
-    Route::post('imports/{import}/adjust-pricing',  [ImportReviewController::class, 'adjustGroupPricing'])->name('import-review.adjust-pricing');
-    Route::post('imports/{import}/reassign-product',[ImportReviewController::class, 'reassignProduct'])->name('import-review.reassign-product');
-    Route::get('imports/{import}/similar-products', [ImportReviewController::class, 'similarProducts'])->name('import-review.similar-products');
-    Route::post('imports/{import}/finalize',        [ImportReviewController::class, 'finalizeImport'])->name('import-review.finalize');
-
-    // Anomaly export Excel (per import session)
-    Route::get('imports/{import}/export-anomaly', [ReportController::class, 'exportAnomalyExcel'])->name('imports.export-anomaly');
-
-    // Payment Memos
-    Route::resource('payment-memos', PaymentMemoController::class)->except(['edit', 'update']);
-    Route::get('payment-memos/{paymentMemo}/pdf', [PaymentMemoController::class, 'pdf'])->name('payment-memos.pdf');
-    Route::get('/api/partners/{partner}/outstanding-invoices', [PaymentMemoController::class, 'outstandingInvoices'])
-        ->name('api.partner.outstanding-invoices');
-
-    // Batch Credit Payments
-    Route::resource('credit-payments', CreditPaymentController::class)->except(['edit', 'update', 'destroy']);
-    Route::delete('credit-payments/{creditPayment}', [CreditPaymentController::class, 'destroy'])
-        ->name('credit-payments.destroy')
-        ->middleware('role:FINANCE,ADMIN');
-
-    Route::middleware('role:ADMIN')->group(function () {
-        Route::post('credit-payments/{creditPayment}/confirm-void', [CreditPaymentController::class, 'confirmVoid'])
-            ->name('credit-payments.confirm-void');
-        Route::post('credit-payments/{creditPayment}/reject-void', [CreditPaymentController::class, 'rejectVoid'])
-            ->name('credit-payments.reject-void');
+    // ── Finance Staff request commission action ───────────────────────────────
+    // Finance Staff bisa submit request; Finance Manager + Admin approve/reject via Fase 6 routes
+    Route::middleware('role:ADMIN,FINANCE_STAFF,FINANCE_MANAGER')->group(function () {
+        Route::post('commission-review/{payment}/request-action', [ReservationAnomalyController::class, 'commissionRequestAction'])->name('commission-review.request-action');
+    });
+    Route::middleware('role:ADMIN,FINANCE_MANAGER')->group(function () {
+        Route::post('commission-requests/{commissionRequest}/approve', [ReservationAnomalyController::class, 'commissionRequestApprove'])->name('commission-requests.approve');
+        Route::post('commission-requests/{commissionRequest}/reject', [ReservationAnomalyController::class, 'commissionRequestReject'])->name('commission-requests.reject');
     });
 
-    Route::get('/api/partners/{partner}/outstanding-invoices-cp', [CreditPaymentController::class, 'outstandingInvoices'])
-        ->name('api.partner.outstanding-invoices-cp');
+    // ── IT + Finance: Transaction Imports ─────────────────────────────────────
+    Route::middleware('role:ADMIN,IT,FINANCE_STAFF,FINANCE_MANAGER')->group(function () {
+        Route::resource('imports', TransactionImportController::class)->only(['index', 'create', 'store', 'show', 'destroy']);
+        Route::post('imports/{import}/reject-rows', [ImportReviewController::class, 'rejectRows'])->name('import-review.reject');
+        Route::post('imports/{import}/override-row', [ImportReviewController::class, 'overrideRow'])->name('import-review.override');
+        Route::post('imports/{import}/override-group', [ImportReviewController::class, 'overrideGroup'])->name('import-review.override-group');
+        Route::post('imports/{import}/reject-group', [ImportReviewController::class, 'rejectGroup'])->name('import-review.reject-group');
+        Route::post('imports/{import}/adjust-pricing', [ImportReviewController::class, 'adjustGroupPricing'])->name('import-review.adjust-pricing');
+        Route::post('imports/{import}/reassign-product', [ImportReviewController::class, 'reassignProduct'])->name('import-review.reassign-product');
+        Route::get('imports/{import}/similar-products', [ImportReviewController::class, 'similarProducts'])->name('import-review.similar-products');
+        Route::post('imports/{import}/finalize', [ImportReviewController::class, 'finalizeImport'])->name('import-review.finalize');
+        Route::get('imports/{import}/export-anomaly', [ReportController::class, 'exportAnomalyExcel'])->name('imports.export-anomaly');
+    });
 
-    // Reports
-    Route::get('reports', [ReportController::class, 'index'])->name('reports.index');
-    Route::get('reports/export-csv', [ReportController::class, 'exportCsv'])->name('reports.export-csv');
-    Route::get('reports/export-pdf', [ReportController::class, 'exportPdf'])->name('reports.export-pdf');
-    Route::get('reports/export-credit-csv', [ReportController::class, 'exportCreditCsv'])->name('reports.export-credit-csv');
-    Route::get('reports/export-credit-pdf', [ReportController::class, 'exportCreditPdf'])->name('reports.export-credit-pdf');
+    // ── Partners: read-only (broad access) ───────────────────────────────────
+    Route::middleware('role:ADMIN,BUSDEV_HO,FINANCE_STAFF,FINANCE_MANAGER,BPM,RESERVATION_STAFF')->group(function () {
+        Route::get('partners', [PartnerController::class, 'index'])->name('partners.index');
+        Route::get('partners/performance', [PartnerController::class, 'performance'])->name('partners.performance');
+        Route::get('partners/{partner}', [PartnerController::class, 'show'])->name('partners.show');
+        Route::get('/api/partners/{partner}/deposit-balance', [PartnerDepositController::class, 'balance'])->name('api.deposit.balance');
+        Route::get('/api/partners/{partner}/credit-info', [PartnerController::class, 'creditInfo'])->name('api.partner.credit-info');
+        Route::get('partners/{partner}/deposits', [PartnerDepositController::class, 'index'])->name('deposits.index');
+        Route::get('partners/{partner}/deposits/topup', [PartnerDepositController::class, 'create'])->name('deposits.create');
+    });
 
-    // ── Phase 12: Admission + Redeem ──────────────────────────────────────────
-    Route::middleware('role:ADMISSION,ADMIN')->prefix('admission')->group(function () {
+    // ── Partners: write (BPM = non-finansial only, enforced in controller) ────
+    Route::middleware('role:ADMIN,BPM')->group(function () {
+        Route::get('partners/create', [PartnerController::class, 'create'])->name('partners.create');
+        Route::post('partners', [PartnerController::class, 'store'])->name('partners.store');
+        Route::get('partners/{partner}/edit', [PartnerController::class, 'edit'])->name('partners.edit');
+        Route::put('partners/{partner}', [PartnerController::class, 'update'])->name('partners.update');
+        Route::delete('partners/{partner}', [PartnerController::class, 'destroy'])->name('partners.destroy');
+    });
+
+    // ── Reservation (BPM + Reservation Staff) ────────────────────────────────
+    Route::middleware('role:ADMIN,BPM,RESERVATION_STAFF')->group(function () {
+        Route::get('/api/reservations/search', [ReservationController::class, 'search'])->name('api.reservations.search');
+        Route::resource('reservations', ReservationController::class)->except(['destroy']);
+        Route::post('reservations/{reservation}/cancel', [ReservationController::class, 'cancel'])->name('reservations.cancel');
+        Route::get('reservations/{reservation}/booking-pass', [ReservationController::class, 'bookingPassDownload'])->name('reservations.booking-pass');
+    });
+
+    // ── Admission ─────────────────────────────────────────────────────────────
+    Route::middleware('role:ADMIN,ADMISSION')->prefix('admission')->group(function () {
         Route::get('/',        [AdmissionController::class, 'dashboard'])->name('admission.dashboard');
         Route::get('/scan',    [AdmissionController::class, 'scanPage'])->name('admission.scan');
         Route::post('/lookup', [AdmissionController::class, 'lookup'])->name('admission.lookup');
@@ -213,56 +260,16 @@ Route::middleware('auth')->group(function () {
         Route::get('/qr',      [AdmissionController::class, 'qrDisplay'])->name('admission.qr');
     });
 
-    // ── Phase 10: Reservation System ──────────────────────────────────────────
-
-    // Internal reservations (authenticated)
-    Route::get('/api/reservations/search', [ReservationController::class, 'search'])->name('api.reservations.search');
-    Route::resource('reservations', ReservationController::class)->except(['destroy']);
-    Route::post('reservations/{reservation}/cancel', [ReservationController::class, 'cancel'])->name('reservations.cancel');
-    Route::get('reservations/{reservation}/booking-pass', [ReservationController::class, 'bookingPassDownload'])->name('reservations.booking-pass');
-
-    // Anomaly & Fraud
-    Route::get('anomalies', [ReservationAnomalyController::class, 'index'])->name('anomalies.index');
-    Route::get('anomalies/{anomaly}', [ReservationAnomalyController::class, 'show'])->name('anomalies.show');
-    Route::post('anomalies/{anomaly}/resolve', [ReservationAnomalyController::class, 'resolve'])->name('anomalies.resolve')->middleware('role:FINANCE,ADMIN');
-
-    // Commission Review
-    Route::get('commission-review', [ReservationAnomalyController::class, 'commissionIndex'])->name('commission-review.index');
-    Route::post('commission-review/{payment}/release', [ReservationAnomalyController::class, 'commissionRelease'])->name('commission-review.release')->middleware('role:ADMIN');
-    Route::post('commission-review/{payment}/revoke', [ReservationAnomalyController::class, 'commissionRevoke'])->name('commission-review.revoke')->middleware('role:ADMIN');
-
-    // Booking Pass Templates (admin)
-    Route::resource('booking-pass-templates', BookingPassController::class)->except(['show'])->middleware('role:ADMIN');
-    Route::post('booking-pass-templates/{bookingPassTemplate}/upload-bg', [BookingPassController::class, 'uploadBackground'])->name('booking-pass-templates.upload-bg')->middleware('role:ADMIN');
-    Route::put('booking-pass-templates/{bookingPassTemplate}/field-mapping', [BookingPassController::class, 'updateFieldMapping'])->name('booking-pass-templates.update-mapping')->middleware('role:ADMIN');
-    Route::get('booking-pass-templates/{bookingPassTemplate}/preview', [BookingPassController::class, 'previewPdf'])->name('booking-pass-templates.preview')->middleware('role:ADMIN');
-
-    // Self-Service QR Admin
+    // ── Self-Service QR ───────────────────────────────────────────────────────
     Route::get('self-service-qr', [SelfServiceController::class, 'qrIndex'])->name('self-service.qr-admin');
-    Route::post('self-service-qr/generate', [SelfServiceController::class, 'generateQr'])->name('self-service.generate-qr')->middleware('role:ADMIN,SALES,ADMISSION');
+    Route::post('self-service-qr/generate', [SelfServiceController::class, 'generateQr'])
+        ->name('self-service.generate-qr')
+        ->middleware('role:ADMIN,ADMISSION');
 
-    // Employee-Partner Checks (admin)
-    Route::get('admin/employee-partner-checks', [ReservationAnomalyController::class, 'employeeCheckIndex'])->name('admin.employee-partner-checks.index')->middleware('role:ADMIN');
-    Route::post('admin/employee-partner-checks/run', [ReservationAnomalyController::class, 'employeeCheckRun'])->name('admin.employee-partner-checks.run')->middleware('role:ADMIN');
-    Route::post('admin/employee-partner-checks/{check}/review', [ReservationAnomalyController::class, 'employeeCheckReview'])->name('admin.employee-partner-checks.review')->middleware('role:ADMIN');
-
-    // Partner token generate/reset (admin)
-    Route::post('partners/{partner}/generate-token', [PartnerController::class, 'generateReservationToken'])->name('partners.generate-token')->middleware('role:ADMIN');
-    Route::post('partners/{partner}/reset-devices', [PartnerController::class, 'resetDevices'])->name('partners.reset-devices')->middleware('role:ADMIN');
-    Route::post('partners/{partner}/toggle-suspension', [PartnerController::class, 'toggleReservationSuspension'])->name('partners.toggle-suspension')->middleware('role:ADMIN');
-
-    // Admin-only
-    Route::middleware('role:ADMIN')->group(function () {
-        Route::resource('users', UserController::class)->except(['show']);
-        Route::resource('credit-classes', CreditClassController::class)->except(['show']);
-        Route::get('settings', [SettingsController::class, 'index'])->name('settings.index');
-        Route::put('settings', [SettingsController::class, 'update'])->name('settings.update');
-
-        // Audit Trail
-        Route::get('audit-logs', [\App\Http\Controllers\Admin\AuditLogController::class, 'index'])->name('admin.audit-logs.index');
-        Route::get('audit-logs/{log}', [\App\Http\Controllers\Admin\AuditLogController::class, 'show'])->name('admin.audit-logs.show');
+    // ── Finance: Partner deposits view ────────────────────────────────────────
+    Route::middleware('role:ADMIN,FINANCE_STAFF,FINANCE_MANAGER,BPM')->group(function () {
+        // topup/store already defined above per role group
     });
-
 });
 
 // ── Phase 10: Public Routes (no auth required) ────────────────────────────────

@@ -24,10 +24,24 @@ class User extends Authenticatable
         ];
     }
 
-    public function isAdmin(): bool      { return $this->user_status === 'ADMIN'; }
-    public function isFinance(): bool    { return $this->user_status === 'FINANCE'; }
-    public function isSales(): bool      { return $this->user_status === 'SALES'; }
-    public function isAdmission(): bool  { return $this->user_status === 'ADMISSION'; }
+    public function isAdmin(): bool             { return $this->user_status === 'ADMIN'; }
+    public function isIT(): bool                { return $this->user_status === 'IT'; }
+    public function isBusdevHO(): bool          { return $this->user_status === 'BUSDEV_HO'; }
+    public function isFinanceStaff(): bool      { return $this->user_status === 'FINANCE_STAFF'; }
+    public function isFinanceManager(): bool    { return $this->user_status === 'FINANCE_MANAGER'; }
+    public function isBPM(): bool               { return $this->user_status === 'BPM'; }
+    public function isReservationStaff(): bool  { return $this->user_status === 'RESERVATION_STAFF'; }
+    public function isAdmission(): bool         { return $this->user_status === 'ADMISSION'; }
+
+    public function canApproveFinance(): bool
+    {
+        return in_array($this->user_status, ['ADMIN', 'FINANCE_MANAGER']);
+    }
+
+    public function canAccessFinance(): bool
+    {
+        return in_array($this->user_status, ['ADMIN', 'FINANCE_STAFF', 'FINANCE_MANAGER']);
+    }
 
     public function invoices()
     {

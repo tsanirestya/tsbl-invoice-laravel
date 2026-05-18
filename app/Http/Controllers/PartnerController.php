@@ -285,11 +285,29 @@ class PartnerController extends Controller
         return view('partners.edit', compact('partner', 'creditClasses'));
     }
 
+    // Financial fields that only ADMIN/FINANCE_STAFF/FINANCE_MANAGER may edit
+    private const FINANCIAL_FIELDS = [
+        'bank_name', 'bank_account_no', 'bank_account_name', 'npwp',
+        'payment_type', 'payment_due_days', 'limit_credit', 'credit_class_id',
+        'doc_npwp',
+    ];
+
     public function update(Request $request, Partner $partner)
     {
         $validated = $this->validatePartner($request, $partner->id);
 
+        // BPM role cannot update financial fields — strip them from validated data
+        if (auth()->user()->isBPM()) {
+            foreach (self::FINANCIAL_FIELDS as $field) {
+                unset($validated[$field]);
+            }
+        }
+
         foreach (self::DOC_FIELDS as $field) {
+            // BPM cannot upload doc_npwp
+            if (auth()->user()->isBPM() && $field === 'doc_npwp') {
+                continue;
+            }
             if ($request->hasFile($field)) {
                 if ($partner->$field) {
                     Storage::disk('public')->delete($partner->$field);
@@ -301,8 +319,8 @@ class PartnerController extends Controller
         $validated['is_active']  = $request->boolean('is_active');
         $validated['updated_by'] = auth()->id();
 
-        // Re-auto-assign if not manually overridden
-        if (empty($validated['credit_class_id'])) {
+        // Re-auto-assign credit class only when financial fields are being saved
+        if (!auth()->user()->isBPM() && empty($validated['credit_class_id'])) {
             $validated['credit_class_id'] = CreditClass::autoAssign((float) $validated['limit_credit'])?->id;
         }
 
