@@ -2,8 +2,6 @@
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
-echo "<h2>Artisan Helper (Artisan::call)</h2>";
-
 // Bootstrap Laravel
 require __DIR__.'/../tsbl-invoice-laravel/vendor/autoload.php';
 $app = require_once __DIR__.'/../tsbl-invoice-laravel/bootstrap/app.php';
@@ -20,6 +18,8 @@ if ($key !== $expectedKey) {
     header('HTTP/1.0 403 Forbidden');
     die("<h3>403 Forbidden: Unauthorized Access</h3>");
 }
+
+echo "<h2>Artisan Helper (Artisan::call)</h2>";
 
 function runArtisan($command) {
     echo "Running: php artisan $command...<br>";
