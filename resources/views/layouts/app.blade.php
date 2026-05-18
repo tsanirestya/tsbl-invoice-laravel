@@ -511,26 +511,51 @@
 
 {{-- Bottom Nav (mobile only) --}}
 <div id="bottom-nav" style="display:none">
-    <a href="{{ route('dashboard') }}" class="flex-fill d-flex flex-column align-items-center justify-content-center text-decoration-none {{ request()->routeIs('dashboard') ? 'text-primary' : 'text-secondary' }}">
-        <i class="bi bi-grid-1x2-fill" style="font-size:1.2rem"></i>
-        <span style="font-size:.58rem;font-weight:600;margin-top:2px">Dashboard</span>
-    </a>
-    <a href="{{ route('invoices.index') }}" class="flex-fill d-flex flex-column align-items-center justify-content-center text-decoration-none {{ request()->routeIs('invoices.*') ? 'text-primary' : 'text-secondary' }}">
-        <i class="bi bi-file-earmark-text-fill" style="font-size:1.2rem"></i>
-        <span style="font-size:.58rem;font-weight:600;margin-top:2px">Invoice</span>
-    </a>
-    <a href="{{ route('invoices.create') }}" class="flex-fill d-flex flex-column align-items-center justify-content-center text-decoration-none text-white"
-       style="background:linear-gradient(135deg,#3b82f6,#2563eb);border-radius:50%;width:46px;height:46px;margin-top:-12px;box-shadow:0 4px 14px rgba(59,130,246,.4);flex-shrink:0;">
-        <i class="bi bi-plus-lg" style="font-size:1.2rem"></i>
-    </a>
-    <a href="{{ route('partners.index') }}" class="flex-fill d-flex flex-column align-items-center justify-content-center text-decoration-none {{ request()->routeIs('partners.*') ? 'text-primary' : 'text-secondary' }}">
-        <i class="bi bi-people-fill" style="font-size:1.2rem"></i>
-        <span style="font-size:.58rem;font-weight:600;margin-top:2px">Partner</span>
-    </a>
-    <a href="#" onclick="toggleSidebar()" class="flex-fill d-flex flex-column align-items-center justify-content-center text-decoration-none text-secondary">
-        <i class="bi bi-list" style="font-size:1.2rem"></i>
-        <span style="font-size:.58rem;font-weight:600;margin-top:2px">Menu</span>
-    </a>
+    @if(auth()->user()->isAdmission())
+        {{-- Admission bottom nav --}}
+        <a href="{{ route('admission.dashboard') }}" class="flex-fill d-flex flex-column align-items-center justify-content-center text-decoration-none {{ request()->routeIs('admission.dashboard') ? 'text-primary' : 'text-secondary' }}">
+            <i class="bi bi-door-open-fill" style="font-size:1.2rem"></i>
+            <span style="font-size:.58rem;font-weight:600;margin-top:2px">Dashboard</span>
+        </a>
+        <a href="{{ route('admission.scan') }}" class="flex-fill d-flex flex-column align-items-center justify-content-center text-decoration-none {{ request()->routeIs('admission.scan') ? 'text-primary' : 'text-secondary' }}">
+            <i class="bi bi-upc-scan" style="font-size:1.2rem"></i>
+            <span style="font-size:.58rem;font-weight:600;margin-top:2px">Scan</span>
+        </a>
+        <a href="{{ route('admission.qr') }}" class="flex-fill d-flex flex-column align-items-center justify-content-center text-decoration-none text-white"
+           style="background:linear-gradient(135deg,#3b82f6,#2563eb);border-radius:50%;width:46px;height:46px;margin-top:-12px;box-shadow:0 4px 14px rgba(59,130,246,.4);flex-shrink:0;">
+            <i class="bi bi-qr-code" style="font-size:1.2rem"></i>
+        </a>
+        <a href="{{ route('admission.history') }}" class="flex-fill d-flex flex-column align-items-center justify-content-center text-decoration-none {{ request()->routeIs('admission.history') ? 'text-primary' : 'text-secondary' }}">
+            <i class="bi bi-clock-history" style="font-size:1.2rem"></i>
+            <span style="font-size:.58rem;font-weight:600;margin-top:2px">Riwayat</span>
+        </a>
+        <a href="#" onclick="toggleSidebar()" class="flex-fill d-flex flex-column align-items-center justify-content-center text-decoration-none text-secondary">
+            <i class="bi bi-list" style="font-size:1.2rem"></i>
+            <span style="font-size:.58rem;font-weight:600;margin-top:2px">Menu</span>
+        </a>
+    @else
+        {{-- Default bottom nav for admin/finance/sales --}}
+        <a href="{{ route('dashboard') }}" class="flex-fill d-flex flex-column align-items-center justify-content-center text-decoration-none {{ request()->routeIs('dashboard') ? 'text-primary' : 'text-secondary' }}">
+            <i class="bi bi-grid-1x2-fill" style="font-size:1.2rem"></i>
+            <span style="font-size:.58rem;font-weight:600;margin-top:2px">Dashboard</span>
+        </a>
+        <a href="{{ route('invoices.index') }}" class="flex-fill d-flex flex-column align-items-center justify-content-center text-decoration-none {{ request()->routeIs('invoices.*') ? 'text-primary' : 'text-secondary' }}">
+            <i class="bi bi-file-earmark-text-fill" style="font-size:1.2rem"></i>
+            <span style="font-size:.58rem;font-weight:600;margin-top:2px">Invoice</span>
+        </a>
+        <a href="{{ route('invoices.create') }}" class="flex-fill d-flex flex-column align-items-center justify-content-center text-decoration-none text-white"
+           style="background:linear-gradient(135deg,#3b82f6,#2563eb);border-radius:50%;width:46px;height:46px;margin-top:-12px;box-shadow:0 4px 14px rgba(59,130,246,.4);flex-shrink:0;">
+            <i class="bi bi-plus-lg" style="font-size:1.2rem"></i>
+        </a>
+        <a href="{{ route('partners.index') }}" class="flex-fill d-flex flex-column align-items-center justify-content-center text-decoration-none {{ request()->routeIs('partners.*') ? 'text-primary' : 'text-secondary' }}">
+            <i class="bi bi-people-fill" style="font-size:1.2rem"></i>
+            <span style="font-size:.58rem;font-weight:600;margin-top:2px">Partner</span>
+        </a>
+        <a href="#" onclick="toggleSidebar()" class="flex-fill d-flex flex-column align-items-center justify-content-center text-decoration-none text-secondary">
+            <i class="bi bi-list" style="font-size:1.2rem"></i>
+            <span style="font-size:.58rem;font-weight:600;margin-top:2px">Menu</span>
+        </a>
+    @endif
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
