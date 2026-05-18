@@ -13,6 +13,14 @@ use Illuminate\Support\Facades\Artisan;
 // Resolve console kernel to enable Artisan
 $app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap();
 
+// Security Authorization Check
+$key = $_GET['key'] ?? '';
+$expectedKey = 'tsbl_deploy_' . date('Ymd');
+if ($key !== $expectedKey) {
+    header('HTTP/1.0 403 Forbidden');
+    die("<h3>403 Forbidden: Unauthorized Access</h3>");
+}
+
 function runArtisan($command) {
     echo "Running: php artisan $command...<br>";
     try {
@@ -54,14 +62,14 @@ if (isset($_GET['show_log'])) {
 } elseif ($cmd) {
     runArtisan($cmd);
 } else {
-    echo "Usage: artisan_helper.php?cmd=migrate<br>";
+    echo "Usage: artisan_helper.php?key=tsbl_deploy_YYYYMMDD&cmd=migrate<br>";
     echo "Common commands: <br>";
-    echo "<li><a href='?cmd=migrate --force'>migrate --force</a></li>";
-    echo "<li><a href='?cmd=migrate:status'>migrate:status</a></li>";
-    echo "<li><a href='?cmd=view:clear'>view:clear</a></li>";
-    echo "<li><a href='?cmd=cache:clear'>cache:clear</a></li>";
-    echo "<li><a href='?cmd=route:clear'>route:clear</a></li>";
-    echo "<li><a href='?cmd=config:clear'>config:clear</a></li>";
-    echo "<li><a href='?show_log=1'>show_log</a></li>";
+    echo "<li><a href='?key=$key&cmd=migrate --force'>migrate --force</a></li>";
+    echo "<li><a href='?key=$key&cmd=migrate:status'>migrate:status</a></li>";
+    echo "<li><a href='?key=$key&cmd=view:clear'>view:clear</a></li>";
+    echo "<li><a href='?key=$key&cmd=cache:clear'>cache:clear</a></li>";
+    echo "<li><a href='?key=$key&cmd=route:clear'>route:clear</a></li>";
+    echo "<li><a href='?key=$key&cmd=config:clear'>config:clear</a></li>";
+    echo "<li><a href='?key=$key&show_log=1'>show_log</a></li>";
 }
 
